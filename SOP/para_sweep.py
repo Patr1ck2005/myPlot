@@ -24,7 +24,7 @@ def generate_m1_m2(max_value, step):
 
 
 # Example usage
-max_value = 0.10
+max_value = 0.12
 step = 0.005
 result = generate_m1_m2(max_value, step)
 print(result)

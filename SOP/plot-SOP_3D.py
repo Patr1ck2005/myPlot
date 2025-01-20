@@ -6,7 +6,8 @@ import pandas as pd
 # data = pd.read_csv('sorted_VBG-II-shrink_type-1stFP', sep='\t').to_numpy()
 # data = pd.read_csv('sorted_VBG-II-shrink_type-1stFP-meshed', sep='\t').to_numpy()
 # data = pd.read_csv('sorted_VBG_III_s1mple', sep='\t').to_numpy()
-data = pd.read_csv('sorted_VBG-II-shrink_type-1stFP-uncoupled-meshed', sep='\t').to_numpy()
+# data = pd.read_csv('sorted_VBG-II-shrink_type-1stFP-uncoupled-meshed', sep='\t').to_numpy()
+data = pd.read_csv('sorted_VBG-final_design.csv', sep='\t').to_numpy()
 
 # 准备绘图
 fig = plt.figure()
@@ -18,18 +19,21 @@ freq_min, freq_max = min(frequencies), max(frequencies)
 
 # 创建颜色映射对象
 norm = plt.Normalize(vmin=freq_min, vmax=freq_max)
-norm = plt.Normalize(vmin=76, vmax=79)
 cmap = plt.get_cmap('twilight')
 
 for d in data:
     # m1, m2, freq, tanchi, phi, rank = d
     m1, m2, freq, tanchi, phi, _, rank = d
+    # m1, m2: momentum space coordinate
+    # freq: complex frequency (THz)
+    # tanchi, phi: polarization parameter (elliptical polarized)
+    # rank: rank of mode frequency
 
     freq_re = complex(freq.replace('i', 'j')).real
     freq_im = complex(freq.replace('i', 'j')).imag
 
     # 计算椭圆的长轴和短轴
-    major_axis = freq_im/2000+0.0003
+    major_axis = freq_im/2000+0.0001
     minor_axis = major_axis * np.tan(tanchi)
 
     # 椭圆的角度
@@ -64,7 +68,7 @@ for d in data:
         color = 'orange'
         alpha = 0.1
     # 绘制椭圆
-    ax.plot(m1 + ellipse[0], m2 + ellipse[1], zs=freq_re, color=color, linewidth=3, alpha=1-alpha)
+    ax.plot(m1 + ellipse[0], m2 + ellipse[1], zs=freq_re, color=color, linewidth=3, alpha=alpha)
     # ax.plot(-m1 + ellipse[0], m2 + ellipse[1], zs=freq, color=color)
     # ax.plot(-m1 + ellipse[0], -m2 + ellipse[1], zs=freq, color=color)
     # ax.plot(m1 + ellipse[0], -m2 + ellipse[1], zs=freq, color=color)
