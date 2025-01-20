@@ -14,7 +14,7 @@ logs/
 *.tif
 
 # 忽略文件
-*.
+*.pptx
 *.npy
 *.npz
 *.fsp
