@@ -12,7 +12,7 @@ yend = 10
 xlabel = 'x'
 ylabel = 'y'
 
-colormap = 'viridis'
+colormap = 'twilight'
 colorbar = True
 colorbar_label = 'colorbar_label'
 vmin = 0

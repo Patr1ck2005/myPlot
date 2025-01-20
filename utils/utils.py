@@ -20,7 +20,7 @@ def circle_crop(square_array):
     return result
 
 
-def compute_circle_average(image_array):
+def compute_circular_average(image_array):
     # 假设image_array是一个方形的NumPy数组
     # 我们将其裁剪为一个圆形
     cropped_array = circle_crop(image_array)
@@ -40,7 +40,5 @@ def load_img(img_path):
 
     # Normalize the array to the range [0, 1]
     img_array = img_array / 255.0
-
-    np.save(img_path)
 
     return img_array

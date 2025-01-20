@@ -5,12 +5,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 
-from utils.utils import compute_circle_average
+from utils.utils import compute_circular_average, load_img
 
 
-def direct_plot_2D(data_filename: Path | str, plot_paras: dict, show: bool):
-    data_2D = np.load(f'./plot_dataset/{data_filename}'+'.npy')
-
+def direct_plot_2D(work_dir: str = './plot_dataset',
+                   data_filename: str = None,
+                   data_type : str = None,
+                   plot_paras: dict = None,
+                   show: bool = False):
+    if data_type == '.npy':
+        data_2D = np.load(f'{work_dir}/{data_filename}'+data_type)
+    else:
+        data_2D = load_img(f'{work_dir}/{data_filename}'+data_type)[:,:,0]
     # Load your numpy array from the .npy file
     image_array = data_2D
 
@@ -19,7 +25,7 @@ def direct_plot_2D(data_filename: Path | str, plot_paras: dict, show: bool):
         if 1 > crop > 0:
             margin = int((1-crop)/2 * image_array.shape[0])
             image_array = image_array[margin:-margin, margin:-margin]
-        print(f'average value {compute_circle_average(image_array)}')
+        # print(f'average value {compute_circular_average(image_array)}')
 
     # Apply a colormap using matplotlib's imshow and get the image data
     # This will create a colormapped image based on your numpy array
@@ -41,19 +47,21 @@ def direct_plot_2D(data_filename: Path | str, plot_paras: dict, show: bool):
 
 
 if __name__ == '__main__':
-    data_filename = 'NIR-mystructure-conversion-efficiency-Si-193.41THz-1550.0nm-25deg-E0.8151-kx=-1.32-1.32-51_ky=-1.32-1.32-51'
     plot_paras = {
+        # 'colormap': 'hot',
         # 'colormap': 'magma',
         'colormap': 'twilight',
         'crop': 0.8,
     }
-    work_dir = 'plot_dataset'
+    work_dir = './plot_dataset/small_shift'
     # data_files = Path(work_dir).glob('*conversion-efficiency*.npy')
     data_files = Path(work_dir).glob('*phase*.npy')
+    # data_files = Path(work_dir).glob('*.png')
     for data_file in data_files:
         # for crop in [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4]:
-        for crop in [0.6]:
+        for crop in [1.0]:
             print(crop)
             plot_paras['crop'] = crop
             data_filename = data_file.stem
-            direct_plot_2D(data_filename, plot_paras, show=False)
+            data_type = data_file.suffix
+            direct_plot_2D(work_dir, data_filename, data_type, plot_paras, show=False)
