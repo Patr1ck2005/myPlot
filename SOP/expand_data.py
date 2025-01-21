@@ -4,6 +4,8 @@ import numpy as np
 # 读取原始数据
 # df = pd.read_csv('sorted_VBG-final_design.csv', sep='\t')
 df = pd.read_csv('expanded_VBG-final_design.csv', sep='\t')
+# df = pd.read_csv('sorted_VBG-band3D-comparison_design.csv', sep='\t')
+# df = pd.read_csv('expanded_VBG-band3D-comparison_design.csv', sep='\t')
 
 m_max = df['m1'].max()
 m_step = 0.005

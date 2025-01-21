@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 # 数据
-data = pd.read_csv('expanded_VBG-final_design-0.12.csv', sep='\t').to_numpy()
+# data = pd.read_csv('expanded_VBG-final_design-0.12.csv', sep='\t').to_numpy()
+data = pd.read_csv('expanded_VBG-comparison_design-0.12.csv', sep='\t').to_numpy()
 # data = pd.read_csv('expanded_VBG-final_design.csv', sep='\t').to_numpy()
 # data = pd.read_csv('sorted_VBG-final_design.csv', sep='\t').to_numpy()
 
@@ -83,7 +84,7 @@ for spine in ax1.spines.values():
     spine.set_visible(False)
 
 plt.tight_layout()
-plt.savefig('../rsl/SOP_2D-polar-pure.png', bbox_inches='tight', pad_inches=0.0, dpi=300)
+plt.savefig('../rsl/SOP_2D-polar-pure.png', bbox_inches='tight', pad_inches=0.0, dpi=300, transparent=True)
 
 fig2, ax2 = plt.subplots(1, 1, figsize=(8, 8))
 # 绘制频率热图

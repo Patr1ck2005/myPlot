@@ -4,7 +4,8 @@ import pandas as pd
 # filename = 'VBG-II-shrink_type-1stFP-meshed'  # 替换为你的文件名
 # filename = 'VBG_III_s1mple'  # 替换为你的文件名
 # filename = 'VBG-II-shrink_type-1stFP-uncoupled-meshed'  # 替换为你的文件名
-filename = 'VBG-final_design.csv'  # 替换为你的文件名
+# filename = 'VBG-final_design.csv'  # 替换为你的文件名
+filename = 'VBG-band3D-comparison_design.csv'  # 替换为你的文件名
 
 data = pd.read_csv(filename, sep='\t')
 

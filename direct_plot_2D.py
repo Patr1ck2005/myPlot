@@ -25,7 +25,7 @@ def direct_plot_2D(work_dir: str = './plot_dataset',
         if 1 > crop > 0:
             margin = int((1-crop)/2 * image_array.shape[0])
             image_array = image_array[margin:-margin, margin:-margin]
-        # print(f'average value {compute_circular_average(image_array)}')
+        print(f'average value {compute_circular_average(image_array)}')
 
     # Apply a colormap using matplotlib's imshow and get the image data
     # This will create a colormapped image based on your numpy array
@@ -49,17 +49,17 @@ def direct_plot_2D(work_dir: str = './plot_dataset',
 if __name__ == '__main__':
     plot_paras = {
         # 'colormap': 'hot',
-        # 'colormap': 'magma',
-        'colormap': 'twilight',
+        'colormap': 'magma',
+        # 'colormap': 'twilight',
         'crop': 0.8,
     }
-    work_dir = './plot_dataset/small_shift'
-    # data_files = Path(work_dir).glob('*conversion-efficiency*.npy')
-    data_files = Path(work_dir).glob('*phase*.npy')
+    work_dir = './plot_dataset/low_loss'
+    data_files = Path(work_dir).glob('*conversion-efficiency*.npy')
+    # data_files = Path(work_dir).glob('*phase*.npy')
     # data_files = Path(work_dir).glob('*.png')
     for data_file in data_files:
-        # for crop in [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4]:
-        for crop in [1.0]:
+        for crop in [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4]:
+        # for crop in [1.0]:
             print(crop)
             plot_paras['crop'] = crop
             data_filename = data_file.stem
