@@ -94,4 +94,4 @@ ax2.set_title('Frequency Heatmap')
 plt.tight_layout()
 plt.show()
 
-np.save('../plot_dataset/SOP_2D-freq', frequency_matrix)
+np.save('../data/SOP_2D-freq', frequency_matrix)

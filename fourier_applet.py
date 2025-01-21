@@ -71,7 +71,7 @@ def main():
     plt.title("Pattern Intensity")
     original_intensity = np.abs(pattern_with_phase)**2
     plt.imshow(original_intensity, cmap="gray")
-    np.save('./plot_dataset/fourier_applet-original_intensity', original_intensity)
+    np.save('data/fourier_applet-original_intensity', original_intensity)
     plt.axis("off")
 
     # Pattern with phase
@@ -86,7 +86,7 @@ def main():
     # plt.imshow(np.log(1 + np.abs(ft_pattern)), cmap="inferno")
     transformed_intensity = np.abs(ft_pattern)**2
     plt.imshow(transformed_intensity, cmap="magma")
-    np.save('./plot_dataset/fourier_applet-farfield_intensity', transformed_intensity)
+    np.save('data/fourier_applet-farfield_intensity', transformed_intensity)
     # plt.imshow(np.abs(ft_pattern)**2, cmap="twilight")
     plt.axis("off")
 

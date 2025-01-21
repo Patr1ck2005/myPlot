@@ -66,5 +66,5 @@ def main(freq_data_path, Q_data_path):
 
 if __name__ == '__main__':
     # 修改此处为实际的文件路径
-    main('./plot_dataset/VBG-band2D-freq-Gamma_M-0.12.txt', './plot_dataset/VBG-band2D-Q-Gamma_M-0.12.txt')
-    main('./plot_dataset/VBG-band2D-freq-Gamma_X-0.12.txt', './plot_dataset/VBG-band2D-Q-Gamma_X-0.12.txt')
+    main('data/VBG-band2D-freq-Gamma_M-0.12.txt', 'data/VBG-band2D-Q-Gamma_M-0.12.txt')
+    main('data/VBG-band2D-freq-Gamma_X-0.12.txt', 'data/VBG-band2D-Q-Gamma_X-0.12.txt')

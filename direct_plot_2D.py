@@ -8,7 +8,7 @@ from PIL import Image
 from utils.utils import compute_circular_average, load_img
 
 
-def direct_plot_2D(work_dir: str = './plot_dataset',
+def direct_plot_2D(work_dir: str = './data',
                    data_filename: str = None,
                    data_type : str = None,
                    plot_paras: dict = None,
@@ -53,7 +53,7 @@ if __name__ == '__main__':
         # 'colormap': 'twilight',
         'crop': 0.8,
     }
-    work_dir = './plot_dataset/low_loss'
+    work_dir = 'data/low_loss'
     data_files = Path(work_dir).glob('*conversion-efficiency*.npy')
     # data_files = Path(work_dir).glob('*phase*.npy')
     # data_files = Path(work_dir).glob('*.png')

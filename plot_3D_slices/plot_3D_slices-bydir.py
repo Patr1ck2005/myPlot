@@ -10,20 +10,21 @@ ylabel = r'NA'
 zlabel = 'Efficiency'
 
 # 切片标签
-df = pd.read_csv('./plot_dataset/optical_intensity_results.csv')
+df = pd.read_csv('../data/optical_intensity_results.csv')
 # 使用 groupby 按照 'dir' 分组
+grouped = df.groupby('dir')
 dataset = {}
-slice_positions = [0.42, 0.36, 0.30, 0.24, 0.18][::-1]
-for slice_value in slice_positions:
+for dir_name, group in grouped:
     # 对每个目录，提取 'wavelength_nm' 和 'average_intensity' 列，作为列表
-    wavelength_array = df['wavelength_nm'].array
-    intensity_array = df[f'avg_intensity_NA{slice_value}'].array
+    wavelength_array = group['wavelength_nm'].array
+    intensity_array = group['average_intensity'].array
     # 将每个目录对应的波长和强度列表存入字典，键为 'wavelength' 和 'intensity'
-    dataset[slice_value] = {
+    dataset[dir_name] = {
         'x': wavelength_array[wavelength_array < xlim[1]],
         'z': intensity_array[wavelength_array < xlim[1]]
     }
 # slice_positions = np.array([0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])
+slice_positions = np.array(list(dataset.keys()))
 
 def polygon_under_graph(x, y):
     """
@@ -37,8 +38,7 @@ def polygon_under_graph(x, y):
 verts = []
 for i, slice in enumerate(slice_positions):
     x = dataset[slice]['x']  # x 数据
-    y = dataset[slice]['z']  # 对应的 z 数据
-    print(max(y))
+    y = dataset[slice]['z']  # 对应的 y 数据
     verts.append(polygon_under_graph(x, y))
 
 # 创建3D图形

@@ -105,4 +105,4 @@ plt.tight_layout()
 plt.savefig('../rsl/SOP_2D-freq-pure.png', bbox_inches='tight', pad_inches=0.0, dpi=300)
 plt.show()
 
-np.save('../plot_dataset/SOP_2D-freq', frequency_matrix)
+np.save('../data/SOP_2D-freq', frequency_matrix)

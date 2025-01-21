@@ -3,28 +3,26 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.collections import PolyCollection
 
-plt.rcParams['font.size'] = 24
-xlim = (1480, 1600)
+plt.rcParams['font.size'] = 20
+xlim = (1480, 1580)
 xlabel = r'Wavelength (nm)'
 ylabel = r'NA'
 zlabel = 'Efficiency'
 
 # 切片标签
-df = pd.read_csv('./plot_dataset/optical_intensity_results.csv')
-# 使用 groupby 按照 'dir' 分组
-grouped = df.groupby('dir')
+df = pd.read_csv('../data/optical_intensity_results.csv')
 dataset = {}
-for dir_name, group in grouped:
-    # 对每个目录，提取 'wavelength_nm' 和 'average_intensity' 列，作为列表
-    wavelength_array = group['wavelength_nm'].array
-    intensity_array = group['average_intensity'].array
+slice_positions = [0.42, 0.36, 0.30, 0.24, 0.18, 0.12, 0.06][::-1]
+for slice_value in slice_positions:
+    # 对每个，提取 'wavelength_nm' 和 'average_intensity' 列，作为列表
+    wavelength_array = df['wavelength_nm'].array
+    intensity_array = df[f'avg_intensity_NA{slice_value}'].array
     # 将每个目录对应的波长和强度列表存入字典，键为 'wavelength' 和 'intensity'
-    dataset[dir_name] = {
+    dataset[slice_value] = {
         'x': wavelength_array[wavelength_array < xlim[1]],
         'z': intensity_array[wavelength_array < xlim[1]]
     }
 # slice_positions = np.array([0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])
-slice_positions = np.array(list(dataset.keys()))
 
 def polygon_under_graph(x, y):
     """
@@ -38,37 +36,47 @@ def polygon_under_graph(x, y):
 verts = []
 for i, slice in enumerate(slice_positions):
     x = dataset[slice]['x']  # x 数据
-    y = dataset[slice]['z']  # 对应的 y 数据
+    y = dataset[slice]['z']  # 对应的 z 数据
+    print(max(y))
     verts.append(polygon_under_graph(x, y))
 
 # 创建3D图形
-fig = plt.figure(figsize=(12, 12))
+fig = plt.figure(figsize=(8, 8))
 ax = fig.add_subplot(111, projection='3d')
 
 # 为每个多边形设置颜色
-facecolors = plt.colormaps['viridis_r'](np.linspace(0, 1, len(verts)))[::-1]
+facecolors = plt.colormaps['inferno_r'](np.linspace(0, 1, len(verts)))[::-1]
 
 # 绘制多边形集合
 poly = PolyCollection(verts, facecolors=facecolors, alpha=.7)
 ax.add_collection3d(poly, zs=slice_positions, zdir='y')
 
-ax.grid(False)
+ax.grid(True)
+ax.set_xlim(1480, 1580)
+ax.set_ylim(0, 0.42)
+ax.set_zlim(0, 1)
+ax.set_xticks([1480, 1500, 1520, 1550, 1580])
+ax.set_yticks(slice_positions[::2])
+ax.set_zticks([0, 0.5, 0.8, 1])
+# ax.set_xticklabels([-0.1, 0, 0.1])
+# ax.set_yticklabels(slice_positions[::2])
+ax.set_yticklabels([])
+ax.set_zticklabels([0, .5, 0.8, 1])
 # 设置坐标轴标签和范围
 ax.set_xlabel(xlabel, labelpad=20)
 ax.set_ylabel(ylabel, labelpad=20)
-ax.set_zlabel(zlabel)
+ax.set_zlabel(zlabel, labelpad=10)
 # 调整刻度位置
 ax.tick_params(axis='x', pad=5)
 ax.tick_params(axis='y', pad=5)
 ax.tick_params(axis='z', pad=5)
 # ax.label_params(axis='x', pad=5)
 
-# ax.set_ylim(0, 4)  # 角度从0到4度
-ax.set_zlim(0.0, 1)
-# ax.set_zticks([], [])
+ax.view_init(elev=30, azim=60)
+ax.set_box_aspect([2, 2, 1])  # x, y, z 轴的比例
 
 # 显示图形
 plt.tight_layout()
-plt.savefig('3D_slices_fig.png', dpi=300, bbox_inches='tight')
+plt.savefig('../rsl/3D_slices_fig.png', dpi=300, bbox_inches='tight', pad_inches=0.0, transparent=True)
 plt.show()
 
