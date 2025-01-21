@@ -2,7 +2,8 @@ import pandas as pd
 import numpy as np
 
 # 读取原始数据
-df = pd.read_csv('sorted_VBG-final_design.csv', sep='\t')
+# df = pd.read_csv('sorted_VBG-final_design.csv', sep='\t')
+df = pd.read_csv('expanded_VBG-final_design.csv', sep='\t')
 
 m_max = df['m1'].max()
 m_step = 0.005
@@ -19,7 +20,12 @@ expanded_range = np.linspace(-m_max, m_max, int(2 * m_max / m_step + 1))
 # 函数来生成 C4 对称坐标
 def generate_c4_symmetry_coords(x, y):
     """根据 C4 对称性扩展坐标 (x, y) 到 -2 到 2 范围"""
-    coords = [(x, y), (-x, y), (x, -y), (-x, -y), (y, x), (-y, x), (y, -x), (-y, -x)]
+    coords = [(x, y), (-y, x), (-x, -y), (y, -x)]
+    return coords
+
+
+def generate_anti_symmetry_coords(x, y):
+    coords = [(y, x)]
     return coords
 
 
@@ -33,17 +39,34 @@ for _, row in df.iterrows():
     m1 = row['m1']
     m2 = row['m2']
 
-    # 生成 C4 对称性的坐标
-    expanded_coords = generate_c4_symmetry_coords(m1, m2)
+    # anti_coords = generate_anti_symmetry_coords(m1, m2)
+    # for i, anti_coord in enumerate(anti_coords):
+    #     # 存储坐标
+    #     expanded_dict['coordinates'].append(anti_coord)
+    #
+    #     # 存储对应的函数值，假设除了'm1'和'm2'以外的列为函数值
+    #     function_values = row.drop(['m1', 'm2']).values
+    #     m1 = anti_coord[0]
+    #     m2 = anti_coord[1]
+    #     theta = np.arctan(m2/m1) if m1 != 0 else np.pi/2
+    #     function_values[2] -= 2*(theta-np.pi/4)
+    #     expanded_dict['function_values'].append(function_values)
+    # expanded_dict['coordinates'].append((m2, m1))
+    # function_values = row.drop(['m1', 'm2']).values
+    # expanded_dict['function_values'].append(function_values)
 
+    # # 生成 C4 对称性的坐标
+    expanded_coords = generate_c4_symmetry_coords(m1, m2)
     # 为每个生成的坐标创建新的行并保存函数值
-    for coord in expanded_coords:
+    for i, coord in enumerate(expanded_coords):
         # 存储坐标
         expanded_dict['coordinates'].append(coord)
 
         # 存储对应的函数值，假设除了'm1'和'm2'以外的列为函数值
         function_values = row.drop(['m1', 'm2']).values
+        function_values[2] += np.pi/2*i
         expanded_dict['function_values'].append(function_values)
+
 
 # 转换为二维数组：coordinates 为 2D 数组
 expanded_dict['coordinates'] = np.array(expanded_dict['coordinates'])
