@@ -3,11 +3,11 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.collections import PolyCollection
 
-plt.rcParams['font.size'] = 20
+plt.rcParams['font.size'] = 12
 xlim = (1480, 1580)
 xlabel = r'Wavelength (nm)'
 ylabel = r'NA'
-zlabel = 'Efficiency'
+zlabel = r'Efficiency'
 
 # 切片标签
 df = pd.read_csv('../data/optical_intensity_results.csv')
@@ -20,7 +20,8 @@ for slice_value in slice_positions:
     # 将每个目录对应的波长和强度列表存入字典，键为 'wavelength' 和 'intensity'
     dataset[slice_value] = {
         'x': wavelength_array[wavelength_array < xlim[1]],
-        'z': intensity_array[wavelength_array < xlim[1]]
+        'z': intensity_array[wavelength_array < xlim[1]],
+        'max_point': (wavelength_array[intensity_array.argmax()], intensity_array.max())
     }
 # slice_positions = np.array([0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4])
 
@@ -51,25 +52,36 @@ facecolors = plt.colormaps['inferno_r'](np.linspace(0, 1, len(verts)))[::-1]
 poly = PolyCollection(verts, facecolors=facecolors, alpha=.7)
 ax.add_collection3d(poly, zs=slice_positions, zdir='y')
 
+# 绘制切片位置的直线
+for i, slice in enumerate(slice_positions):
+    ax.plot([xlim[0], xlim[1]], [slice, slice], [0, 0], color=facecolors[i], linewidth=2)
+    # ax.plot([dataset[slice]['max_point'][0]], [slice], [dataset[slice]['max_point'][1]], color='black', marker='o', markersize=5)
+    ax.plot([1480], [slice], [dataset[slice]['max_point'][1]], color=facecolors[i], marker='o', markersize=5)
+    # draw line connect max_point
+    # ax.plot([dataset[slice]['max_point'][0], dataset[slice]['max_point'][0]], [slice, slice], [0, dataset[slice]['max_point'][1]], color='black', linewidth=1, linestyle='--')
+    ax.plot([dataset[slice]['max_point'][0], 1480], [slice, slice], [dataset[slice]['max_point'][1], dataset[slice]['max_point'][1]], color=facecolors[i], linewidth=1, linestyle='--')
+
+# 设置绘图样式
 ax.grid(True)
 ax.set_xlim(1480, 1580)
 ax.set_ylim(0, 0.42)
 ax.set_zlim(0, 1)
-ax.set_xticks([1480, 1500, 1520, 1550, 1580])
+ax.set_xticks([1480, 1500, 1510, 1520, 1530, 1550, 1580])
 ax.set_yticks(slice_positions[::2])
 ax.set_zticks([0, 0.5, 0.8, 1])
 # ax.set_xticklabels([-0.1, 0, 0.1])
+ax.set_xticklabels([])
 # ax.set_yticklabels(slice_positions[::2])
 ax.set_yticklabels([])
 ax.set_zticklabels([0, .5, 0.8, 1])
 # 设置坐标轴标签和范围
-ax.set_xlabel(xlabel, labelpad=20)
-ax.set_ylabel(ylabel, labelpad=20)
-ax.set_zlabel(zlabel, labelpad=10)
+# ax.set_xlabel(xlabel, labelpad=10)
+# ax.set_ylabel(ylabel, labelpad=10)
+# ax.set_zlabel(zlabel, labelpad=10)
 # 调整刻度位置
-ax.tick_params(axis='x', pad=5)
-ax.tick_params(axis='y', pad=5)
-ax.tick_params(axis='z', pad=5)
+ax.tick_params(axis='x', pad=1)
+ax.tick_params(axis='y', pad=1)
+ax.tick_params(axis='z', pad=1)
 # ax.label_params(axis='x', pad=5)
 
 ax.view_init(elev=30, azim=60)
@@ -77,6 +89,7 @@ ax.set_box_aspect([2, 2, 1])  # x, y, z 轴的比例
 
 # 显示图形
 plt.tight_layout()
-plt.savefig('../rsl/3D_slices_fig.png', dpi=300, bbox_inches='tight', pad_inches=0.0, transparent=True)
+# plt.savefig('../rsl/3D_slices_fig.png', dpi=300, bbox_inches='tight', pad_inches=0.0, transparent=True)
+plt.savefig('../rsl/3D_slices_fig.png', dpi=300, bbox_inches='tight', pad_inches=0.3, transparent=True)
 plt.show()
 

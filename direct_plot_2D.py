@@ -49,14 +49,16 @@ def direct_plot_2D(work_dir: str = './data',
 if __name__ == '__main__':
     plot_paras = {
         # 'colormap': 'hot',
-        'colormap': 'magma',
-        # 'colormap': 'twilight',
+        # 'colormap': 'magma',
+        'colormap': 'twilight',
         'crop': 0.8,
     }
+    # work_dir = 'data/img_data'
     work_dir = 'data/low_loss'
-    data_files = Path(work_dir).glob('*conversion-efficiency*.npy')
-    # data_files = Path(work_dir).glob('*phase*.npy')
+    # data_files = Path(work_dir).glob('*conversion-efficiency*.npy')
+    data_files = Path(work_dir).glob('*phase*.npy')
     # data_files = Path(work_dir).glob('*.png')
+    # data_files = Path(work_dir).glob('*')
     for data_file in data_files:
         for crop in [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4]:
         # for crop in [1.0]:
