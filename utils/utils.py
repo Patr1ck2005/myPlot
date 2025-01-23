@@ -42,3 +42,19 @@ def load_img(img_path):
     img_array = img_array / 255.0
 
     return img_array
+
+
+def load_2D_data(
+        data_filename,
+        data_type,
+        work_dir='./data',
+        crop_rate=1.0
+):
+    if data_type == '.npy':
+        data_2D = np.load(f'{work_dir}/{data_filename}' + data_type)
+    else:
+        data_2D = load_img(f'{work_dir}/{data_filename}' + data_type)[:, :, 0]
+    if 1 > crop_rate > 0:
+        margin = int((1 - crop_rate) / 2 * data_2D.shape[0])
+        data_2D = data_2D[margin:-margin, margin:-margin]
+    return data_2D

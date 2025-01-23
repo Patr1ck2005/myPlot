@@ -12,6 +12,8 @@ logs/
 *.jpg
 *.bmp
 *.tif
+*.pdf
+*.svg
 
 # 忽略文件
 *.pptx

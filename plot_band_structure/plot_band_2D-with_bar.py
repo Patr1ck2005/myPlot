@@ -20,8 +20,8 @@ def main(freq_data_path, Q_data_path):
     sorted_freq_part = np.sort(freq_part, axis=1)
     sorted_Q_part = np.sort(Q_part, axis=1)
 
-    freq_df = pd.DataFrame(sorted_freq_part)
-    Q_df = pd.DataFrame(sorted_Q_part)
+    freq_df = pd.DataFrame(freq_part)
+    Q_df = pd.DataFrame(Q_part)
     freq_result = {}
     Q_rsl = {}
     for i, freq_part in enumerate(freq_df):
@@ -45,6 +45,7 @@ def main(freq_data_path, Q_data_path):
                     capsize=2,
                     capthick=1,
                     alpha=0.8)
+        # plt.show()
 
     # 去除坐标轴标签和刻度
     ax.set_xticklabels([])
@@ -56,7 +57,7 @@ def main(freq_data_path, Q_data_path):
     for spine in ax.spines.values():
         spine.set_visible(False)
 
-    plt.savefig(f'./rsl/band_2D_with_error_bars+{freq_data_path.split("/")[-1].split(".")[0]}.png',
+    plt.savefig(f'../rsl/band_2D_with_error_bars+{freq_data_path.split("/")[-1].split(".")[0]}.png',
                 dpi=300,
                 bbox_inches='tight',
                 transparent=True,
@@ -66,5 +67,5 @@ def main(freq_data_path, Q_data_path):
 
 if __name__ == '__main__':
     # 修改此处为实际的文件路径
-    main('../data/VBG-band2D-freq-Gamma_M-0.12.txt', 'data/VBG-band2D-Q-Gamma_M-0.12.txt')
-    main('../data/VBG-band2D-freq-Gamma_X-0.12.txt', 'data/VBG-band2D-Q-Gamma_X-0.12.txt')
+    main('../data/VBG-band2D-freq-Gamma_M-0.12.txt', '../data/VBG-band2D-Q-Gamma_M-0.12.txt')
+    main('../data/VBG-band2D-freq-Gamma_X-0.12.txt', '../data/VBG-band2D-Q-Gamma_X-0.12.txt')

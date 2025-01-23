@@ -11,7 +11,7 @@ def convert_svg_to_pdf(svg_file):
     pdf_file = os.path.join(file_dir, file_name + '.pdf')
 
     # 使用 Inkscape 命令行工具转换 SVG 为 PDF
-    command = ['inkscape', svg_file, '--export-filename', pdf_file]
+    command = ['E:\\Program Files\\Inkscape\\bin\\inkscape.exe', svg_file, '--export-filename', pdf_file]
     subprocess.run(command)
 
 
