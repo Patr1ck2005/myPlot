@@ -54,8 +54,7 @@ def point_charge_field(X, Y, Z, q, position):
 
     return Ex, Ey, Ez
 
-
-N = 64
+N = 32
 # 生成三维网格点
 x = np.linspace(-1, 1, N)
 y = np.linspace(-1, 1, N)
@@ -69,9 +68,9 @@ Ex_d, Ey_d, Ez_d = dipole_electric_field(X, Y, Z)
 # 添加独立点电荷贡献
 # 定义多个点电荷（位置与电荷量）
 point_charges = [
-    {"q": +1.0, "position": [0.3, 0.3, 0.0]},        # 正电荷
-    {"q": +1.0, "position": [-0.15, -0.15, 0.05]},   # 正电荷
-    {"q": -3.0, "position": [-0.1, -0.1, 0.0]},      # 负电荷
+    {"q": +1.0, "position": [0.3, 0.3, 0.0]},   # 正电荷
+    {"q": +1.0, "position": [0.1, 0.3, 0.3]},   # 正电荷
+    {"q": -3.0, "position": [-0.1, -0.1, 0.0]}, # 负电荷
 ]
 
 # 初始化点电荷电场为零
@@ -95,10 +94,7 @@ Ez[R2 > 1] = 0
 
 # 计算电场强度（用于透明度渲染）
 E_magnitude = np.sqrt(Ex**2 + Ey**2 + Ez**2)
-E_opacity = np.power(E_magnitude, 1)
-E_max = np.max(E_opacity)
-E_max_clip = np.percentile(E_opacity, 99)
-E_opacity = np.clip(E_opacity, 0, E_max_clip)  # 裁剪过强的电场
+E_opacity = np.power(E_magnitude, 1/5)
 E_opacity /= np.max(E_opacity)  # 归一化场强到范围 [0, 1]
 
 # 构造 RGB 颜色映射（三个方向分量分别映射到 R, G, B）
@@ -112,20 +108,19 @@ Ez_n = (Ez_norm+1)/2
 colors = np.stack((Ex_n, Ey_n, Ez_n), axis=-1)  # 将 Ex, Ey, Ez 组合成 RGB
 
 #######################################################################################################################
+# 创建矢量箭头点云
+vectors = np.c_[Ex_norm.ravel(), Ey_norm.ravel(), Ez_norm.ravel()]  # 每个点上的电场矢量
+centers = np.c_[X.ravel(), Y.ravel(), Z.ravel()]    # 每个点的坐标位置
 
-# 将电场强度数据存储为标量场
-structured_grid = pv.StructuredGrid(X, Y, Z)
-structured_grid["field_strength"] = E_opacity.ravel(order="F")
+# 使用 PyVista 显示矢量箭头场
+point_cloud = pv.PolyData(centers)
+point_cloud["vectors"] = vectors
 
-# 体绘制渲染
+# 创建箭头
+arrows = point_cloud.glyph(orient="vectors", scale=True, factor=0.03)  # factor 控制箭头长度缩放
+
+# 创建 Plotter
 plotter = pv.Plotter()
-plotter.add_volume(
-    structured_grid,
-    scalars="field_strength",  # 场强作为标量
-    opacity="linear",          # 使用线性透明度渲染
-    # opacity=[0, 1, 1, 1, 1, 1],          # render by custom opacity list
-    # opacity=1,          # render by custom opacity list
-    cmap="magma_r",            # 使用适合科学数据的颜色映射
-)
-plotter.add_axes(interactive=True)  # 添加交互式坐标轴
+plotter.add_mesh(arrows, color=colors)  # 渲染箭头
+plotter.add_axes(interactive=True)  # 显示交互式轴
 plotter.show()

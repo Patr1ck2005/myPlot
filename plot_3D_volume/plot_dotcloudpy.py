@@ -2,6 +2,7 @@ import numpy as np
 import pyvista as pv
 
 
+
 def dipole_electric_field(X, Y, Z, p=np.array([0, 0, 0])):
     """
     计算电偶极子的电场在三维空间中每个点上的向量 (Ex, Ey, Ez)。
@@ -54,8 +55,7 @@ def point_charge_field(X, Y, Z, q, position):
 
     return Ex, Ey, Ez
 
-
-N = 64
+N = 128
 # 生成三维网格点
 x = np.linspace(-1, 1, N)
 y = np.linspace(-1, 1, N)
@@ -69,9 +69,12 @@ Ex_d, Ey_d, Ez_d = dipole_electric_field(X, Y, Z)
 # 添加独立点电荷贡献
 # 定义多个点电荷（位置与电荷量）
 point_charges = [
-    {"q": +1.0, "position": [0.3, 0.3, 0.0]},        # 正电荷
-    {"q": +1.0, "position": [-0.15, -0.15, 0.05]},   # 正电荷
-    {"q": -3.0, "position": [-0.1, -0.1, 0.0]},      # 负电荷
+    # {"q": +0.0, "position": [0.3, 0.3, 0.0]},        # 正电荷
+    # {"q": +3.0, "position": [0.1, 0.1, 0.0]},   # 正电荷
+    # {"q": -3.0, "position": [-0.1, -0.1, 0.0]},      # 负电荷
+    {"q": +1.0, "position": [0.3, 0.3, 0.0]},  # 正电荷
+    {"q": +1.0, "position": [-0.15, -0.15, 0.05]},  # 正电荷
+    {"q": -3.0, "position": [-0.1, -0.1, 0.0]},  # 负电荷
 ]
 
 # 初始化点电荷电场为零
@@ -97,7 +100,7 @@ Ez[R2 > 1] = 0
 E_magnitude = np.sqrt(Ex**2 + Ey**2 + Ez**2)
 E_opacity = np.power(E_magnitude, 1)
 E_max = np.max(E_opacity)
-E_max_clip = np.percentile(E_opacity, 99)
+E_max_clip = np.percentile(E_opacity, 99.999)
 E_opacity = np.clip(E_opacity, 0, E_max_clip)  # 裁剪过强的电场
 E_opacity /= np.max(E_opacity)  # 归一化场强到范围 [0, 1]
 
@@ -113,19 +116,28 @@ colors = np.stack((Ex_n, Ey_n, Ez_n), axis=-1)  # 将 Ex, Ey, Ez 组合成 RGB
 
 #######################################################################################################################
 
-# 将电场强度数据存储为标量场
-structured_grid = pv.StructuredGrid(X, Y, Z)
-structured_grid["field_strength"] = E_opacity.ravel(order="F")
+# 构造为 PyVista 点云数据
+points = np.column_stack((X.ravel(), Y.ravel(), Z.ravel()))
+# 构造 RGBA 颜色映射（三个方向分量分别映射到 R, G, B, 透明度 A）
+rgba_colors = np.column_stack((colors.reshape(-1, 3), E_opacity.ravel()))
 
-# 体绘制渲染
+# 创建 PyVista 点云数据
+point_cloud = pv.PolyData(points)  # 创建点云对象
+point_cloud["rgba_colors"] = rgba_colors  # 使用 RGBA 颜色
+
+# 添加 mesh，并指定 `rgba=True`
 plotter = pv.Plotter()
-plotter.add_volume(
-    structured_grid,
-    scalars="field_strength",  # 场强作为标量
-    opacity="linear",          # 使用线性透明度渲染
-    # opacity=[0, 1, 1, 1, 1, 1],          # render by custom opacity list
-    # opacity=1,          # render by custom opacity list
-    cmap="magma_r",            # 使用适合科学数据的颜色映射
+plotter.add_mesh(
+    point_cloud,
+    scalars="rgba_colors",  # 直接使用包含透明度的 RGBA 颜色
+    rgba=True,              # 告诉 PyVista 颜色数组是 RGBA 格式
+    point_size=15,           # 点的大小
+    lighting=False,  # 禁用光照以保持颜色准确
+    render_points_as_spheres=True,  # 渲染为球体
+    style="points",          # 使用点渲染模式
 )
-plotter.add_axes(interactive=True)  # 添加交互式坐标轴
+# 添加坐标轴和背景
+plotter.add_axes()
+plotter.set_background("black")
+
 plotter.show()
