@@ -44,7 +44,8 @@ def add_vortex_phase_and_guassian(pattern, waist, charge):
     theta = np.arctan2(Y, X)
     vortex_phase = np.exp(1j * charge * theta)
     gaussian_filter = np.exp(-R2/waist**2)
-    return pattern * vortex_phase * gaussian_filter
+    LG_tern = R2
+    return pattern * vortex_phase * gaussian_filter * LG_tern
 
 def main():
     size = 2048  # Image size
