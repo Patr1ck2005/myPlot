@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 # 数据
-data = pd.read_csv('expanded_VBG-final_design-0.12.csv', sep='\t').to_numpy()
-# data = pd.read_csv('expanded_VBG-final_design.csv', sep='\t').to_numpy()
+# data = pd.read_csv('expanded_VBG-final_design-0.12.csv', sep='\t').to_numpy()
+data = pd.read_csv('expanded_VBG-final_design.csv', sep='\t').to_numpy()
 # data = pd.read_csv('sorted_VBG-final_design.csv', sep='\t').to_numpy()
 
 # 选择rank为1的元素（或者您可以选择其他rank）
