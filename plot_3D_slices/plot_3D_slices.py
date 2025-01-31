@@ -9,8 +9,9 @@ xlabel = r'Wavelength (nm)'
 ylabel = r'NA'
 zlabel = r'Efficiency'
 
+filename = 'optical_intensity_results-old-nonp2p.csv'
 # 切片标签
-df = pd.read_csv('./data/optical_intensity_results.csv')
+df = pd.read_csv(f'./data/{filename}')
 dataset = {}
 slice_positions = [0.42, 0.36, 0.30, 0.24, 0.18, 0.12, 0.06][::-1]
 for slice_value in slice_positions:
@@ -56,7 +57,16 @@ ax.add_collection3d(poly, zs=slice_positions, zdir='y')
 for i, slice in enumerate(slice_positions):
     ax.plot([xlim[0], xlim[1]], [slice, slice], [0, 0], color=facecolors[i], linewidth=2)
     # ax.plot([dataset[slice]['max_point'][0]], [slice], [dataset[slice]['max_point'][1]], color='black', marker='o', markersize=5)
-    ax.plot([1480], [slice], [dataset[slice]['max_point'][1]], color=facecolors[i], marker='o', markersize=5)
+    ax.plot(
+        [1480], [slice], [dataset[slice]['max_point'][1]],
+        color=facecolors[i],
+        marker='o',
+        markersize=5,
+        # markeredgecolor=0.8*facecolors[i],
+        markeredgecolor='black',
+        markeredgewidth=1,
+        zorder=99,
+    )
     # draw line connect max_point
     # ax.plot([dataset[slice]['max_point'][0], dataset[slice]['max_point'][0]], [slice, slice], [0, dataset[slice]['max_point'][1]], color='black', linewidth=1, linestyle='--')
     ax.plot([dataset[slice]['max_point'][0], 1480], [slice, slice], [dataset[slice]['max_point'][1], dataset[slice]['max_point'][1]], color=facecolors[i], linewidth=1, linestyle='--')
