@@ -5,14 +5,14 @@ import pandas as pd
 # 数据
 # data = pd.read_csv('expanded_VBG-final_design-0.12.csv', sep='\t').to_numpy()
 data = pd.read_csv('expanded_VBG-final_design.csv', sep='\t').to_numpy()
-# data = pd.read_csv('sorted_VBG-final_design.csv', sep='\t').to_numpy()
+# data = pd.read_csv('sorted_VBG-band3D-final_design.csv', sep='\t').to_numpy()
 
 # 选择rank
-selected_rank = 3
+selected_rank = 2
 rank_idx = 7
 selected_data = [d for d in data if int(d[rank_idx]) == selected_rank]  # rank在第几列
 
-selected_data = [d for d in data if 112 < complex(d[2].replace('i', 'j')).real < 116]
+# selected_data = [d for d in data if 112 < complex(d[2].replace('i', 'j')).real < 116]
 
 # 提取频率并归一化
 frequencies = [complex(d[2].replace('i', 'j')).real for d in selected_data]  # 提取频率 (仅实部用于颜色映射)

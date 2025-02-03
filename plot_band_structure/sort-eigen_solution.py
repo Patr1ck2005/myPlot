@@ -1,11 +1,12 @@
 import pandas as pd
 
 # Step 1: 从 txt 文件加载数据
-# filename = 'VBG-II-shrink_type-1stFP-meshed'  # 替换为你的文件名
-# filename = 'VBG_III_s1mple'  # 替换为你的文件名
-# filename = 'VBG-II-shrink_type-1stFP-uncoupled-meshed'  # 替换为你的文件名
-# filename = 'VBG-final_design.csv'  # 替换为你的文件名
-filename = 'VBG-band3D-comparison_design.csv'  # 替换为你的文件名
+# filename = 'VBG-II-shrink_type-1stFP-meshed'
+# filename = 'VBG_III_s1mple'
+# filename = 'VBG-II-shrink_type-1stFP-uncoupled-meshed'
+# filename = 'VBG-band3D-final_design.csv'
+# filename = 'VBG-band3D-comparison_design.csv'
+filename = 'VBG-band3D-homo_layer.csv'
 
 data = pd.read_csv(filename, sep='\t')
 

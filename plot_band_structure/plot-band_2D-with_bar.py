@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from scipy.interpolate import make_interp_spline
 
+from utils.utils import clear_output
+
 
 def main(freq_data_path, Q_data_path):
     plt.rcParams['font.sans-serif'] = ['Arial']
@@ -47,15 +49,7 @@ def main(freq_data_path, Q_data_path):
                     alpha=0.8)
         # plt.show()
 
-    # 去除坐标轴标签和刻度
-    ax.set_xticklabels([])
-    ax.set_yticklabels([])
-    ax.set_xticks([])
-    ax.set_yticks([])
-
-    # 去除边框
-    for spine in ax.spines.values():
-        spine.set_visible(False)
+    # clear_output(ax)
 
     plt.savefig(f'../rsl/band_2D_with_error_bars+{freq_data_path.split("/")[-1].split(".")[0]}.png',
                 dpi=300,

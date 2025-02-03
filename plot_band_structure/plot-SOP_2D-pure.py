@@ -8,7 +8,7 @@ from utils.utils import clear_output
 # data = pd.read_csv('expanded_VBG-final_design-0.12.csv', sep='\t').to_numpy()
 # data = pd.read_csv('expanded_VBG-comparison_design-0.12.csv', sep='\t').to_numpy()
 data = pd.read_csv('expanded_VBG-final_design.csv', sep='\t').to_numpy()
-# data = pd.read_csv('sorted_VBG-final_design.csv', sep='\t').to_numpy()
+# data = pd.read_csv('sorted_VBG-band3D-final_design.csv', sep='\t').to_numpy()
 
 # 选择rank
 selected_rank = 3
