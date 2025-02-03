@@ -2,13 +2,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
+from utils.utils import clear_output
+
 # 数据
 # data = pd.read_csv('expanded_VBG-final_design-0.12.csv', sep='\t').to_numpy()
 # data = pd.read_csv('expanded_VBG-comparison_design-0.12.csv', sep='\t').to_numpy()
 data = pd.read_csv('expanded_VBG-final_design.csv', sep='\t').to_numpy()
 # data = pd.read_csv('sorted_VBG-final_design.csv', sep='\t').to_numpy()
 
-# 选择rank为1的元素（或者您可以选择其他rank）
+# 选择rank
 selected_rank = 3
 rank_idx = 7
 selected_data = [d for d in data if int(d[rank_idx]) == selected_rank]  # rank在第几列
@@ -73,15 +75,7 @@ for d in selected_data:
     y_idx = int((m2 - m2_min) / (m2_max - m2_min) * (colormap_size-1))
     frequency_matrix[x_idx, y_idx] = freq_re
 
-# 去除坐标轴标签和刻度
-ax1.set_xticklabels([])
-ax1.set_yticklabels([])
-ax1.set_xticks([])
-ax1.set_yticks([])
-
-# 去除边框
-for spine in ax1.spines.values():
-    spine.set_visible(False)
+clear_output(ax1)
 
 plt.tight_layout()
 plt.savefig('../rsl/SOP_2D-polar-pure.png', bbox_inches='tight', pad_inches=0.0, dpi=300, transparent=True)
@@ -90,15 +84,7 @@ fig2, ax2 = plt.subplots(1, 1, figsize=(8, 8))
 # 绘制频率热图
 cax = ax2.imshow(frequency_matrix, cmap='twilight', origin='lower', aspect='equal', vmin=freq_min, vmax=freq_max)
 
-# 去除坐标轴标签和刻度
-ax2.set_xticklabels([])
-ax2.set_yticklabels([])
-ax2.set_xticks([])
-ax2.set_yticks([])
-
-# 去除边框
-for spine in ax2.spines.values():
-    spine.set_visible(False)
+clear_output(ax2)
 
 
 plt.tight_layout()

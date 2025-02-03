@@ -10,10 +10,10 @@ if __name__ == '__main__':
         # 'colormap': 'hot',
         # 'colormap': 'magma',
         'colormap': 'twilight',
-        'crop': 0.8,
     }
     # work_dir = 'data/img_data'
-    work_dir = '../data/low_loss'
+    # work_dir = '../data/low_loss'
+    work_dir = '../data/low_loss/full'
     # data_files = Path(work_dir).glob('*conversion-efficiency*.npy')
     data_files = Path(work_dir).glob('*phase*.npy')
     # data_files = Path(work_dir).glob('*.png')
@@ -27,14 +27,13 @@ if __name__ == '__main__':
                 data_2D = np.load(f'{work_dir}/{data_filename}' + data_type)
             else:
                 data_2D = load_img(f'{work_dir}/{data_filename}' + data_type)[:, :, 0]
-            if 'crop' in plot_paras:
-                crop = plot_paras['crop']
-                if 1 > crop > 0:
-                    margin = int((1 - crop) / 2 * data_2D.shape[0])
-                    data_2D = data_2D[margin:-margin, margin:-margin]
-                print(f'average value {compute_circular_average(data_2D)}')
-            plot_paras['crop'] = crop
+            if 1 > crop > 0:
+                margin = int((1 - crop) / 2 * data_2D.shape[0])
+                data_2D = data_2D[margin:-margin, margin:-margin]
+            print(f'average value {compute_circular_average(data_2D)}')
+            print(f'max value {np.max(data_2D)}')
+            # plot_paras['crop'] = crop
             direct_plot_2D(data_2D,
-                           save_name=f'{data_filename}',
+                           save_name=f'{data_filename}-crop{crop}',
                            plot_paras=plot_paras,
                            show=False)

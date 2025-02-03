@@ -7,7 +7,7 @@ import pandas as pd
 data = pd.read_csv('expanded_VBG-final_design.csv', sep='\t').to_numpy()
 # data = pd.read_csv('sorted_VBG-final_design.csv', sep='\t').to_numpy()
 
-# 选择rank为1的元素（或者您可以选择其他rank）
+# 选择rank
 selected_rank = 3
 rank_idx = 7
 selected_data = [d for d in data if int(d[rank_idx]) == selected_rank]  # rank在第几列

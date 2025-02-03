@@ -58,3 +58,15 @@ def load_2D_data(
         margin = int((1 - crop_rate) / 2 * data_2D.shape[0])
         data_2D = data_2D[margin:-margin, margin:-margin]
     return data_2D
+
+
+def clear_output(ax):
+    # 去除坐标轴标签和刻度
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    # 去除边框
+    for spine in ax.spines.values():
+        spine.set_visible(False)
