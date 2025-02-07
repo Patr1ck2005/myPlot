@@ -7,8 +7,8 @@ import pandas as pd
 # data = pd.read_csv('sorted_VBG-II-shrink_type-1stFP-meshed', sep='\t').to_numpy()
 # data = pd.read_csv('sorted_VBG_III_s1mple', sep='\t').to_numpy()
 # data = pd.read_csv('sorted_VBG-II-shrink_type-1stFP-uncoupled-meshed', sep='\t').to_numpy()
-# data = pd.read_csv('sorted_VBG-band3D-final_design.csv', sep='\t').to_numpy()
-data = pd.read_csv('sorted_VBG-band3D-homo_layer.csv', sep='\t').to_numpy()
+data = pd.read_csv('sorted_VBG-band3D-final_design.csv', sep='\t').to_numpy()
+# data = pd.read_csv('sorted_VBG-band3D-homo_layer.csv', sep='\t').to_numpy()
 
 # 准备绘图
 fig = plt.figure()
