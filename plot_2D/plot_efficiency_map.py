@@ -8,14 +8,15 @@ from utils.utils import load_img, compute_circular_average
 if __name__ == '__main__':
     plot_paras = {
         # 'colormap': 'hot',
-        # 'colormap': 'magma',
-        'colormap': 'twilight',
+        'colormap': 'magma',
+        # 'colormap': 'twilight',
     }
     # work_dir = 'data/img_data'
     # work_dir = '../data/low_loss'
-    work_dir = '../data/low_loss/full'
-    # data_files = Path(work_dir).glob('*conversion-efficiency*.npy')
-    data_files = Path(work_dir).glob('*phase*.npy')
+    # work_dir = '../data/low_loss/full'
+    work_dir = './data/opt'
+    data_files = Path(work_dir).glob('*conversion-efficiency*.npy')
+    # data_files = Path(work_dir).glob('*phase*.npy')
     # data_files = Path(work_dir).glob('*.png')
     # data_files = Path(work_dir).glob('*')
     for data_file in data_files:
