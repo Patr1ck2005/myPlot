@@ -24,7 +24,7 @@ def plot_band_surfaces(data):
     # 选择坐标和频率数据进行绘制
     for i, d in enumerate(data):
         m1, m2, freq, tanchi, phi, Q, S_air_prop, rank = d
-        if Q < 10:
+        if Q < 7:
             print('Q skip')
             continue
         elif S_air_prop > 10:
@@ -70,7 +70,8 @@ def plot_band_surfaces(data):
     ax.set_zticks([100, 120, 140])
     ax.set_xticklabels([-0.1, 0, 0.1])
     ax.set_yticklabels([-0.1, 0, 0.1])
-    ax.set_zticklabels([100, 120, 140])
+    # ax.set_zticklabels([1800, 1500, 1300])
+    ax.set_zticklabels([1800, 1500, 1300])
     # 调整刻度位置
     ax.tick_params(axis='x', pad=1, length=15)
     ax.tick_params(axis='y', pad=1, length=15)
@@ -84,11 +85,11 @@ def plot_band_surfaces(data):
     # cbar = plt.colorbar(sm, ax=ax)
     # cbar.set_label('Frequency (THz)')
 
-    # plt.savefig(f'../rsl/band3D-{cmap.name}-{"comparison_design"}.png', dpi=500, bbox_inches='tight', pad_inches=0.3, transparent=True)
-    plt.savefig(f'../rsl/band3D-{cmap.name}-{"final_design"}.png', dpi=500, bbox_inches='tight', pad_inches=0.3, transparent=True)
+    plt.savefig(f'./rsl/band3D-{cmap.name}-{"comparison_design"}.png', dpi=500, bbox_inches='tight', pad_inches=0.3, transparent=True)
+    # plt.savefig(f'./rsl/band3D-{cmap.name}-{"final_design"}.png', dpi=500, bbox_inches='tight', pad_inches=0.3, transparent=True)
     # plt.show()
 
 # 载入数据并调用函数
-# data = pd.read_csv('expanded_VBG-comparison_design-0.12.csv', sep='\t').to_numpy()
-data = pd.read_csv('expanded_VBG-final_design-0.12.csv', sep='\t').to_numpy()
+data = pd.read_csv('expanded_VBG-comparison_design-0.12.csv', sep='\t').to_numpy()
+# data = pd.read_csv('expanded_VBG-final_design.csv', sep='\t').to_numpy()
 plot_band_surfaces(data)

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from scipy.interpolate import make_interp_spline
 
-from utils.utils import clear_output
+from utils.utils import clear_ax
 
 
 def main(freq_data_path, Q_data_path):

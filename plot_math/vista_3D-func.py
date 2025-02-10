@@ -62,13 +62,14 @@ def create_xy_base_plane(kx_range, ky_range, resolution):
 def main():
     # 设置常数
     omega_Gamma = 1.5
-    a_1 = -0.5
+    a_1 = -1.0
     kx_range = (-1, 1)  # kx 的范围
     ky_range = (-1, 1)  # ky 的范围
     resolution = 100  # 分辨率，控制网格细腻程度
 
     # 创建抛物面
-    grid = create_paraboloid(kx_range, ky_range, resolution, omega_Gamma, a_1)
+    grid = create_paraboloid(kx_range, ky_range, resolution, omega_Gamma, 1*a_1)
+    # grid2 = create_paraboloid(kx_range, ky_range, resolution, omega_Gamma, -0.5*a_1)
 
     # 创建箭头
     origin = np.array([0, 0, 0])  # 箭头的原点位置
@@ -84,10 +85,11 @@ def main():
     plotter = pv.Plotter(off_screen=True, window_size=[2048, 2048])
 
     # 添加xy平面
-    plotter.add_mesh(xy_base_plane, color="white", opacity=1)
+    # plotter.add_mesh(xy_base_plane, color="white", opacity=1)
 
     # 添加抛物面
-    plotter.add_mesh(grid, cmap="inferno_r", scalars="omega", opacity=0.0)  # 显式指定颜色映射
+    plotter.add_mesh(grid, cmap="inferno_r", scalars="omega", opacity=0.5)  # 显式指定颜色映射
+    # plotter.add_mesh(grid2, cmap="inferno_r", scalars="omega", opacity=0.0)  # 显式指定颜色映射
 
     # 添加xy平面，应用inferno颜色映射
     # plotter.add_mesh(xy_plane, cmap="inferno_r", scalars="omega", opacity=0.5)

@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from utils.utils import clear_output
+from utils.utils import clear_ax
 
 # 数据
 # data = pd.read_csv('expanded_VBG-final_design-0.12.csv', sep='\t').to_numpy()
@@ -75,7 +75,7 @@ for d in selected_data:
     y_idx = int((m2 - m2_min) / (m2_max - m2_min) * (colormap_size-1))
     frequency_matrix[x_idx, y_idx] = freq_re
 
-clear_output(ax1)
+clear_ax(ax1)
 
 plt.tight_layout()
 plt.savefig('../rsl/SOP_2D-polar-pure.png', bbox_inches='tight', pad_inches=0.0, dpi=300, transparent=True)
@@ -84,7 +84,7 @@ fig2, ax2 = plt.subplots(1, 1, figsize=(8, 8))
 # 绘制频率热图
 cax = ax2.imshow(frequency_matrix, cmap='twilight', origin='lower', aspect='equal', vmin=freq_min, vmax=freq_max)
 
-clear_output(ax2)
+clear_ax(ax2)
 
 
 plt.tight_layout()

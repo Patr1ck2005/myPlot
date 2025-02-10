@@ -32,11 +32,11 @@ for d in data:
     # tanchi, phi: polarization parameter (elliptical polarized)
     # rank: rank of mode frequency
 
-    # if Q < 10:
-    #     print('Q skip')
-    #     continue
-    # elif S_air_prop > 10:
-    #     print('S_air_prop skip')
+    if Q < 7:
+        print('Q skip')
+        continue
+    elif S_air_prop > 10:
+        print('S_air_prop skip')
 
     freq_re = complex(freq.replace('i', 'j')).real
     freq_im = complex(freq.replace('i', 'j')).imag

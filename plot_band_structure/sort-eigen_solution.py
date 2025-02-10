@@ -4,9 +4,9 @@ import pandas as pd
 # filename = 'VBG-II-shrink_type-1stFP-meshed'
 # filename = 'VBG_III_s1mple'
 # filename = 'VBG-II-shrink_type-1stFP-uncoupled-meshed'
-# filename = 'VBG-band3D-final_design.csv'
+filename = 'VBG-band3D-final_design.csv'
 # filename = 'VBG-band3D-comparison_design.csv'
-filename = 'VBG-band3D-homo_layer.csv'
+# filename = 'VBG-band3D-homo_layer.csv'
 
 data = pd.read_csv(filename, sep='\t')
 
