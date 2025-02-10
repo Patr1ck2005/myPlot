@@ -35,6 +35,9 @@ for d in data:
     if Q < 7:
         print('Q skip')
         continue
+    # elif Q > 20:
+    #     print('Q skip')
+    #     continue
     elif S_air_prop > 10:
         print('S_air_prop skip')
 
@@ -101,6 +104,7 @@ ax.set_ylabel('ky')
 ax.legend(loc='upper right')
 ax.set_box_aspect([1, 1, 2])
 ax.set_title('polarization map')
+ax.view_init(elev=30, azim=-60-90)
 
 plt.tight_layout()
 plt.show()
