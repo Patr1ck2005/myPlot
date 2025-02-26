@@ -51,7 +51,7 @@ def main(freq_data_path, Q_data_path):
 
     # clear_output(ax)
 
-    plt.savefig(f'../rsl/band_2D_with_error_bars+{freq_data_path.split("/")[-1].split(".")[0]}.png',
+    plt.savefig(f'./rsl/band_2D_with_error_bars+{freq_data_path.split("/")[-1].split(".")[0]}.png',
                 dpi=300,
                 bbox_inches='tight',
                 transparent=True,
@@ -61,5 +61,5 @@ def main(freq_data_path, Q_data_path):
 
 if __name__ == '__main__':
     # 修改此处为实际的文件路径
-    main('../data/VBG-band2D-freq-Gamma_M-0.12.txt', '../data/VBG-band2D-Q-Gamma_M-0.12.txt')
-    main('../data/VBG-band2D-freq-Gamma_X-0.12.txt', '../data/VBG-band2D-Q-Gamma_X-0.12.txt')
+    main('./data/VBG-band2D-freq-Gamma_M-0.12.txt', './data/VBG-band2D-Q-Gamma_M-0.12.txt')
+    main('./data/VBG-band2D-freq-Gamma_X-0.12.txt', './data/VBG-band2D-Q-Gamma_X-0.12.txt')

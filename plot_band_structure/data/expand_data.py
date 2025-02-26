@@ -1,11 +1,11 @@
 import pandas as pd
 import numpy as np
 
-# 读取原始数据
+#
+# df = pd.read_csv('sorted_VBG-band3D-comparison_design.csv', sep='\t')读取原始数据
 # df = pd.read_csv('sorted_VBG-band3D-final_design.csv', sep='\t')
-df = pd.read_csv('sorted_VBG-band3D-final_design.csv', sep='\t')
-# df = pd.read_csv('sorted_VBG-band3D-comparison_design.csv', sep='\t')
-# df = pd.read_csv('expanded_VBG-band3D-comparison_design.csv', sep='\t')
+df = pd.read_csv('sorted_merging_BICs-band3D.csv', sep='\t')
+# df = pd.read_csv('sorted_merging_BICs-band3D-0.01.csv', sep='\t')
 
 m_max = df['m1'].max()
 m_step = 0.005
@@ -50,8 +50,10 @@ for _, row in df.iterrows():
         function_values = row.drop(['m1', 'm2']).values
         m1 = anti_coord[0]
         m2 = anti_coord[1]
-        theta = np.arctan(m1/m2) if m2 != 0 else np.pi/2
-        function_values[2] -= 2*(theta-np.pi/4)
+        phi = function_values[2]
+        theta = np.arctan(m2/m1) if m1 != 0 else np.pi/2
+        # function_values[2] -= 2*(theta-np.pi/4)
+        function_values[2] = (np.pi/2-phi)
         expanded_dict['function_values'].append(function_values)
     expanded_dict['coordinates'].append((m2, m1))
     function_values = row.drop(['m1', 'm2']).values
@@ -77,6 +79,7 @@ for i, func_col in enumerate(df.columns[2:]):
 
 expanded_df.to_csv('temp-expanded_SOP.csv', sep='\t', index=False)
 
+# STEP 2 ##############################################################################################################
 # 读取原始数据
 df = pd.read_csv('temp-expanded_SOP.csv', sep='\t')
 
@@ -126,6 +129,7 @@ expanded_df = pd.DataFrame(expanded_dict['coordinates'], columns=['m1', 'm2'])
 for i, func_col in enumerate(df.columns[2:]):
     expanded_df[func_col] = expanded_dict['function_values'][:, i]
 
-expanded_df.to_csv('expanded_VBG-final_design.csv', sep='\t', index=False)
+# expanded_df.to_csv('expanded_VBG-final_design.csv', sep='\t', index=False)
+expanded_df.to_csv('expanded_merging_BICs.csv', sep='\t', index=False)
 
 print("坐标和函数值已成功存储并保存为 'expanded_VBG-final_design.csv'.")

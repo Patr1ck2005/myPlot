@@ -4,7 +4,9 @@ import pandas as pd
 # filename = 'VBG-II-shrink_type-1stFP-meshed'
 # filename = 'VBG_III_s1mple'
 # filename = 'VBG-II-shrink_type-1stFP-uncoupled-meshed'
-filename = 'VBG-band3D-final_design.csv'
+# filename = 'VBG-band3D-final_design.csv'
+# filename = 'merging_BICs-band3D.csv'
+filename = 'merging_BICs-band3D-0.01.csv'
 # filename = 'VBG-band3D-comparison_design.csv'
 # filename = 'VBG-band3D-homo_layer.csv'
 
@@ -19,7 +21,6 @@ data['Eigenfrequency Rank'] = data.groupby(['m1', 'm2'])['Eigenfrequency (THz)']
 
 # Step 4: 查看结果
 data = data.drop(['Eigenfrequency (THz)'], axis=1)
-print(data)
 
 # Step 5: 将数据保存到一个新的文件
 data.to_csv(f'sorted_{filename}', sep='\t', index=False)

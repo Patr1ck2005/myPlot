@@ -16,7 +16,7 @@ def generate_pattern(size, radius, back_hole_radius, width):
     # Create cross pattern
     cross = (theta % (np.pi/2) < width*np.pi*2).astype(float)
 
-    cross += 7
+    cross += 1
 
     # Add circular hole in the center
     hole = np.clip((R/back_hole_radius)**2, 0, 1)
@@ -27,7 +27,7 @@ def generate_pattern(size, radius, back_hole_radius, width):
 
     mask = cross * hole * outline
 
-    # return mask*np.exp(-(R/radius/0.5)**2)
+    # return mask
     return mask
 
 def add_vortex_phase_and_guassian(pattern, waist, charge):
@@ -44,15 +44,15 @@ def add_vortex_phase_and_guassian(pattern, waist, charge):
     theta = np.arctan2(Y, X)
     vortex_phase = np.exp(1j * charge * theta)
     gaussian_filter = np.exp(-R2/waist**2)
-    LG_tern = R2
-    return pattern * vortex_phase * gaussian_filter * LG_tern
+    additional_tern = 1
+    return pattern * vortex_phase * gaussian_filter * additional_tern
 
 def main():
     size = 2048  # Image size
     back_hole_radius = 0  # Radius of the circular hole
     radius = 200  # Radius of the cross pattern
     waist = 100
-    width = 0/6  # Thickness of the cross lines
+    width = 1/12  # Thickness of the cross lines
     vortex_charge = 2  # Charge of the vortex phase
 
     # Generate pattern
@@ -93,6 +93,7 @@ def main():
 
     plt.tight_layout()
     plt.show()
+
 
 if __name__ == "__main__":
     main()

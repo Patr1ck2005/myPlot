@@ -90,6 +90,6 @@ def plot_band_surfaces(data):
     # plt.show()
 
 # 载入数据并调用函数
-data = pd.read_csv('expanded_VBG-comparison_design-0.12.csv', sep='\t').to_numpy()
+data = pd.read_csv('./data/expanded_VBG-comparison_design-0.12.csv', sep='\t').to_numpy()
 # data = pd.read_csv('expanded_VBG-final_design.csv', sep='\t').to_numpy()
 plot_band_surfaces(data)

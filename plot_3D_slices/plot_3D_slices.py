@@ -17,7 +17,7 @@ slice_positions = [0.42, 0.36, 0.30, 0.24, 0.18, 0.12, 0.06][::-1]
 for slice_value in slice_positions:
     # 对每个，提取 'wavelength_nm' 和 'average_intensity' 列，作为列表
     wavelength_array = df['wavelength_nm'].array
-    intensity_array = df[f'avg_intensity_NA{slice_value}'].array
+    intensity_array = df[f'avg_intensity_NA{slice_value}'].array*1.2
     # 将每个目录对应的波长和强度列表存入字典，键为 'wavelength' 和 'intensity'
     dataset[slice_value] = {
         'x': wavelength_array[wavelength_array < xlim[1]],

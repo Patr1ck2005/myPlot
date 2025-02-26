@@ -64,15 +64,16 @@ def main():
     # omega_Gamma = 1.5
     # a_1 = -1.0
 
-    omega_Gamma = 1.25
-    a_1 = -0.75
+    omega_Gamma = 2
+    a_1 = -0.25
     kx_range = (-1, 1)  # kx 的范围
     ky_range = (-1, 1)  # ky 的范围
     resolution = 100  # 分辨率，控制网格细腻程度
 
     # 创建抛物面
     grid = create_paraboloid(kx_range, ky_range, resolution, omega_Gamma, a_1)
-    # grid2 = create_paraboloid(kx_range, ky_range, resolution, omega_Gamma, -a_1)
+    grid2 = create_paraboloid(kx_range, ky_range, resolution, omega_Gamma, -a_1)
+    grid3 = create_paraboloid(kx_range, ky_range, resolution, 1.5, -1)
 
     # 创建箭头
     origin = np.array([0, 0, 0])  # 箭头的原点位置
@@ -91,8 +92,9 @@ def main():
     # plotter.add_mesh(xy_base_plane, color="white", opacity=1)
 
     # 添加抛物面
-    plotter.add_mesh(grid, cmap="inferno_r", scalars="omega", opacity=0.5, clim=[0.5, 2.25])  # 显式指定颜色映射
-    # plotter.add_mesh(grid2, cmap="inferno_r", scalars="omega", opacity=0.0)  # 显式指定颜色映射
+    plotter.add_mesh(grid, cmap="twilight", scalars="omega", opacity=0.5, clim=[0.5, 2.25])  # 显式指定颜色映射
+    plotter.add_mesh(grid2, cmap="twilight", scalars="omega", opacity=0.5, clim=[0.5, 2.25])  # 显式指定颜色映射
+    plotter.add_mesh(grid3, cmap="twilight", scalars="omega", opacity=0.5, clim=[0.5, 2.25])  # 显式指定颜色映射
 
     # 添加xy平面，应用inferno颜色映射
     # plotter.add_mesh(xy_plane, cmap="inferno_r", scalars="omega", opacity=0.5)
