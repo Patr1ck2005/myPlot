@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from utils.utils import clear_ax
+from utils.utils import clear_ax_ticks
 
 # 数据
 # data = pd.read_csv('expanded_VBG-final_design-old.csv', sep='\t').to_numpy()
@@ -149,7 +149,7 @@ k_range = 0.06
 plot_k_range = 0.01
 ax1.set_xlim(-plot_k_range, plot_k_range)
 ax1.set_ylim(-plot_k_range, plot_k_range)
-clear_ax(ax1)
+clear_ax_ticks(ax1)
 plt.tight_layout()
 plt.savefig(f'./rsl/SOP_2D-polar-TC={selected_TC}.png', bbox_inches='tight', pad_inches=0.0, dpi=300, transparent=True)
 
@@ -157,7 +157,7 @@ fig2, ax2 = plt.subplots(1, 1, figsize=(8, 8))
 # 绘制热图
 ax2.imshow(frequency_matrix, cmap=freq_cmap, origin='lower', aspect='equal', vmin=cmap_freq_min, vmax=cmap_freq_max)
 # cax = ax2.imshow(Q_matrix, cmap='hot', origin='lower', aspect='equal')
-clear_ax(ax2)
+clear_ax_ticks(ax2)
 plt.tight_layout()
 plt.savefig(f'./rsl/SOP_2D-freq-TC={selected_TC}.png', bbox_inches='tight', pad_inches=0.0, dpi=300)
 
@@ -181,7 +181,7 @@ plt.savefig(f'./rsl/SOP_2D-Q-TC={selected_TC}.png', bbox_inches='tight', pad_inc
 fig4, ax4 = plt.subplots(1, 1, figsize=(8, 8))
 # 绘制热图
 ax4.imshow(phi_matrix, cmap='hsv', origin='lower', aspect='equal')
-clear_ax(ax4)
+clear_ax_ticks(ax4)
 plt.tight_layout()
 plt.savefig(f'./rsl/SOP_2D-phi-TC={selected_TC}.png', bbox_inches='tight', pad_inches=0.0, dpi=300)
 plt.show()

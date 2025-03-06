@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from utils.utils import clear_ax
+from utils.utils import clear_ax_ticks
 
 # 数据
 # data = pd.read_csv('expanded_VBG-final_design-old.csv', sep='\t').to_numpy()
@@ -126,7 +126,7 @@ k_range = 0.06
 ax1.set_xlim(-k_range, k_range)
 ax1.set_ylim(-k_range, k_range)
 
-clear_ax(ax1)
+clear_ax_ticks(ax1)
 
 plt.tight_layout()
 plt.savefig(f'./rsl/SOP_2D-polar-TC={selected_TC}.png', bbox_inches='tight', pad_inches=0.0, dpi=300, transparent=True)
@@ -135,7 +135,7 @@ fig2, ax2 = plt.subplots(1, 1, figsize=(8, 8))
 # 绘制频率热图
 cax = ax2.imshow(frequency_matrix, cmap='twilight', origin='lower', aspect='equal', vmin=freq_min, vmax=freq_max)
 
-clear_ax(ax2)
+clear_ax_ticks(ax2)
 
 
 plt.tight_layout()

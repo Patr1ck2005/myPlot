@@ -60,7 +60,7 @@ def load_2D_data(
     return data_2D
 
 
-def clear_ax(ax):
+def clear_ax_ticks(ax):
     # 去除坐标轴标签和刻度
     ax.set_title('')
     ax.set_xlabel('')

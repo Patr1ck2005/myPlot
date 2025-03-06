@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from utils.utils import clear_ax
+from utils.utils import clear_ax_ticks
 
 
 def plot_2d_function(f, x_range, y_range, filename='function_plot.png', **kwargs):
@@ -31,7 +31,7 @@ def plot_2d_function(f, x_range, y_range, filename='function_plot.png', **kwargs
     ax.set_ylabel('y')
     ax.set_title('2D Function Heatmap')
 
-    clear_ax(ax)
+    clear_ax_ticks(ax)
 
     # 保存图像
     plt.savefig(filename, dpi=300, bbox_inches='tight', pad_inches=0)
