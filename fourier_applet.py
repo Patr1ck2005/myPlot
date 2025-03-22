@@ -16,7 +16,7 @@ def generate_pattern(size, radius, back_hole_radius, width):
     # Create cross pattern
     cross = (theta % (np.pi/2) < width*np.pi*2).astype(float)
 
-    cross += 1
+    cross += 10
 
     # Add circular hole in the center
     hole = np.clip((R/back_hole_radius)**2, 0, 1)
@@ -47,6 +47,35 @@ def add_vortex_phase_and_guassian(pattern, waist, charge):
     additional_tern = 1
     return pattern * vortex_phase * gaussian_filter * additional_tern
 
+def add_guassian(pattern, waist):
+    """
+    Add guassian to the pattern.
+    """
+    size = pattern.shape[0]
+    x = np.linspace(-size // 2, size // 2, size)
+    y = np.linspace(-size // 2, size // 2, size)
+    X, Y = np.meshgrid(x, y)
+
+    # Calculate angle and add vortex phase
+    R2 = X**2+Y**2
+    theta = np.arctan2(Y, X)
+    gaussian_filter = np.exp(-R2/waist**2)
+    return pattern * gaussian_filter
+
+def add_spherical_phase(pattern, focal_length):
+    """
+    Add spherical phase to the pattern.
+    """
+    size = pattern.shape[0]
+    x = np.linspace(-size // 2, size // 2, size)
+    y = np.linspace(-size // 2, size // 2, size)
+    X, Y = np.meshgrid(x, y)
+
+    # Calculate angle and add vortex phase
+    R2 = X**2+Y**2
+    spherical_phase = np.exp(1j * focal_length * R2)
+    return pattern * spherical_phase
+
 def main():
     size = 2048  # Image size
     back_hole_radius = 0  # Radius of the circular hole
@@ -59,13 +88,16 @@ def main():
     pattern = generate_pattern(size, radius, back_hole_radius, width)
 
     # Add vortex phase and Gaussian Distribution
-    pattern_with_phase = add_vortex_phase_and_guassian(pattern, waist, vortex_charge)
+    pattern = add_guassian(pattern, waist)
+    # pattern_with_phase = add_vortex_phase_and_guassian(pattern, waist, vortex_charge)
+    pattern_with_phase = add_spherical_phase(pattern, 1e-3)
+    # pattern_with_phase = pattern
 
     # Compute Fourier transform
     ft_pattern = np.fft.fftshift(np.fft.fft2(pattern_with_phase))
 
     # Visualize
-    plt.figure(figsize=(12, 6))
+    plt.figure(figsize=(18, 9))
 
     # Original pattern
     plt.subplot(1, 3, 1)

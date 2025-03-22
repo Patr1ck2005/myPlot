@@ -1,6 +1,8 @@
 import numpy as np
 import pyvista as pv
 
+from plot_math.tcmt import TCMTSolver
+
 
 def create_paraboloid(kx_range, ky_range, resolution, omega_Gamma, a_1):
     """

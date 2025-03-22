@@ -7,20 +7,17 @@ from scipy.interpolate import make_interp_spline
 from utils.utils import clear_ax_ticks
 
 
-def main(freq_data_path, Q_data_path, x, ylim, y_offset=0, selection=None):
+def main(freq, Q, x, xlim, plot_ylim, selection_ylim=None, selection=None, save_name='default'):
     plt.rcParams['font.sans-serif'] = ['Arial']
     plt.rcParams['font.size'] = 18
 
     fig, ax = plt.subplots(figsize=(4, 4))
 
-    # 加载频率和 Q 数据
-    freq = np.loadtxt(freq_data_path)[:, 1]+y_offset
-    Q = np.loadtxt(Q_data_path)[:, 1]
-
-    # 对于频率大小进行过滤
-    _mask = (freq < ylim[0]+y_offset) | (freq > ylim[1]+y_offset)
-    freq[_mask] = 0
-    Q[_mask] = 0
+    if selection_ylim:
+        # 对于频率大小进行过滤
+        _mask = (freq < selection_ylim[0]) | (freq > selection_ylim[1])
+        freq[_mask] = 0
+        Q[_mask] = 0
 
     period = len(x)
     freq_part = freq.reshape(-1, period).T  # 假设 `freq` 代表 zone folding 数据
@@ -38,8 +35,10 @@ def main(freq_data_path, Q_data_path, x, ylim, y_offset=0, selection=None):
         freq_result[i] = freq_df[freq_part]
         Q_rsl[i] = Q_df[freq_part]*mask
 
-    ax.set_ylim(ylim[0]+y_offset, ylim[-1]+y_offset)
-    ax.set_xlim(x[0], x[-1])
+    ax.set_ylim(plot_ylim[0], plot_ylim[-1])
+    ax.set_xlim(xlim[0], xlim[-1])
+    # ax.set_ylim(1e10, 1e12)
+    # ax.set_xlim(1e-5, 1e-3)
 
     # ax.set_xticks([0, 0.33, 0.66, 1])
     # ax.set_xticklabels([0, 0.005, 0.005, 0.015])
@@ -50,25 +49,28 @@ def main(freq_data_path, Q_data_path, x, ylim, y_offset=0, selection=None):
     # 绘制带误差棒的图形
     for i in selection:
         i -= 1
-        ax.errorbar(x,
-                    freq_result[i],
+        ax.errorbar(abs(x),
+                    abs(freq_result[i]),
                     # yerr=1/Q_rsl[i]*1e14*5e-1,
-                    fmt='-',
+                    fmt='-o',
                     label=f'Series {i+1}',
                     linewidth=3,
-                    markersize=3,
+                    markersize=5,
+                    fillstyle='none',
                     capsize=2,
                     capthick=1,
                     alpha=0.8)
         # plt.show()
 
     # clear_ax_ticks(ax)
-    plt.savefig(f'./rsl/band_2D_with_error_bars+{freq_data_path.split("/")[-1].split(".")[0]}.png',
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.savefig(f'./rsl/band_2D_with_error_bars+{save_name.split("/")[-1].split(".")[0]}.png',
                 dpi=300,
                 bbox_inches='tight',
                 transparent=True,
                 pad_inches=0)
-    plt.savefig(f'./rsl/band_2D_with_error_bars+{freq_data_path.split("/")[-1].split(".")[0]}.svg',
+    plt.savefig(f'./rsl/band_2D_with_error_bars+{save_name.split("/")[-1].split(".")[0]}.svg',
                 dpi=300,
                 bbox_inches='tight',
                 transparent=True,
@@ -80,20 +82,26 @@ if __name__ == '__main__':
     # 修改此处为实际的文件路径
     # main('./data/VBG-band2D-freq-Gamma_M-0.12.txt', './data/VBG-band2D-Q-Gamma_M-0.12.txt')  # period = 61
     # main('./data/VBG-band2D-freq-Gamma_X-0.12.txt', './data/VBG-band2D-Q-Gamma_X-0.12.txt')
+    # 加载频率和 Q 数据
+    freq = np.loadtxt('./data/3EP_noslab/perturbations/3EP-band2D-freq.txt')[:, 1]-7.120e13
+    Q = np.loadtxt('./data/3EP_noslab/perturbations/3EP-band2D-Q.txt')[:, 1]
     main(
-        'data/3EP_noslab/perturbations/3EP-band2D-freq.txt',
-        'data/3EP_noslab/perturbations/3EP-band2D-Q.txt',
-        x=np.linspace(0.0055, 0.0070, 151)-0.00628,
-        y_offset=-7.12e13,
-        ylim=[7.0e13, 7.22e13],
-        selection=[1, 2, 3]
+        freq,
+        Q,
+        x=np.linspace(0.0055, 0.0070, 151) - 0.006285,
+        # ylim=[7.0e13-7.12e13, 7.22e13-7.12e13],
+        xlim=[1e-5, 1e-3],
+        plot_ylim=[1e10, 1e12],
+        selection=[1, 2, 3],
     )
+    ifreq = np.loadtxt('./data/3EP_noslab/perturbations/3EP-band2D-iomega.txt')[:, 1]/2/np.pi+1.22e13/2/np.pi
     main(
-        'data/3EP_noslab/perturbations/3EP-band2D-iomega.txt',
-        'data/3EP_noslab/perturbations/3EP-band2D-Q.txt',
-        x=np.linspace(0.0055, 0.0070, 151)-0.00628,
-        y_offset=-1.9e13,
-        ylim=[-2 * 1e13, 0],
+        ifreq,
+        Q,
+        x=np.linspace(0.0055, 0.0070, 151)-0.006285,
+        # xlim=[1e-5, 1e-3],
+        # ylim=[-2*1e13+1.2e13, 0+1.2e13],
+        # plot_ylim=[1e10, 1e12],
         selection=[1, 2, 3]
     )
     # main(

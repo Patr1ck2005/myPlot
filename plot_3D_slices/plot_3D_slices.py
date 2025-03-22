@@ -17,7 +17,7 @@ slice_positions = [0.42, 0.36, 0.30, 0.24, 0.18, 0.12, 0.06][::-1]
 for slice_value in slice_positions:
     # 对每个，提取 'wavelength_nm' 和 'average_intensity' 列，作为列表
     wavelength_array = df['wavelength_nm'].array
-    intensity_array = df[f'avg_intensity_NA{slice_value}'].array*1.2
+    intensity_array = df[f'avg_intensity_NA{slice_value}'].array
     # 将每个目录对应的波长和强度列表存入字典，键为 'wavelength' 和 'intensity'
     dataset[slice_value] = {
         'x': wavelength_array[wavelength_array < xlim[1]],
@@ -78,12 +78,12 @@ ax.set_ylim(0, 0.42)
 ax.set_zlim(0, 1)
 ax.set_xticks([1480, 1500, 1510, 1520, 1530, 1550, 1580])
 ax.set_yticks(slice_positions[::2])
-ax.set_zticks([0, 0.5, 0.8, 0.9, 1])
+ax.set_zticks([0, 0.5, 0.75, 1])
 # ax.set_xticklabels([-0.1, 0, 0.1])
 ax.set_xticklabels([])
 # ax.set_yticklabels(slice_positions[::2])
 ax.set_yticklabels([])
-ax.set_zticklabels([0, 0.5, 0.8, 0.9, 1])
+ax.set_zticklabels([0, 0.5, 0.75, 1])
 # 设置坐标轴标签和范围
 # ax.set_xlabel(xlabel, labelpad=10)
 # ax.set_ylabel(ylabel, labelpad=10)
