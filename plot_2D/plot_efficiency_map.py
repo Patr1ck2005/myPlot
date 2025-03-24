@@ -2,26 +2,30 @@ from pathlib import Path
 
 import numpy as np
 
-from plot_2D.direct_plot_2D import direct_plot_2D
+from plot_2D.core.direct_plot_2D import direct_plot_2D
 from utils.utils import load_img, compute_circular_average
 
 if __name__ == '__main__':
     plot_paras = {
+        'colormap': 'gray',
         # 'colormap': 'hot',
         # 'colormap': 'magma',
-        'colormap': 'twilight',
+        # 'colormap': 'twilight',
     }
     # work_dir = 'data/img_data'
     # work_dir = '../data/low_loss'
     # work_dir = '../data/low_loss/full'
-    work_dir = './data/opt'
+    # work_dir = './data/opt'
+    # work_dir = './data/sym/1500'
+    work_dir = './data/A48-1500~1600'
     # work_dir = './data/compared'
-    # data_files = Path(work_dir).glob('*conversion-efficiency*.npy')
-    data_files = Path(work_dir).glob('*phase*.npy')
+    data_files = Path(work_dir).glob('*conversion-efficiency*.npy')
+    # data_files = Path(work_dir).glob('*phase*.npy')
     # data_files = Path(work_dir).glob('*.png')
     # data_files = Path(work_dir).glob('*')
     for data_file in data_files:
-        for crop in [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4]:
+        # for crop in [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4]:
+        for crop in [1.0]:
             print(crop)
             data_filename = data_file.stem
             data_type = data_file.suffix
@@ -39,6 +43,8 @@ if __name__ == '__main__':
                            save_name=f'{data_filename}-crop{crop}',
                            plot_paras=plot_paras,
                            show=False,
+                           vmin=0,
+                           vmax=1,
                            # vmin=0,
-                           # vmax=1
+                           # vmax=2*np.pi,
                            )

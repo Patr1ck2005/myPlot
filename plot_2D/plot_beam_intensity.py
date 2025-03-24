@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from plot_2D.direct_plot_2D import direct_plot_2D
+from plot_2D.core.direct_plot_2D import direct_plot_2D
 from utils.utils import load_2D_data
 
 if __name__ == '__main__':

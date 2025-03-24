@@ -85,11 +85,13 @@ def plot_band_surfaces(data):
     # cbar = plt.colorbar(sm, ax=ax)
     # cbar.set_label('Frequency (THz)')
 
-    plt.savefig(f'./rsl/band3D-{cmap.name}-{"comparison_design"}.png', dpi=500, bbox_inches='tight', pad_inches=0.3, transparent=True)
-    # plt.savefig(f'./rsl/band3D-{cmap.name}-{"final_design"}.png', dpi=500, bbox_inches='tight', pad_inches=0.3, transparent=True)
+    # plt.savefig(f'./rsl/band3D-{cmap.name}-{"comparison_design"}.png', dpi=500, bbox_inches='tight', pad_inches=0.3, transparent=True)
+    # plt.savefig(f'./rsl/band3D-{cmap.name}-{"comparison_design"}.svg', bbox_inches='tight', pad_inches=0.3, transparent=True)
+    plt.savefig(f'./rsl/band3D-{cmap.name}-{"final_design"}.png', dpi=500, bbox_inches='tight', pad_inches=0.3, transparent=True)
+    plt.savefig(f'./rsl/band3D-{cmap.name}-{"final_design"}.svg', bbox_inches='tight', pad_inches=0.3, transparent=True)
     # plt.show()
 
 # 载入数据并调用函数
-data = pd.read_csv('./data/expanded_VBG-comparison_design-0.12.csv', sep='\t').to_numpy()
-# data = pd.read_csv('expanded_VBG-final_design.csv', sep='\t').to_numpy()
+# data = pd.read_csv('./data/expanded_VBG-comparison_design-0.12.csv', sep='\t').to_numpy()
+data = pd.read_csv('./data/expanded_VBG-final_design.csv', sep='\t').to_numpy()
 plot_band_surfaces(data)

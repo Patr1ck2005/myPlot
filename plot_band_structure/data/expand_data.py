@@ -3,8 +3,8 @@ import numpy as np
 
 #
 # df = pd.read_csv('sorted_VBG-band3D-comparison_design.csv', sep='\t')读取原始数据
-# df = pd.read_csv('sorted_VBG-band3D-final_design.csv', sep='\t')
-df = pd.read_csv('sorted_merging_BICs-band3D.csv', sep='\t')
+df = pd.read_csv('sorted_VBG-band3D-final_design.csv', sep='\t')
+# df = pd.read_csv('sorted_merging_BICs-band3D.csv', sep='\t')
 # df = pd.read_csv('sorted_merging_BICs-band3D-0.01.csv', sep='\t')
 
 m_max = df['m1'].max()
@@ -129,7 +129,7 @@ expanded_df = pd.DataFrame(expanded_dict['coordinates'], columns=['m1', 'm2'])
 for i, func_col in enumerate(df.columns[2:]):
     expanded_df[func_col] = expanded_dict['function_values'][:, i]
 
-# expanded_df.to_csv('expanded_VBG-final_design.csv', sep='\t', index=False)
-expanded_df.to_csv('expanded_merging_BICs.csv', sep='\t', index=False)
+expanded_df.to_csv('expanded_VBG-final_design.csv', sep='\t', index=False)
+# expanded_df.to_csv('expanded_merging_BICs.csv', sep='\t', index=False)
 
-print("坐标和函数值已成功存储并保存为 'expanded_VBG-final_design.csv'.")
+print("坐标和函数值已成功存储并保存.")

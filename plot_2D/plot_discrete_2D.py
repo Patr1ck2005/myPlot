@@ -1,12 +1,9 @@
-import json
 from pathlib import Path
 
 import numpy as np
-import matplotlib.pyplot as plt
-from PIL import Image
 
-from plot_2D.direct_plot_2D import direct_plot_2D
-from utils.utils import compute_circular_average, load_img
+from plot_2D.core.direct_plot_2D import direct_plot_2D
+from utils.utils import load_img
 
 if __name__ == '__main__':
     plot_paras = {

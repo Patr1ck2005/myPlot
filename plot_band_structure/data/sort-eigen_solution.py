@@ -4,9 +4,9 @@ import pandas as pd
 # filename = 'VBG-II-shrink_type-1stFP-meshed'
 # filename = 'VBG_III_s1mple'
 # filename = 'VBG-II-shrink_type-1stFP-uncoupled-meshed'
-# filename = 'VBG-band3D-final_design.csv'
+filename = 'VBG-band3D-final_design.csv'
 # filename = 'merging_BICs-band3D.csv'
-filename = 'merging_BICs-band3D-0.01.csv'
+# filename = 'merging_BICs-band3D-0.01.csv'
 # filename = 'VBG-band3D-comparison_design.csv'
 # filename = 'VBG-band3D-homo_layer.csv'
 
