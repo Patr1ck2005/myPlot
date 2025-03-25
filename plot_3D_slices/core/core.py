@@ -6,7 +6,15 @@ from matplotlib.collections import PolyCollection
 plt.rcParams['font.size'] = 12
 
 
-def plot_3d_slices(filename, xlim=(1500, 1600), slice_positions=None, save_dir='./rsl/'):
+def plot_3d_slices(
+        filename,
+        xlim=(1500, 1600),
+        xticks=None,
+        zticks=None,
+        slice_positions=None,
+        save_dir='./rsl/',
+        box_aspect=(1, 1, 1),
+):
 
     df = pd.read_csv(f'./data/{filename}')
     dataset = {}
@@ -48,9 +56,11 @@ def plot_3d_slices(filename, xlim=(1500, 1600), slice_positions=None, save_dir='
     ax.set_xlim(xlim)
     ax.set_ylim(0, 0.42)
     ax.set_zlim(0, 1)
-    ax.set_xticks([1500, 1520, 1540, 1550, 1560, 1580, 1600])
+    if  xticks is not None:
+        ax.set_xticks(xticks)
     ax.set_yticks(slice_positions[::2])
-    ax.set_zticks([0, 0.5, 0.75, 0.9, 1])
+    if zticks is not None:
+        ax.set_zticks(zticks)
     ax.set_xticklabels([])
     ax.set_yticklabels([])
     ax.set_zticklabels([])
@@ -59,7 +69,7 @@ def plot_3d_slices(filename, xlim=(1500, 1600), slice_positions=None, save_dir='
     ax.tick_params(axis='y', pad=1)
     ax.tick_params(axis='z', pad=1)
     ax.view_init(elev=30, azim=60)
-    ax.set_box_aspect([2, 2, 1])
+    ax.set_box_aspect(box_aspect)
 
     plt.tight_layout()
     plt.savefig(f'{save_dir}3D_slices_fig.png', dpi=300, bbox_inches='tight', pad_inches=0.3, transparent=True)
@@ -67,7 +77,16 @@ def plot_3d_slices(filename, xlim=(1500, 1600), slice_positions=None, save_dir='
     plt.show()
 
 
-def plot_2d_slices(filename, xlim=(1500, 1600), slice_positions=None, save_dir='./rsl/', color_list=None):
+def plot_2d_slices(
+        filename,
+        xlim=(1500, 1600),
+        xticks=None,
+        yticks=None,
+        slice_positions=None,
+        save_dir='./rsl/',
+        color_list=None,
+        box_aspect=1.0,
+):
     if slice_positions is None:
         slice_positions = [0.42, 0.36, 0.30, 0.24, 0.18, 0.12, 0.06][::-1]
 
@@ -87,7 +106,7 @@ def plot_2d_slices(filename, xlim=(1500, 1600), slice_positions=None, save_dir='
     ax2 = fig2.add_subplot(111)
 
     if color_list is None:
-        facecolors = plt.colormaps['inferno_r'](np.linspace(0, 1, len(slice_positions)))[::-1]
+        facecolors = plt.colormaps['inferno_r'](np.linspace(0.2, 1.0, len(slice_positions)))[::-1]
     else:
         facecolors = color_list
     for i, slice in enumerate(slice_positions):
@@ -101,11 +120,13 @@ def plot_2d_slices(filename, xlim=(1500, 1600), slice_positions=None, save_dir='
     ax2.grid(True)
     ax2.set_xlim(xlim)
     ax2.set_ylim(0, 1)
-    ax2.set_xticks([1500, 1520, 1540, 1550, 1560, 1580, 1600])
-    ax2.set_yticks([0, 0.5, 0.75, 1])
+    if xticks is not None:
+        ax2.set_xticks(xticks)
+    if yticks is not None:
+        ax2.set_yticks(yticks)
     ax2.set_xticklabels([])
     ax2.set_yticklabels([])
-    ax2.set_box_aspect(1)
+    ax2.set_box_aspect(box_aspect)
 
     plt.tight_layout()
     plt.savefig(f'{save_dir}2D_slices_fig.png', dpi=300, bbox_inches='tight', pad_inches=0.3, transparent=True)

@@ -24,9 +24,7 @@ def convert_svgs_in_directory(input_dir):
             print(f"已转换：{filename}")
 
 
-def main():
-    # 设置工作目录
-    working_directory = r'D:\DELL\Documents\myPlots\examples'  # 替换为你实际的工作目录
+def main(working_directory):
 
     # 执行转换
     convert_svgs_in_directory(working_directory)
@@ -34,4 +32,6 @@ def main():
     print("转换完成！")
 
 if __name__ == '__main__':
-    main()
+    main(r'D:\DELL\Documents\myPlots\examples')
+    main(r'D:\DELL\Documents\myPlots\examples\SM')
+
