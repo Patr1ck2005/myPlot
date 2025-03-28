@@ -13,7 +13,8 @@ if __name__ == '__main__':
         'crop': 1.0,
     }
     # work_dir = 'data/img_data'
-    work_dir = '../data'
+    # work_dir = '../data'
+    work_dir = './data/LG_compo'
     data_files = Path(work_dir).glob('*LG*')
     for data_file in data_files:
         data_filename = data_file.stem
@@ -28,5 +29,6 @@ if __name__ == '__main__':
             data_2D,
             save_name=f'{data_filename}',
             plot_paras=plot_paras,
-            show=False
+            show=False,
+            stretch=100,
         )

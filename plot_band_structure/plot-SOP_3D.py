@@ -107,4 +107,5 @@ ax.set_title('polarization map')
 ax.view_init(elev=30, azim=-60-90)
 
 plt.tight_layout()
+plt.savefig('./rsl/3D_SOP_fig.png', dpi=300, bbox_inches='tight', pad_inches=0.3, transparent=True)
 plt.show()

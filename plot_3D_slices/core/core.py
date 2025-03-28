@@ -56,14 +56,14 @@ def plot_3d_slices(
     ax.set_xlim(xlim)
     ax.set_ylim(0, 0.42)
     ax.set_zlim(0, 1)
-    if  xticks is not None:
+    if xticks is not None:
         ax.set_xticks(xticks)
     ax.set_yticks(slice_positions[::2])
     if zticks is not None:
         ax.set_zticks(zticks)
     ax.set_xticklabels([])
     ax.set_yticklabels([])
-    ax.set_zticklabels([])
+    # ax.set_zticklabels([])
 
     ax.tick_params(axis='x', pad=1)
     ax.tick_params(axis='y', pad=1)

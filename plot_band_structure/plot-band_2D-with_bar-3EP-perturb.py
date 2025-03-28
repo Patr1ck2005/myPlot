@@ -7,7 +7,7 @@ from scipy.interpolate import make_interp_spline
 from utils.utils import clear_ax_ticks
 
 
-def main(freq, Q, x, xlim=None, plot_ylim=None, selection_ylim=None, selection=None, save_name='default'):
+def main(freq, Q, x, xlim, plot_ylim, selection_ylim=None, selection=None, save_name='default'):
     plt.rcParams['font.sans-serif'] = ['Arial']
     plt.rcParams['font.size'] = 18
 
@@ -35,12 +35,13 @@ def main(freq, Q, x, xlim=None, plot_ylim=None, selection_ylim=None, selection=N
         freq_result[i] = freq_df[freq_part]
         Q_rsl[i] = Q_df[freq_part]*mask
 
-    if plot_ylim:
-        ax.set_ylim(plot_ylim[0], plot_ylim[-1])
-    if xlim:
-        ax.set_xlim(xlim[0], xlim[-1])
-    else:
-        ax.set_xlim(x[0], x[-1])
+    ax.set_ylim(plot_ylim[0], plot_ylim[-1])
+    ax.set_xlim(xlim[0], xlim[-1])
+    # ax.set_ylim(1e10, 1e12)
+    # ax.set_xlim(1e-5, 1e-3)
+
+    # ax.set_xticks([0, 0.33, 0.66, 1])
+    # ax.set_xticklabels([0, 0.005, 0.005, 0.015])
 
     # ax.xaxis.set_major_locator(MaxNLocator(4))  # X轴最多刻度
     ax.yaxis.set_major_locator(MaxNLocator(4))  # Y轴最多刻度
@@ -48,10 +49,10 @@ def main(freq, Q, x, xlim=None, plot_ylim=None, selection_ylim=None, selection=N
     # 绘制带误差棒的图形
     for i in selection:
         i -= 1
-        ax.errorbar(x,
-                    freq_result[i],
+        ax.errorbar(abs(x),
+                    abs(freq_result[i]),
                     # yerr=1/Q_rsl[i]*1e14*5e-1,
-                    fmt='-',
+                    fmt='-o',
                     label=f'Series {i+1}',
                     linewidth=3,
                     markersize=5,
@@ -62,8 +63,8 @@ def main(freq, Q, x, xlim=None, plot_ylim=None, selection_ylim=None, selection=N
         # plt.show()
 
     # clear_ax_ticks(ax)
-    # plt.xscale('log')
-    # plt.yscale('log')
+    plt.xscale('log')
+    plt.yscale('log')
     plt.savefig(f'./rsl/band_2D_with_error_bars+{save_name.split("/")[-1].split(".")[0]}.png',
                 dpi=300,
                 bbox_inches='tight',
@@ -82,45 +83,38 @@ if __name__ == '__main__':
     # main('./data/VBG-band2D-freq-Gamma_M-0.12.txt', './data/VBG-band2D-Q-Gamma_M-0.12.txt')  # period = 61
     # main('./data/VBG-band2D-freq-Gamma_X-0.12.txt', './data/VBG-band2D-Q-Gamma_X-0.12.txt')
     # 加载频率和 Q 数据
-    # freq = np.loadtxt('./data/3EP_noslab/perturbations/3EP-band2D-freq.txt')[:, 1] - 7.120e13
-    # Q = np.loadtxt('./data/3EP_noslab/perturbations/3EP-band2D-Q.txt')[:, 1]
-    # main(
-    #     freq,
-    #     Q,
-    #     x=np.linspace(0.0055, 0.0070, 151) - 0.006285,
-    #     # ylim=[7.0e13-7.12e13, 7.22e13-7.12e13],
-    #     # xlim=[1e-5, 1e-3],
-    #     # plot_ylim=[1e10, 1e12],
-    #     selection=[1, 2, 3],
-    # )
-    # ifreq = np.loadtxt('./data/3EP_noslab/perturbations/3EP-band2D-iomega.txt')[:, 1]/2/np.pi+1.22e13/2/np.pi
-    # main(
-    #     ifreq,
-    #     Q,
-    #     x=np.linspace(0.0055, 0.0070, 151) - 0.006285,
-    #     # xlim=[1e-5, 1e-3],
-    #     # ylim=[-2*1e13+1.2e13, 0+1.2e13],
-    #     # plot_ylim=[1e10, 1e12],
-    #     selection=[1, 2, 3]
-    # )
-    freq = np.loadtxt('./data/3EP_noslab/0~3e-2k/3EP-band2D-freq.txt')[:, 1]
-    Q = np.loadtxt('./data/3EP_noslab/0~3e-2k/3EP-band2D-Q.txt')[:, 1]
+    freq = np.loadtxt('./data/3EP_noslab/perturbations/3EP-band2D-freq.txt')[:, 1]-7.120e13
+    Q = np.loadtxt('./data/3EP_noslab/perturbations/3EP-band2D-Q.txt')[:, 1]
     main(
         freq,
         Q,
-        x=np.linspace(0.00, 0.015, 601),
+        x=np.linspace(0.0055, 0.0070, 151) - 0.006285,
         # ylim=[7.0e13-7.12e13, 7.22e13-7.12e13],
-        # xlim=[1e-5, 1e-3],
-        # plot_ylim=[1e10, 1e12],
+        xlim=[1e-5, 1e-3],
+        plot_ylim=[1e10, 1e12],
         selection=[1, 2, 3],
     )
-    ifreq = np.loadtxt('./data/3EP_noslab/0~3e-2k/3EP-band2D-iomega.txt')[:, 1]/2/np.pi
+    ifreq = np.loadtxt('./data/3EP_noslab/perturbations/3EP-band2D-iomega.txt')[:, 1]/2/np.pi+1.22e13/2/np.pi
     main(
         ifreq,
         Q,
-        x=np.linspace(0.00, 0.015, 601),
+        x=np.linspace(0.0055, 0.0070, 151)-0.006285,
         # xlim=[1e-5, 1e-3],
         # ylim=[-2*1e13+1.2e13, 0+1.2e13],
         # plot_ylim=[1e10, 1e12],
         selection=[1, 2, 3]
     )
+    # main(
+    #     'data/3EP_noslab/0~3e-2k/3EP-band2D-freq.txt',
+    #     'data/3EP_noslab/0~3e-2k/3EP-band2D-Q.txt',
+    #     ylim=[6.5e13, 7.7e13],
+    #     period=601,
+    #     selection=[1, 2, 3]
+    # )
+    # main(
+    #     'data/3EP_noslab/0~3e-2k/3EP-band2D-iomega.txt',
+    #     'data/3EP_noslab/0~3e-2k/3EP-band2D-Q.txt',
+    #     [-3 * 1e13, 0],
+    #     period=601,
+    #     selection=[1, 2, 3]
+    # )

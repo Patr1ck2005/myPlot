@@ -15,15 +15,16 @@ data = pd.read_csv('./data/expanded_VBG-final_design.csv', sep='\t').to_numpy()
 # rank_idx = 7
 # selected_data = [d for d in data if int(d[rank_idx]) == selected_rank]  # rank在第几列
 # # 利用频率选择
-# selected_data = [d for d in data if 115 < complex(d[2].replace('i', 'j')).real < 119]  # for +1BIC band
-# selected_data = [eigen_info for eigen_info in data if 121 < complex(eigen_info[2].replace('i', 'j')).real < 128]  # for DP band
-selected_data = [eigen_info for eigen_info in data if 128 < complex(eigen_info[2].replace('i', 'j')).real < 140]  # for DP band
+selected_data = [eigen_info for eigen_info in data if 100 < complex(eigen_info[2].replace('i', 'j')).real < 110]  # for DP1 band
+# selected_data = [eigen_info for eigen_info in data if 115 < complex(eigen_info[2].replace('i', 'j')).real < 119]  # for +1BIC band
+# selected_data = [eigen_info for eigen_info in data if 121 < complex(eigen_info[2].replace('i', 'j')).real < 128]  # for DP2 band
+# selected_data = [eigen_info for eigen_info in data if 128 < complex(eigen_info[2].replace('i', 'j')).real < 140]  # for -1BIC band
 
 # 按照每一个m1, m2下对频率进行排序
 # 假设 m1, m2 分别是 d[0] 和 d[1]
 grouped_data = {}
-selected_TC = None
-# selected_TC = 1
+# selected_TC = None
+selected_TC = -1
 for eigen_info in selected_data:
     m1, m2 = eigen_info[0], eigen_info[1]
     if (m1, m2) not in grouped_data:

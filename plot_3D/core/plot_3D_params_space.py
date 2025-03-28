@@ -3,7 +3,10 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import pandas as pd
 
-def plot_band_surfaces(data):
+def plot_3D_params_space(
+        data,
+        save_label,
+):
     # 准备绘图
     plt.rcParams['font.size'] = 16
     fig = plt.figure(figsize=(8, 12))
@@ -17,22 +20,24 @@ def plot_band_surfaces(data):
     freq_min, freq_max = 90, 120
     freq_length = freq_max-freq_min
 
-    freq_im_min = 0.5
-    freq_im_max = 1.4
+    freq_im_min = 0.0
+    freq_im_max = 0.2
     freq_im_length = freq_im_max-freq_im_min
 
     # 创建颜色映射对象
     refreq_norm = plt.Normalize(vmin=freq_min, vmax=freq_max)
     imfreq_norm = plt.Normalize(vmin=freq_im_min, vmax=freq_im_max)
-    cmap = plt.get_cmap('twilight')
+    # cmap = plt.get_cmap('twilight')
+    cmap = plt.get_cmap('rainbow')
+    selected_params = 0.0
 
     # 选择坐标和频率数据进行绘制
     for i, d in enumerate(data):
         buffer, a, k1, freq, freq_real, Q, S_air_prop = d
-        if k1 != 0.00:
+        if k1 != selected_params:
             print('k1 skip')
             continue
-        if Q < 30:
+        if Q < 100:
             print('Q skip')
             continue
         # elif S_air_prop > 10:
@@ -40,8 +45,7 @@ def plot_band_surfaces(data):
         freq_complex = complex(freq.replace('i', 'j'))
         freq_re = freq_complex.real
         freq_im = freq_complex.imag
-        # .98~136
-        # if freq_re < 98 or freq_re > 136:
+
         if freq_re < freq_min or freq_re > freq_max:
             print('freq skip')
             continue
@@ -63,16 +67,16 @@ def plot_band_surfaces(data):
         else:
             ax.scatter(buffer, a, z, color=color, alpha=alpha, s=10)
 
-    # 创建X和Z的网格数据
-    y = np.linspace(0, 0.16, 10)  # X的范围
-    z = np.linspace(0, 1.4, 10)  # Z的范围
-    y, z = np.meshgrid(y, z)  # 生成网格
-
-    # 计算对应的x值，y=2
-    x = np.full_like(y, 1400)
-
-    # 绘制平面
-    ax.plot_surface(x, y, z, color='white', alpha=0.5)
+    # # 创建X和Z的网格数据
+    # y = np.linspace(0, 0.16, 10)  # X的范围
+    # z = np.linspace(0, 0.3, 10)  # Z的范围
+    # y, z = np.meshgrid(y, z)  # 生成网格
+    #
+    # # 计算对应的x值，y=2
+    # x = np.full_like(y, 1400)
+    #
+    # # 绘制平面
+    # ax.plot_surface(x, y, z, color='white', alpha=0.5)
 
     # # 设置图形格式
     # # ax.set_xlabel('kx (2π/P)', labelpad=12)
@@ -93,8 +97,10 @@ def plot_band_surfaces(data):
     ax.tick_params(axis='y', pad=1, length=15)
     ax.tick_params(axis='z', pad=15, length=15)
     ax.set_box_aspect([1, 1, 2])  # x, y, z 轴的比例
-    # ax.view_init(elev=30, azim=-60+90+75)
-    ax.view_init(elev=30, azim=-60+90+120)
+    azim_angle = -60+90+75
+    # azim_angle = -60+90+120
+    ax.view_init(elev=30, azim=azim_angle)
+    # ax.view_init(elev=30, azim=azim_angle)
 
     # # 添加颜色条
     # sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
@@ -102,11 +108,7 @@ def plot_band_surfaces(data):
     # cbar = plt.colorbar(sm, ax=ax)
     # cbar.set_label('Frequency (THz)')
 
-    plt.savefig(f'./rsl/3D-{cmap.name}-{"EP_band"}.png', dpi=500, bbox_inches='tight', pad_inches=0.3, transparent=True)
-    plt.savefig(f'./rsl/3D-{cmap.name}-{"EP_band"}.svg', bbox_inches='tight', pad_inches=0.3, transparent=True)
+    plt.savefig(f'./rsl/3D-{cmap.name}-{"EP_band"}-k1{selected_params}-azim{azim_angle}-{save_label}.png', dpi=500, bbox_inches='tight', pad_inches=0.3, transparent=True)
+    plt.savefig(f'./rsl/3D-{cmap.name}-{"EP_band"}-k1{selected_params}-azim{azim_angle}-{save_label}.svg', bbox_inches='tight', pad_inches=0.3, transparent=True)
     # plt.show()
 
-# 载入数据并调用函数
-data = pd.read_csv('./data/EP_band.csv', sep='\t').to_numpy()
-# data = pd.read_csv('expanded_VBG-final_design.csv', sep='\t').to_numpy()
-plot_band_surfaces(data)
