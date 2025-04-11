@@ -30,7 +30,7 @@ def generate_pattern(size, radius, back_hole_radius, width):
     # return mask
     return mask
 
-def add_vortex_phase_and_guassian(pattern, waist, charge):
+def add_vortex_phase(pattern, waist, charge):
     """
     Add vortex phase to the pattern.
     """
@@ -43,9 +43,8 @@ def add_vortex_phase_and_guassian(pattern, waist, charge):
     R2 = X**2+Y**2
     theta = np.arctan2(Y, X)
     vortex_phase = np.exp(1j * charge * theta)
-    gaussian_filter = np.exp(-R2/waist**2)
     additional_tern = 1
-    return pattern * vortex_phase * gaussian_filter * additional_tern
+    return pattern * vortex_phase * additional_tern
 
 def add_guassian(pattern, waist):
     """
@@ -79,18 +78,18 @@ def add_spherical_phase(pattern, focal_length):
 def main():
     size = 2048  # Image size
     back_hole_radius = 0  # Radius of the circular hole
-    radius = 200  # Radius of the cross pattern
+    radius = 1000  # Radius of the cross pattern
     waist = 100
-    width = 1/12  # Thickness of the cross lines
+    width = 0/12  # Thickness of the cross lines
     vortex_charge = 2  # Charge of the vortex phase
 
     # Generate pattern
     pattern = generate_pattern(size, radius, back_hole_radius, width)
 
-    # Add vortex phase and Gaussian Distribution
+    # # Add vortex phase and Gaussian Distribution
     pattern = add_guassian(pattern, waist)
-    # pattern_with_phase = add_vortex_phase_and_guassian(pattern, waist, vortex_charge)
-    pattern_with_phase = add_spherical_phase(pattern, 1e-3)
+    pattern_with_phase = add_vortex_phase(pattern, waist, vortex_charge)
+    # pattern_with_phase = add_spherical_phase(pattern, 1e-3)
     # pattern_with_phase = pattern
 
     # Compute Fourier transform

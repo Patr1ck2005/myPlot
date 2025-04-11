@@ -21,7 +21,7 @@ def plot_3D_params_space(
     freq_real = [freq.real for freq in frequencies]  # 实部用于颜色映射
     freq_imag = [freq.imag for freq in frequencies]  # 虚部用于透明度
 
-    freq_min, freq_max = 92, 120
+    freq_min, freq_max = selected_params['freq_lim']
     # freq_length = freq_max-freq_min
     # freq_im_min = 0.0
     # freq_im_max = 0.2
@@ -37,10 +37,10 @@ def plot_3D_params_space(
     # 选择坐标和频率数据进行绘制
     for i, d in enumerate(data):
         buffer, a, k1, freq, freq_real, Q, S_air_prop = d
-        if k1 != selected_params['k1']:
+        if k1 != selected_params.get('k1'):
             print('k1 skip')
             continue
-        if Q < selected_params['Qlim'][1]:
+        if Q < selected_params['Qlim'][0]:
             print('Q skip')
             continue
         # elif S_air_prop > 10:
@@ -55,8 +55,7 @@ def plot_3D_params_space(
 
         edge = False
 
-        # z = freq_re
-        z = freq_im
+        z = freq_re if selected_params.get('z_type') == 'freq_real' else freq_im
 
         # 频率的实部和虚部影响颜色和透明度
         # color = cmap(refreq_norm(freq_re))
@@ -99,12 +98,11 @@ def plot_3D_params_space(
     # ax.set_yticklabels([-0.1, 0, 0.1])
     # ax.set_zticklabels([1800, 1500, 1300])
     # 调整刻度位置
-    ax.tick_params(axis='x', pad=1, length=15)
-    ax.tick_params(axis='y', pad=1, length=15)
-    ax.tick_params(axis='z', pad=15, length=15)
+    # ax.tick_params(axis='x', pad=1, length=15)
+    # ax.tick_params(axis='y', pad=1, length=15)
+    # ax.tick_params(axis='z', pad=15, length=15)
     ax.set_box_aspect([1, 1, 2])  # x, y, z 轴的比例
-    azim_angle = -60+90+75
-    # azim_angle = -60+90+120
+    azim_angle = -60+90+75+180
     ax.view_init(elev=30, azim=azim_angle)
 
     # # 添加颜色条
@@ -113,7 +111,16 @@ def plot_3D_params_space(
     cbar = plt.colorbar(sm, ax=ax, shrink=0.5, aspect=10, pad=0.)
     cbar.set_label('Frequency (THz)')
     params_label = [f'{k}={v}' for k, v in selected_params.items()]
-    plt.savefig(f'./rsl/3D-{cmap.name}-{"EP_band"}-{params_label}-azim{azim_angle}-{save_label}.png', dpi=500, bbox_inches='tight', pad_inches=0.3, transparent=True)
-    plt.savefig(f'./rsl/3D-{cmap.name}-{"EP_band"}-{params_label}-azim{azim_angle}-{save_label}.svg', bbox_inches='tight', pad_inches=0.3, transparent=True)
-    # plt.show()
 
+    plt.savefig(f'./rsl/3D-{save_label}-{params_label}-{cmap.name}-azim{azim_angle}.png', dpi=500, bbox_inches='tight', pad_inches=0.3, transparent=True)
+    plt.savefig(f'./rsl/3D-{save_label}-{params_label}-{cmap.name}-azim{azim_angle}.svg', bbox_inches='tight', pad_inches=0.3, transparent=True)
+
+    azim_angle = -60+90+120
+    ax.view_init(elev=30, azim=azim_angle)
+    plt.savefig(f'./rsl/3D-{save_label}-{params_label}-{cmap.name}-azim{azim_angle}.png', dpi=500, bbox_inches='tight', pad_inches=0.3, transparent=True)
+    plt.savefig(f'./rsl/3D-{save_label}-{params_label}-{cmap.name}-azim{azim_angle}.svg', bbox_inches='tight', pad_inches=0.3, transparent=True)
+
+    azim_angle = -60+90-60
+    ax.view_init(elev=30, azim=azim_angle)
+    plt.savefig(f'./rsl/3D-{save_label}-{params_label}-{cmap.name}-azim{azim_angle}.png', dpi=500, bbox_inches='tight', pad_inches=0.3, transparent=True)
+    plt.savefig(f'./rsl/3D-{save_label}-{params_label}-{cmap.name}-azim{azim_angle}.svg', bbox_inches='tight', pad_inches=0.3, transparent=True)

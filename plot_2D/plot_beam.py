@@ -1,14 +1,16 @@
 from pathlib import Path
 
+import numpy as np
+
 from plot_2D.core.direct_plot_2D import direct_plot_2D
 from utils.utils import load_2D_data
 
 if __name__ == '__main__':
     plot_paras = {
         # 'colormap': 'hot',
-        # 'colormap': 'magma',
+        'colormap': 'magma',
         # 'colormap': 'rainbow',
-        'colormap': 'hsv',
+        # 'colormap': 'hsv',
         # 'colormap': 'twilight',
     }
 
@@ -23,10 +25,13 @@ if __name__ == '__main__':
         twoD_data = load_2D_data(
             data_filename=data_filename,
             data_type=data_type,
-            crop_rate=crop_rate
+            crop_rate=crop_rate,
+            work_dir='../data'
         )
         direct_plot_2D(
-            twoD_data=twoD_data, save_name=f'{data_filename}-crop_rate={crop_rate}',
+            twoD_data=0.1*twoD_data/np.max(twoD_data), save_name=f'{data_filename}-crop_rate={crop_rate}',
             plot_paras=plot_paras,
             show=False,
+            vmax=1,
+            stretch=10,
         )
