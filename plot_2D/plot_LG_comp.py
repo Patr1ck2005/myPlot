@@ -3,16 +3,13 @@ from pathlib import Path
 import numpy as np
 
 from plot_2D.core.direct_plot_2D import direct_plot_2D
-from plot_2D.core.discret_plot import direct_plot_3D, direct_plot_aggregated_bar
+from plot_2D.core.discrete_plot import direct_plot_3D, direct_plot_aggregated_bar
 
 from utils.utils import load_img
 
 if __name__ == '__main__':
     plot_paras = {
-        # 'colormap': 'hot',
-        # 'colormap': 'magma',
-        'colormap': 'gray',
-        'crop': 1.0,
+        'colormap': 'magma',
     }
     # work_dir = 'data/img_data'
     # work_dir = '../data'
@@ -34,19 +31,22 @@ if __name__ == '__main__':
             stretch=100,
         )
         plot_paras_2 = {
-            'font_size': 20,
-            'colormap': 'Blues',
+            'font_size': 18,
+            'colormap': 'magma',
             # 'xlabel': r'$p$',
             # 'ylabel': r'$l$',
             # 'zlabel': 'a.u',
-            'yticks': [0, 5, 10],
-            'ytickslabels': [-5, 0, 5],
+            'yticks': [0, 3, 5, 7, 10],
+            'ytickslabels': [-5, -2, 0, 2, 5],
             'z-a.u': True,
             # 'log_scale': 'log'
+            'log_color': True,
             'view_angle': [30, -60-90],
             'raw_yindex': [5, 16],
-            'box_aspect': [1, 1, 0.6]
-            # 'vmin': 0
+            'box_aspect': [1, 1, 0.6],
+            # 'vmin': 0,
+            # 'vmax': 3,
+            'grid': True,
         }
         data_2D = data_2D[5:16, :]
         direct_plot_3D(
@@ -58,13 +58,15 @@ if __name__ == '__main__':
         plot_paras_3 = {
             'font_size': 20,
             'title': None,
-            'colormap': 'Blues',
-            'bar_color': 'gray',
-            # 'xlabel': r'$p$',
-            # 'ylabel': r'$l$',
-            # 'zlabel': 'a.u',
-            'yticks': [0, 5, 10],
-            'ytickslabels': [-5, 0, 5],
+            'colormap': 'magma',
+            'bar_color': 'black',
+            'bulk_bar': True,
+            'xlabel': None,
+            'ylabel': None,
+            'zlabel': None,
+            'yticks': [0, 1],
+            'ytickslabels': [],
+            'xtickslabels': [],
             'z-a.u': True,
             # 'log_scale': 'log'
             'view_angle': [30, -60-90],
@@ -73,6 +75,7 @@ if __name__ == '__main__':
             'vmax': 1,
             'zlim': [0, 1],
             'mark_value': False,
+            'grid': True,
         }
         direct_plot_aggregated_bar(
             data_2D,

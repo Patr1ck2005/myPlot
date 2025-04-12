@@ -25,15 +25,14 @@ def plot_2d_function(f, x_range, y_range, cmap_name, filename='function_plot.png
     norm = plt.Normalize(vmin=np.min(Z), vmax=1)
     norm = plt.Normalize(vmin=np.min(Z), vmax=np.max(Z))
     Z_norm = norm(Z)
-    Z_norm = abs(Z_norm)**2
 
     # # 获取颜色映射
     # cmap = plt.get_cmap(cmap_name)
 
     vortex_pattern = (2*(np.atan(Y / X))+np.pi)/np.pi/2
     # 获取颜色映射
-    # cmap = plt.get_cmap('twilight')
-    cmap = plt.get_cmap('hsv')
+    cmap = plt.get_cmap('twilight')
+    # cmap = plt.get_cmap('hsv')
 
     # spherical_pattern = np.angle(np.exp(1j * 10*(X**2 + Y**2) + 1j*np.pi))
     # spherical_pattern = (spherical_pattern+np.pi)/np.pi/2
@@ -55,7 +54,7 @@ def plot_2d_function(f, x_range, y_range, cmap_name, filename='function_plot.png
     fig, ax = plt.subplots(figsize=(8, 6))
 
     # 绘制热图
-    im = ax.imshow(composite_img, extent=(x_range[0], x_range[1], y_range[0], y_range[1]), origin='lower', **kwargs)
+    im = ax.imshow(rgba_img, extent=(x_range[0], x_range[1], y_range[0], y_range[1]), origin='lower', **kwargs)
     # cbar = fig.colorbar(im, ax=ax, label='f(x, y)')  # 添加颜色条
     ax.set_xlabel('x')
     ax.set_ylabel('y')

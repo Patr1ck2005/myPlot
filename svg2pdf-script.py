@@ -32,6 +32,6 @@ def main(working_directory):
     print("转换完成！")
 
 if __name__ == '__main__':
-    # main(r'D:\DELL\Documents\myPlots\examples')
-    main(r'D:\DELL\Documents\myPlots\examples\SM')
+    main(r'D:\DELL\Documents\myPlots\examples')
+    # main(r'D:\DELL\Documents\myPlots\examples\SM')
 
