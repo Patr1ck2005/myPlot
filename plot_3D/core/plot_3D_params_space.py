@@ -1,126 +1,132 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 import pandas as pd
 
-def plot_3D_params_space(
-        data,
-        save_label,
-        selected_params,
-        cmap,
-        zlim=None,
-        norm_zlim=None,
+
+def create_data_grid(
+        df: pd.DataFrame,
+        param_keys: list,
+        z_key: str,
+        aggregator=None
 ):
-    # 准备绘图
-    plt.rcParams['font.size'] = 16
-    fig = plt.figure(figsize=(12, 12))
-    ax = fig.add_subplot(111, projection='3d')
+    """
+    根据指定的参数组合 (param_keys) 和目标数据列 (z_key) 构造多维数据网格，
+    每个参数组合对应的目标数据可能有多个，默认收集为列表，
+    可通过 aggregator 参数对列表数据进行聚合处理。
 
-    # 提取频率并归一化
-    frequencies = [complex(d[3].replace('i', 'j')) for d in data]  # 提取复数频率
-    freq_real = [freq.real for freq in frequencies]  # 实部用于颜色映射
-    freq_imag = [freq.imag for freq in frequencies]  # 虚部用于透明度
+    参数:
+        df: 原始数据集 (DataFrame)，数据集由各参数组合生成，每一行对应一种组合下的观测值
+        param_keys: 需要处理的参数名称列表，例如 ["w1 (nm)", "buffer (nm)", "h_grating (nm)"]
+        z_key: 最终结果数据的列名，例如 "特征频率 (THz)" 或其他经过后处理的结果
+        aggregator: 可选的聚合函数，接受列表作为输入，返回单一值，比如 np.mean、np.median 等，
+                    若为 None，则每个单元存放该组合下所有值的列表
 
-    freq_min, freq_max = selected_params['freq_lim']
-    # freq_length = freq_max-freq_min
-    # freq_im_min = 0.0
-    # freq_im_max = 0.2
-    # freq_im_length = freq_im_max-freq_im_min
+    返回:
+        grid_coords: dict，存储每个参数对应的唯一取值（已排序），便于后续查找。例如：
+                     {
+                        "w1 (nm)": np.array([...]),
+                        "buffer (nm)": np.array([...]),
+                        "h_grating (nm)": np.array([...])
+                     }
+        Z: 多维 numpy 数组（dtype=object），维度顺序与 param_keys 相同，
+           每个单元格存放该组合下 z_key 的值列表（或者通过 aggregator 聚合后的值）
+    """
+    grid_coords = {}
+    grid_shape = []
 
-    # 创建颜色映射对象
-    # refreq_norm = plt.Normalize(vmin=freq_min, vmax=freq_max)
-    # imfreq_norm = plt.Normalize(vmin=freq_im_min, vmax=freq_im_max)
-    norm = plt.Normalize(vmin=norm_zlim[0], vmax=norm_zlim[1])
-    # cmap = plt.get_cmap('twilight')
-    cmap = plt.get_cmap(cmap)
+    # 为每个参数获取唯一且排序后的取值
+    for key in param_keys:
+        unique_vals = np.sort(df[key].unique())
+        grid_coords[key] = unique_vals
+        grid_shape.append(len(unique_vals))
 
-    # 选择坐标和频率数据进行绘制
-    for i, d in enumerate(data):
-        buffer, a, k1, freq, freq_real, Q, S_air_prop = d
-        if k1 != selected_params.get('k1'):
-            print('k1 skip')
-            continue
-        if Q < selected_params['Qlim'][0]:
-            print('Q skip')
-            continue
-        # elif S_air_prop > 10:
-        #     print('S_air_prop skip')
-        freq_complex = complex(freq.replace('i', 'j'))
-        freq_re = freq_complex.real
-        freq_im = freq_complex.imag
+    # 创建一个多维数组，每个位置存放一个列表（dtype=object）
+    Z = np.empty(shape=grid_shape, dtype=object)
+    for index in np.ndindex(*grid_shape):
+        Z[index] = []
 
-        if freq_re < freq_min or freq_re > freq_max:
-            print('freq skip')
-            continue
+    # 遍历 DataFrame 中的每一行，将对应的 z_key 值添加到相应位置的列表中
+    for _, row in df.iterrows():
+        indices = []
+        for key in param_keys:
+            # 定位当前值在唯一取值数组中的索引
+            idx = np.where(grid_coords[key] == row[key])[0]
+            if idx.size == 0:
+                raise ValueError(f"数值 {row[key]} 在参数 {key} 中未找到匹配项。")
+            indices.append(idx[0])
+        # 将目标数据添加到对应单元格的列表中
+        Z[tuple(indices)].append(row[z_key])
 
-        edge = False
+    # 如果指定了聚合函数，则对每个单元格的列表进行聚合处理
+    if aggregator is not None:
+        for index in np.ndindex(*grid_shape):
+            try:
+                Z[index] = aggregator(Z[index])
+            except Exception as e:
+                raise ValueError(f"在索引 {index} 应用 aggregator 函数时出现错误: {e}")
 
-        z = freq_re if selected_params.get('z_type') == 'freq_real' else freq_im
+    return grid_coords, Z
 
-        # 频率的实部和虚部影响颜色和透明度
-        # color = cmap(refreq_norm(freq_re))
-        # color = cmap(imfreq_norm(freq_im))
-        color = cmap(norm(z))
-        # alpha = np.clip(30/Q/2, 0, 1)  # 透明度由虚部控制
-        alpha = 1  # 透明度由虚部控制
 
-        # 绘制曲面
-        if edge:
-            ax.scatter(buffer, a, z, color=color, alpha=alpha, s=10, edgecolors='black', linewidths=2)  # 使用散点绘图
-        else:
-            ax.scatter(buffer, a, z, color=color, alpha=alpha, s=10)
+def query_data_grid(
+        grid_coords: dict,
+        Z: np.ndarray,
+        query: dict
+):
+    """
+    根据用户提供的一组参数数值 (query) 查找对应的结果数据，
+    若某一单元格内的数据为列表，则直接返回该列表（或聚合后的单一值）。
 
-    if zlim is not None:
-        ax.set_zlim(zlim)
-    # # 创建X和Z的网格数据
-    # y = np.linspace(0, 0.16, 10)  # X的范围
-    # z = np.linspace(0, 0.3, 10)  # Z的范围
-    # y, z = np.meshgrid(y, z)  # 生成网格
-    #
-    # # 计算对应的x值，y=2
-    # x = np.full_like(y, 1400)
-    #
-    # # 绘制平面
-    # ax.plot_surface(x, y, z, color='white', alpha=0.5)
+    参数:
+        grid_coords: 从 create_data_grid 返回的参数唯一取值字典
+        Z: 多维数据数组 (对应 create_data_grid 返回的 Z)
+        query: dict，键为参数名称，值为要查询的数值，例如：
+               {"w1 (nm)": 215.00, "buffer (nm)": 1345.0, "h_grating (nm)": 113.50}
 
-    # # 设置图形格式
-    # # ax.set_xlabel('kx (2π/P)', labelpad=12)
-    # # ax.set_ylabel('ky (2π/P)', labelpad=12)
-    # # ax.set_zlabel('Frequency (THz)', labelpad=30)
-    # # ax.grid(False)
-    # ax.set_xlim(-0.15, 0.15)
-    # ax.set_ylim(-0.15, 0.15)
-    # ax.set_zlim(freq_min-.05*freq_length, freq_max+.1*freq_length)
-    # ax.set_xticks([-0.1, 0, 0.1])
-    # ax.set_yticks([-0.1, 0, 0.1])
-    # ax.set_zticks([100, 120, 140])
-    # ax.set_xticklabels([-0.1, 0, 0.1])
-    # ax.set_yticklabels([-0.1, 0, 0.1])
-    # ax.set_zticklabels([1800, 1500, 1300])
-    # 调整刻度位置
-    # ax.tick_params(axis='x', pad=1, length=15)
-    # ax.tick_params(axis='y', pad=1, length=15)
-    # ax.tick_params(axis='z', pad=15, length=15)
-    ax.set_box_aspect([1, 1, 2])  # x, y, z 轴的比例
-    azim_angle = -60+90+75+180
-    ax.view_init(elev=30, azim=azim_angle)
+    返回:
+        对应参数组合下的目标数据（可能为列表或单个聚合值）
+    """
+    indices = []
+    for key, value in query.items():
+        if key not in grid_coords:
+            raise ValueError(f"参数 {key} 不在网格坐标中")
+        idx = np.where(grid_coords[key] == value)[0]
+        if idx.size == 0:
+            raise ValueError(f"值 {value} 对应的参数 {key} 未找到。")
+        indices.append(idx[0])
 
-    # # 添加颜色条
-    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
-    sm.set_array([])  # 空数组用于生成颜色条
-    cbar = plt.colorbar(sm, ax=ax, shrink=0.5, aspect=10, pad=0.)
-    cbar.set_label('Frequency (THz)')
-    params_label = [f'{k}={v}' for k, v in selected_params.items()]
+    return Z[tuple(indices)]
 
-    plt.savefig(f'./rsl/3D-{save_label}-{params_label}-{cmap.name}-azim{azim_angle}.png', dpi=500, bbox_inches='tight', pad_inches=0.3, transparent=True)
-    plt.savefig(f'./rsl/3D-{save_label}-{params_label}-{cmap.name}-azim{azim_angle}.svg', bbox_inches='tight', pad_inches=0.3, transparent=True)
 
-    azim_angle = -60+90+120
-    ax.view_init(elev=30, azim=azim_angle)
-    plt.savefig(f'./rsl/3D-{save_label}-{params_label}-{cmap.name}-azim{azim_angle}.png', dpi=500, bbox_inches='tight', pad_inches=0.3, transparent=True)
-    plt.savefig(f'./rsl/3D-{save_label}-{params_label}-{cmap.name}-azim{azim_angle}.svg', bbox_inches='tight', pad_inches=0.3, transparent=True)
+# 示例使用
+if __name__ == "__main__":
+    data_path = '../data/3EP-test.csv'
+    df_sample = pd.read_csv(data_path, sep='\t')
 
-    azim_angle = -60+90-60
-    ax.view_init(elev=30, azim=azim_angle)
-    plt.savefig(f'./rsl/3D-{save_label}-{params_label}-{cmap.name}-azim{azim_angle}.png', dpi=500, bbox_inches='tight', pad_inches=0.3, transparent=True)
-    plt.savefig(f'./rsl/3D-{save_label}-{params_label}-{cmap.name}-azim{azim_angle}.svg', bbox_inches='tight', pad_inches=0.3, transparent=True)
+    # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
+    def convert_complex(freq_str):
+        return complex(freq_str.replace('i', 'j'))
+    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(lambda c: c.real)
+
+    # 指定用于构造网格的参数以及目标数据列
+    param_keys = ["w1 (nm)", "buffer (nm)", "h_grating (nm)", "a", "bg_n"]
+    z_key = "特征频率 (THz)"
+
+    # 构造数据网格，此处不进行聚合，每个单元格保存列表
+    grid_coords, Z = create_data_grid(df_sample, param_keys, z_key)
+    print("网格参数：")
+    for key, arr in grid_coords.items():
+        print(f"  {key}: {arr}")
+    print("数据网格 Z 的形状：", Z.shape)
+    print("数据网格 Z：\n", Z)
+
+    # 如果希望对结果进行聚合，例如取平均值
+    grid_coords_agg, Z_agg = create_data_grid(df_sample, param_keys, z_key, aggregator=np.mean)
+    print("\n使用 np.mean 聚合后的数据网格：\n", Z_agg)
+
+    # 示例查询某个参数组合对应的数据
+    query = {"w1 (nm)": 215.00, "buffer (nm)": 1345.0, "h_grating (nm)": 113.50, "a": 0.0085000, "bg_n": 1.3330}
+    result = query_data_grid(grid_coords, Z, query)
+    print("\n查询结果（保留列表）：", result)
+
+    result_agg = query_data_grid(grid_coords_agg, Z_agg, query)
+    print("查询结果（聚合后的值）：", result_agg)
