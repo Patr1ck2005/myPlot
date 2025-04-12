@@ -1,4 +1,5 @@
-from plot_3D.core.plot_3D_params_space import plot_Z_diff
+from plot_3D.core.plot_3D_params_space import *
+from plot_3D.core.plot_3D_params_space_pv import plot_Z_diff_pyvista
 from plot_3D.core.process_multi_dim_params_space import *
 
 import numpy as np
@@ -106,22 +107,42 @@ if __name__ == '__main__':
     print("示例差值：", Z_diff.flatten()[:10])
 
     # 假设已经得到 new_coords, Z_diff
-    # 画一维曲线：w1 对 Δ频率
-    plot_Z_diff(
+    # 画一维曲线：w1 对 Δ
+    plot_Z_diff_plt(
         new_coords, Z_diff,
         x_key="a",
         fixed_params={
             "buffer (nm)": 1347.0,
             "h_grating (nm)": 115.5,
-            "w1 (nm)": 219.
+            "w1 (nm)": 221.
         },
         plot_params={
             'zlabel': 'RIU'
         }
     )
-
     # 画二维曲面：w1 vs buffer 对 Δ频率
-    plot_Z_diff(
+    plot_params = {
+        'zlabel': 'RIU',
+        'cmap1': 'Blues',
+        'cmap2': 'OrRd',
+        'log_scale': True,
+        'alpha': 1,
+        'show_live': True,
+        'data_scale': [10000, 1, 1]
+    }
+    # for h_g in [113.5, 114.5, 115.5, 116.5, 117.5]:
+    #     for buffer in [1345., 1346., 1347., 1348., 1349.]:
+    #         plot_Z_diff_pyvista(
+    #             new_coords, Z_diff,
+    #             x_key="a",
+    #             y_key="w1 (nm)",
+    #             fixed_params={
+    #                 "h_grating (nm)": h_g,
+    #                 "buffer (nm)": buffer,
+    #             },
+    #             plot_params=plot_params
+    #         )
+    plot_Z_diff_pyvista(
         new_coords, Z_diff,
         x_key="a",
         y_key="w1 (nm)",
@@ -129,10 +150,5 @@ if __name__ == '__main__':
             "h_grating (nm)": 115.5,
             "buffer (nm)": 1347.0,
         },
-        plot_params={
-            'zlabel': r'$log_{10}RIU$',
-            'cmap1': 'magma',
-            'cmap2': 'Blues',
-            'log_scale': True,
-        }
+        plot_params=plot_params
     )
