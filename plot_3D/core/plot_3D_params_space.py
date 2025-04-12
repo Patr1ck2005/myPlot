@@ -1,132 +1,151 @@
 import numpy as np
-import pandas as pd
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import re
+import os
 
-
-def create_data_grid(
-        df: pd.DataFrame,
-        param_keys: list,
-        z_key: str,
-        aggregator=None
+def plot_Z_diff(
+        new_coords,
+        Z_diff,
+        x_key,
+        plot_params,
+        y_key=None,
+        fixed_params=None,
 ):
     """
-    根据指定的参数组合 (param_keys) 和目标数据列 (z_key) 构造多维数据网格，
-    每个参数组合对应的目标数据可能有多个，默认收集为列表，
-    可通过 aggregator 参数对列表数据进行聚合处理。
+    根据 new_coords 和 Z_diff，指定一个或两个 key 作为坐标轴，其它 key 固定，绘制 Z_diff 的曲线或曲面，
+    并保存绘图文件（文件名中包含绘图参数）。
 
-    参数:
-        df: 原始数据集 (DataFrame)，数据集由各参数组合生成，每一行对应一种组合下的观测值
-        param_keys: 需要处理的参数名称列表，例如 ["w1 (nm)", "buffer (nm)", "h_grating (nm)"]
-        z_key: 最终结果数据的列名，例如 "特征频率 (THz)" 或其他经过后处理的结果
-        aggregator: 可选的聚合函数，接受列表作为输入，返回单一值，比如 np.mean、np.median 等，
-                    若为 None，则每个单元存放该组合下所有值的列表
+    参数：
+        new_coords: dict，键为参数名，值为该参数的坐标数组（已排序）。
+        Z_diff: np.ndarray，多维数组，维度与 new_coords 顺序一致，存放差值数据。
+        x_key: str，要作为横坐标的参数名。
+        plot_params: dict，绘图时的一些参数，例如：
+            - 'cmap1': 实部使用的 colormap 名称
+            - 'cmap2': 虚部使用的 colormap 名称
+            - 'log_scale': 是否对数显示（True/False）
+            - 'zlabel': z 轴标签文本
+            - 'ylabel': 用于标题中的描述文字
+            - 'alpha': 曲面透明度（0~1之间，一般取 0.5-0.7）
+        y_key: str or None，要作为纵坐标的参数名；若为 None，则绘制一维曲线图。
+        fixed_params: dict，固定其它参数的取值，例如 {"a": 0.0085}。
+                      固定参数的键应为 new_coords 中除 x_key, y_key 外的参数名。
 
-    返回:
-        grid_coords: dict，存储每个参数对应的唯一取值（已排序），便于后续查找。例如：
-                     {
-                        "w1 (nm)": np.array([...]),
-                        "buffer (nm)": np.array([...]),
-                        "h_grating (nm)": np.array([...])
-                     }
-        Z: 多维 numpy 数组（dtype=object），维度顺序与 param_keys 相同，
-           每个单元格存放该组合下 z_key 的值列表（或者通过 aggregator 聚合后的值）
+    绘图文件将以 "plot_<参数信息>.png" 命名，并保存在当前工作目录。
+    例如：
+        # 一维曲线
+        plot_Z_diff(new_coords, Z_diff,
+                    x_key="w1 (nm)",
+                    plot_params={
+                        'zlabel': "Δ频率 (kHz)",
+                        'ylabel': "Δ频率实部 (kHz)",
+                        'alpha': 1.0
+                    },
+                    fixed_params={"buffer (nm)": 1345.0, "h_grating (nm)": 113.5, "a": 0.0085})
+
+        # 二维曲面
+        plot_Z_diff(new_coords, Z_diff,
+                    x_key="w1 (nm)",
+                    y_key="buffer (nm)",
+                    plot_params={
+                        'cmap1': 'viridis',
+                        'cmap2': 'plasma',
+                        'log_scale': False,
+                        'zlabel': "Δ频率 (kHz)",
+                        'alpha': 0.6
+                    },
+                    fixed_params={"h_grating (nm)": 113.5, "a": 0.0085})
     """
-    grid_coords = {}
-    grid_shape = []
+    # 1. 参数检查
+    keys = list(new_coords.keys())
+    assert x_key in keys, f"{x_key} 不在 new_coords 中"
+    if y_key:
+        assert y_key in keys and y_key != x_key, f"{y_key} 不在 new_coords 中或与 {x_key} 重复"
+    fixed_params = fixed_params or {}
+    for k in fixed_params:
+        assert k in keys and k not in (x_key, y_key), f"固定参数 {k} 无效"
 
-    # 为每个参数获取唯一且排序后的取值
-    for key in param_keys:
-        unique_vals = np.sort(df[key].unique())
-        grid_coords[key] = unique_vals
-        grid_shape.append(len(unique_vals))
+    # 2. 构建切片索引：对每个维度确定要选哪一组索引
+    #    对 x_key, y_key 设为 slice(None)，其它根据 fixed_params 找到具体索引
+    slicer = []
+    for k in keys:
+        if k == x_key or k == y_key:
+            slicer.append(slice(None))
+        else:
+            val = fixed_params.get(k)
+            assert val is not None, f"参数 {k} 未在 fixed_params 中指定"
+            idx = np.where(new_coords[k] == val)[0]
+            assert idx.size == 1, f"{k} 中未找到值 {val}"
+            slicer.append(idx[0])
+    slicer = tuple(slicer)
 
-    # 创建一个多维数组，每个位置存放一个列表（dtype=object）
-    Z = np.empty(shape=grid_shape, dtype=object)
-    for index in np.ndindex(*grid_shape):
-        Z[index] = []
+    # 3. 取出子数组
+    sub = Z_diff[slicer]
+    x_vals = new_coords[x_key]
 
-    # 遍历 DataFrame 中的每一行，将对应的 z_key 值添加到相应位置的列表中
-    for _, row in df.iterrows():
-        indices = []
-        for key in param_keys:
-            # 定位当前值在唯一取值数组中的索引
-            idx = np.where(grid_coords[key] == row[key])[0]
-            if idx.size == 0:
-                raise ValueError(f"数值 {row[key]} 在参数 {key} 中未找到匹配项。")
-            indices.append(idx[0])
-        # 将目标数据添加到对应单元格的列表中
-        Z[tuple(indices)].append(row[z_key])
+    # 提取绘图参数
+    cmap1_name = plot_params.get('cmap1', 'viridis')
+    cmap2_name = plot_params.get('cmap2', 'plasma')
+    log_scale = plot_params.get('log_scale', False)
+    zlabel = plot_params.get('zlabel', "Δ")
+    ylabel_title = plot_params.get('ylabel', "Δ")
+    alpha_val = plot_params.get('alpha', 0.6)  # 半透明参数
 
-    # 如果指定了聚合函数，则对每个单元格的列表进行聚合处理
-    if aggregator is not None:
-        for index in np.ndindex(*grid_shape):
-            try:
-                Z[index] = aggregator(Z[index])
-            except Exception as e:
-                raise ValueError(f"在索引 {index} 应用 aggregator 函数时出现错误: {e}")
+    # 4. 绘图
+    if y_key is None:
+        # 一维曲线图
+        y_vals = sub/0.001  # 对数据进行缩放（根据实际需要调整）
+        plt.figure(figsize=(8, 6))
+        plt.plot(x_vals, y_vals.real, label='real', color='blue')
+        if sub.dtype == np.dtype(complex):
+            plt.plot(x_vals, y_vals.imag, label='imag', color='red', linestyle='--')
+        plt.xlabel(x_key)
+        plt.ylabel(zlabel)
+        plt.title(f"{x_key} vs {ylabel_title} @ {fixed_params}")
+        plt.grid(True)
+        plt.legend()
+        fig = plt.gcf()
+    else:
+        # 二维曲面
+        y_vals = new_coords[y_key]
+        X, Y = np.meshgrid(x_vals, y_vals, indexing='ij')
+        # 注意：sub 的 shape 应为 (len(x_vals), len(y_vals))
+        Z = sub.T/0.001  # 将数据进行缩放
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(111, projection='3d')
 
-    return grid_coords, Z
+        # 根据 log_scale 选择绘图数据
+        if log_scale:
+            Z_real_plot = np.log10(np.abs(Z.real))
+            Z_imag_plot = np.log10(np.abs(Z.imag))
+        else:
+            Z_real_plot = Z.real
+            Z_imag_plot = Z.imag
 
+        # 绘制实部曲面
+        surf1 = ax.plot_surface(X, Y, Z_real_plot, cmap=cmap1_name,
+                                alpha=alpha_val, edgecolor='none')
+        # 绘制虚部曲面；为了保证交互性，先绘制一部分，再次绘制交叠区域
+        if sub.dtype == np.dtype(complex):
+            surf2 = ax.plot_surface(X, Y, Z_imag_plot, cmap=cmap2_name,
+                                    alpha=alpha_val, edgecolor='none')
+        ax.set_xlabel(x_key)
+        ax.set_ylabel(y_key)
+        ax.set_zlabel(zlabel)
+        ax.set_title(f"{x_key} vs {y_key} @ { {k: v for k, v in fixed_params.items()} }")
+        fig.colorbar(surf1, ax=ax, shrink=0.5, aspect=20, pad=0.0)
+        fig.colorbar(surf2, ax=ax, shrink=0.5, aspect=20, pad=0.1)
+    plt.tight_layout()
 
-def query_data_grid(
-        grid_coords: dict,
-        Z: np.ndarray,
-        query: dict
-):
-    """
-    根据用户提供的一组参数数值 (query) 查找对应的结果数据，
-    若某一单元格内的数据为列表，则直接返回该列表（或聚合后的单一值）。
-
-    参数:
-        grid_coords: 从 create_data_grid 返回的参数唯一取值字典
-        Z: 多维数据数组 (对应 create_data_grid 返回的 Z)
-        query: dict，键为参数名称，值为要查询的数值，例如：
-               {"w1 (nm)": 215.00, "buffer (nm)": 1345.0, "h_grating (nm)": 113.50}
-
-    返回:
-        对应参数组合下的目标数据（可能为列表或单个聚合值）
-    """
-    indices = []
-    for key, value in query.items():
-        if key not in grid_coords:
-            raise ValueError(f"参数 {key} 不在网格坐标中")
-        idx = np.where(grid_coords[key] == value)[0]
-        if idx.size == 0:
-            raise ValueError(f"值 {value} 对应的参数 {key} 未找到。")
-        indices.append(idx[0])
-
-    return Z[tuple(indices)]
-
-
-# 示例使用
-if __name__ == "__main__":
-    data_path = '../data/3EP-test.csv'
-    df_sample = pd.read_csv(data_path, sep='\t')
-
-    # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
-    def convert_complex(freq_str):
-        return complex(freq_str.replace('i', 'j'))
-    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(lambda c: c.real)
-
-    # 指定用于构造网格的参数以及目标数据列
-    param_keys = ["w1 (nm)", "buffer (nm)", "h_grating (nm)", "a", "bg_n"]
-    z_key = "特征频率 (THz)"
-
-    # 构造数据网格，此处不进行聚合，每个单元格保存列表
-    grid_coords, Z = create_data_grid(df_sample, param_keys, z_key)
-    print("网格参数：")
-    for key, arr in grid_coords.items():
-        print(f"  {key}: {arr}")
-    print("数据网格 Z 的形状：", Z.shape)
-    print("数据网格 Z：\n", Z)
-
-    # 如果希望对结果进行聚合，例如取平均值
-    grid_coords_agg, Z_agg = create_data_grid(df_sample, param_keys, z_key, aggregator=np.mean)
-    print("\n使用 np.mean 聚合后的数据网格：\n", Z_agg)
-
-    # 示例查询某个参数组合对应的数据
-    query = {"w1 (nm)": 215.00, "buffer (nm)": 1345.0, "h_grating (nm)": 113.50, "a": 0.0085000, "bg_n": 1.3330}
-    result = query_data_grid(grid_coords, Z, query)
-    print("\n查询结果（保留列表）：", result)
-
-    result_agg = query_data_grid(grid_coords_agg, Z_agg, query)
-    print("查询结果（聚合后的值）：", result_agg)
+    # 5. 自动生成文件名，并保存图像
+    # 文件名将基于 plot_params 中的键值（为了简单，只使用部分关键信息）
+    def safe_str(val):
+        return re.sub(r'[^\w.-]', '', str(val))
+    param_items = [f"{k}-{safe_str(v)}" for k, v in sorted(plot_params.items())]
+    filename = "plot_" + "_".join(param_items) + ".png"
+    # 如果文件名过长，可以截断或采用 hash 值，这里仅作简单处理
+    if len(filename) > 200:
+        filename = filename[:200] + ".png"
+    plt.savefig(filename, dpi=300, bbox_inches="tight")
+    print(f"图像已保存为：{filename}")
+    plt.show()
