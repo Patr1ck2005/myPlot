@@ -95,6 +95,11 @@ def direct_plot_3D(
 
     # 坐标轴与视角设置
     if plot_paras:
+        if 'z-a.u' in plot_paras:
+            z_ticks = np.linspace(dz.min(), dz.max(), 3, endpoint=True)
+            z_ticklabels = np.linspace(0, 1, 3, endpoint=True)
+            ax.set_zticks(z_ticks)
+            ax.set_zticklabels(z_ticklabels)
         if 'xlabel' in plot_paras:
             ax.set_xlabel(plot_paras['xlabel'])
         if 'ylabel' in plot_paras:
@@ -122,13 +127,11 @@ def direct_plot_3D(
         if 'view_angle' in plot_paras:
             elev, azim = plot_paras['view_angle']
             ax.view_init(elev=elev, azim=azim)
-        if 'z-a.u' in plot_paras:
-            z_ticks = np.linspace(dz.min(), dz.max(), 3, endpoint=True)
-            z_ticklabels = np.linspace(0, 1, 3, endpoint=True)
-            ax.set_zticks(z_ticks)
-            ax.set_zticklabels(z_ticklabels)
         if 'box_aspect' in plot_paras:
             ax.set_box_aspect(plot_paras['box_aspect'])
+        ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+        ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
 
     # 构造保存文件名，将参数字典转为字符串（去除特殊字符）
     dict_str = json.dumps(plot_paras, separators=(',', ':')) if plot_paras else ""
@@ -210,7 +213,7 @@ def direct_plot_aggregated_bar(
 
     # 柱宽设定（此处设为 0.8，可根据需要调整）
     bar_width = 0.8
-
+    print(max(proportions))
     # 对于每个柱，使用 imshow 绘制垂直方向的渐变
     for i, prop in enumerate(proportions):
         # 每个柱的中心位置

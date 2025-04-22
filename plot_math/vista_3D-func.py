@@ -1,6 +1,5 @@
 import numpy as np
 import pyvista as pv
-from plot_math.tcmt import TCMTSolver  # 根据实际情况确认此模块是否需要
 
 
 # 如果 utils 中的 clear_ax_ticks 用于 2D 绘图，可以根据需要决定是否保留引用
@@ -30,7 +29,7 @@ def create_paraboloid(kx_range, ky_range, resolution, omega_Gamma, a_1, a_2, sca
     grid = pv.StructuredGrid(KX, KY, omega)
     grid.point_data[scalar_field] = omega.flatten()
     R2 = (KX ** 2 + KY ** 2)
-    efficiency = 0 + np.exp(-R2/4*0)*np.clip(R2*2, 0, 0.8)
+    efficiency = 0 + np.exp(-R2/4*0)*np.clip(R2*2, 0, 0.8)*0.25/0.8
     grid.point_data['efficiency'] = efficiency.flatten()
 
     return grid

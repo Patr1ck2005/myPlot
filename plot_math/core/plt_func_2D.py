@@ -31,14 +31,16 @@ def plot_2d_function(f, x_range, y_range, cmap_name, filename='function_plot.png
 
     vortex_pattern = (2*(np.atan(Y / X))+np.pi)/np.pi/2
     # 获取颜色映射
-    cmap = plt.get_cmap('twilight')
+    cmap = plt.get_cmap('magma')
+    # cmap = plt.get_cmap('twilight')
     # cmap = plt.get_cmap('hsv')
 
     # spherical_pattern = np.angle(np.exp(1j * 10*(X**2 + Y**2) + 1j*np.pi))
     # spherical_pattern = (spherical_pattern+np.pi)/np.pi/2
 
     # 应用颜色映射获得 RGBA 图像
-    rgba_img = cmap(vortex_pattern)
+    # rgba_img = cmap(vortex_pattern)
+    rgba_img = cmap(Z_norm)
 
     # 将透明度通道设定为标准化后的函数值（也可以根据需要进行非线性变换）
     rgba_img[..., 3] = Z_norm
