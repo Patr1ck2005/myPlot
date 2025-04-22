@@ -265,6 +265,7 @@ def plot_Z_diff_plt(
     zlabel = plot_params.get('zlabel', "Δ")
     ylabel_title = plot_params.get('ylabel', "Δ")
     alpha_val = plot_params.get('alpha', 1.0)  # 半透明参数
+    plot_imaginary = plot_params.get('imag', True)  # 半透明参数
 
     # 4. 绘图
     if y_key is None:
@@ -272,13 +273,15 @@ def plot_Z_diff_plt(
         y_vals = sub/0.001  # 对数据进行缩放（根据实际需要调整）
         plt.figure(figsize=(8, 6))
         plt.plot(x_vals, y_vals.real, label='real', color='blue')
-        if sub.dtype == np.dtype(complex):
+        if sub.dtype == np.dtype(complex) and plot_imaginary:
             plt.plot(x_vals, y_vals.imag, label='imag', color='red', linestyle='--')
         plt.xlabel(x_key)
         plt.ylabel(zlabel)
         plt.title(f"{x_key} vs {ylabel_title} @ {fixed_params}")
         plt.grid(True)
         plt.legend()
+        if log_scale:
+            plt.yscale('log')
         fig = plt.gcf()
     else:
         # 二维曲面
@@ -301,7 +304,7 @@ def plot_Z_diff_plt(
         surf1 = ax.plot_surface(X, Y, Z_real_plot, cmap=cmap1_name,
                                 alpha=alpha_val, edgecolor='none')
         # 绘制虚部曲面；为了保证交互性，先绘制一部分，再次绘制交叠区域
-        if sub.dtype == np.dtype(complex):
+        if sub.dtype == np.dtype(complex) and plot_imaginary:
             surf2 = ax.plot_surface(X, Y, Z_imag_plot, cmap=cmap2_name,
                                     alpha=alpha_val, edgecolor='none')
         ax.set_xlabel(x_key)

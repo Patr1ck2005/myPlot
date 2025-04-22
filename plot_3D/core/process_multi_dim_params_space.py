@@ -96,37 +96,64 @@ def query_data_grid(
 
     return Z[tuple(indices)]
 
+def compress_data_axis(coords, data, axis_key, aggregator=np.max, selection_range=None):
+    """
+    压缩数据数组的某一维度，对指定参数 axis_key 进行聚合计算。
+    可以选择只对该轴中部分索引（例如第2到第5个）应用聚合函数。
 
-# 示例使用
-if __name__ == "__main__":
-    data_path = '../data/3EP-test.csv'
-    df_sample = pd.read_csv(data_path, sep='\t')
+    参数:
+        coords: dict
+            坐标字典，键为参数名，值为该参数的所有取值构成的数组，
+            且顺序与 data 数组各维度顺序对应。
+        data: np.ndarray
+            多维数据数组，其各维度与 coords 中键的顺序相一致。
+        axis_key: str
+            要压缩的参数名称，比如 "a"。
+        reduce_func: function, 可选
+            用于在指定轴上进行聚合的函数，默认使用 np.max。
+        selection_range: tuple 或 slice, 可选
+            指定一个索引范围，只聚合该参数维度中对应的部分数据。
+            例如 (1, 5) 表示只聚合第2到第5个（注意：Python 中索引从0开始）。
+            如果为 None，则对整个轴进行聚合。
 
-    # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
-    def convert_complex(freq_str):
-        return complex(freq_str.replace('i', 'j'))
-    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(lambda c: c.real)
+    返回:
+        new_coords: dict
+            去除了 axis_key 后的坐标字典。
+        new_data: np.ndarray
+            压缩后的数据数组，其维度比原数组少 1。
+    """
+    # 1. 获取参数字典的键列表，找出 axis_key 在哪个位置
+    keys = list(coords.keys())
+    if axis_key not in keys:
+        raise KeyError(f"参数字典中不存在 key '{axis_key}'")
+    axis_index = keys.index(axis_key)
 
-    # 指定用于构造网格的参数以及目标数据列
-    param_keys = ["w1 (nm)", "buffer (nm)", "h_grating (nm)", "a", "bg_n"]
-    z_key = "特征频率 (THz)"
+    # 2. 根据 selection_range 判断在该维度上只选取子区间进行聚合
+    if selection_range is not None:
+        # 如果传入的是 tuple，则构造 slice 对象
+        if isinstance(selection_range, tuple):
+            slicer = slice(*selection_range)
+        elif isinstance(selection_range, slice):
+            slicer = selection_range
+        else:
+            raise TypeError("selection_range 应为 tuple 或 slice 类型")
 
-    # 构造数据网格，此处不进行聚合，每个单元格保存列表
-    grid_coords, Z = create_data_grid(df_sample, param_keys, z_key)
-    print("网格参数：")
-    for key, arr in grid_coords.items():
-        print(f"  {key}: {arr}")
-    print("数据网格 Z 的形状：", Z.shape)
-    print("数据网格 Z：\n", Z)
+        # 构造对 data 进行切片的切片元组：
+        # 对于指定的 axis_index，使用 slicer，其它维度使用 slice(None)
+        slicers = [slice(None)] * data.ndim
+        slicers[axis_index] = slicer
+        # 对选定部分数据应用切片
+        data_selected = data[tuple(slicers)]
+    else:
+        data_selected = data
 
-    # 如果希望对结果进行聚合，例如取平均值
-    grid_coords_agg, Z_agg = create_data_grid(df_sample, param_keys, z_key, aggregator=np.mean)
-    print("\n使用 np.mean 聚合后的数据网格：\n", Z_agg)
+    # 3. 在选定的数据上沿 axis_index 维度进行聚合计算，
+    # 注意：由于 data_selected 可能维度与 data 相同（即全部数据）或者该轴已被切片到部分数据，
+    # 使用 reduce_func 并移除该维度得到压缩后的数据
+    new_data = aggregator(data_selected, axis=axis_index)
 
-    # 示例查询某个参数组合对应的数据
-    query = {"w1 (nm)": 215.00, "buffer (nm)": 1345.0, "h_grating (nm)": 113.50, "a": 0.0085000, "bg_n": 1.3330}
-    result = query_data_grid(grid_coords, Z, query)
-    print("\n查询结果（保留列表）：", result)
+    # 4. 在坐标字典中删除被压缩的参数 axis_key，
+    # 同时，如果希望记录被选中那部分对应的坐标值，则可用如下方式（这里默认直接删除）
+    new_coords = {k: v for k, v in coords.items() if k != axis_key}
 
-    result_agg = query_data_grid(grid_coords_agg, Z_agg, query)
-    print("查询结果（聚合后的值）：", result_agg)
+    return new_coords, new_data

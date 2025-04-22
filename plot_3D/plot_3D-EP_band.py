@@ -1,6 +1,6 @@
 import pandas as pd
 
-from core.plot_3D_params_space import plot_3D_params_space
+from core.plot_3D_params_space_plt import plot_3D_params_space
 
 if __name__ == '__main__':
 
