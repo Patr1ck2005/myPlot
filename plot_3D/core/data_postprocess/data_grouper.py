@@ -1,13 +1,11 @@
 import numpy as np
 import random
-
 from matplotlib import pyplot as plt
 from scipy.optimize import linear_sum_assignment
 
-
 def estimate_derivative_one_sided(Zg, assigned, idx, s, axis, delta):
     """
-    在多维数组 Zg 上，沿 axis 方向（整数维度索引）在点 idx 处
+    在多维数组 Zg 上，沿 axis 方向在点 idx 处
     用单边差分估计第 s 条曲面的偏导数。
     优先使用已赋值的后向差分，不可用时使用已赋值的前向差分；
     若都不可用，返回 0.
@@ -33,72 +31,105 @@ def estimate_derivative_one_sided(Zg, assigned, idx, s, axis, delta):
     # 都不可用
     return 0.0
 
-
-def group_surfaces_one_sided_hungarian(Z, deltas, lams):
+def group_surfaces_one_sided_hungarian(
+    Z,
+    deltas,
+    value_weights,
+    deriv_weights,
+    initial_derivatives=None
+):
     """
-    任意 n 维参数空间的分组算法。
-    Z: np.ndarray, dtype=object, shape = dims (tuple of length n),
-       每个元素是长度为 m 的 complex 列表。
-    deltas: list 或 tuple, 长度 n，每个维度的单元格大小 Δ。
-    lams:   list 或 tuple, 长度 n，每个维度的导数连续性权重 λ。
-    返回 Zg: 与 Z 相同 shape 和 dtype，每个元素是已排序的长度 m 的 complex np.array。
-    """
-    dims = Z.shape
-    n_dims = len(dims)
-    origin = tuple([0] * n_dims)
-    m = len(Z[origin])
+    任意 n 维参数空间的分组算法，可用矩阵指定不同生长方向上的
+    值连续性权重（value_weights）与导数连续性权重（deriv_weights）。
 
-    # 初始化 Zg 和 assigned 标记
-    Zg = np.empty(dims, dtype=object)
+    参数
+    ----
+    Z : np.ndarray, dtype=object, shape=dims
+        每个格点存放长度为 m 的 complex 列表（乱序）。
+    deltas : sequence of float, length = n_dims
+        各维度的网格步长 Δ_d。
+    value_weights : np.ndarray, shape=(n_dims, n_dims)
+        生长方向 d（行）对应的“值差”权重向量，列索引 j。
+    deriv_weights : np.ndarray, shape=(n_dims, n_dims)
+        生长方向 d（行）对应的“导数不连续”权重向量，列索引 j。
+    initial_derivatives : optional np.ndarray, shape=(m, n_dims)
+        原点处 m 条曲面的初始偏导数猜测值。
+
+    返回
+    ----
+    Zg : np.ndarray, same shape and dtype as Z
+        每个点存放已排序（按曲面索引）长度 m 的 complex np.array。
+    """
+    dims    = Z.shape
+    n_dims  = len(dims)
+    origin  = tuple([0] * n_dims)
+    m       = len(Z[origin])
+
+    # 输出与标记数组
+    Zg       = np.empty(dims, dtype=object)
     assigned = np.zeros(dims, dtype=bool)
 
-    # 原点按实部排序赋值
-    Zg[origin] = np.array(sorted(Z[origin], key=lambda c: c.real), dtype=complex)
+    # 原点按实部排序
+    Zg[origin]   = np.array(sorted(Z[origin], key=lambda c: c.real), dtype=complex)
     assigned[origin] = True
 
-    # 按 lexicographic 顺序遍历所有格点
+    # 按字典序遍历
     for idx in np.ndindex(*dims):
         if assigned[idx]:
             continue
 
-        # 找一个已赋值的邻点：优先沿各维度的后向
-        for axis in range(n_dims):
-            if idx[axis] > 0:
-                neighbor = list(idx)
-                neighbor[axis] -= 1
-                neighbor = tuple(neighbor)
-                if assigned[neighbor]:
-                    break
-        else:
-            # 没找到已赋值的后向邻点，回退到原点
-            neighbor = origin
-            axis = 0
+        # 收集所有已赋值的后向邻点
+        neighbors = []
+        for d in range(n_dims):
+            if idx[d] > 0:
+                nb = list(idx); nb[d] -= 1; nb = tuple(nb)
+                if assigned[nb]:
+                    neighbors.append((nb, d))
+        if not neighbors:
+            neighbors = [(origin, 0)]
 
-        # 上一格的值 (复杂数数组) 和各维度导数 (m×n_dims 矩阵)
-        v_prev = Zg[neighbor]
-        d_prev = np.zeros((m, n_dims), dtype=float)
-        for s in range(m):
-            for d in range(n_dims):
-                d_prev[s, d] = estimate_derivative_one_sided(
-                    Zg, assigned, neighbor, s, d, deltas[d]
-                )
-
-        # 构造 m×m 代价矩阵
+        # 候选集合
         candidates = Z[idx]
-        C = np.zeros((m, m))
-        for s in range(m):
-            for c_idx, c in enumerate(candidates):
-                cost_val = abs(c - v_prev[s])
-                cost_der = sum(
-                    lams[d] * abs((c - v_prev[s]) / deltas[d] - d_prev[s, d])
-                    for d in range(n_dims)
-                )
-                C[s, c_idx] = cost_val + cost_der
+        C_total    = np.zeros((m, m), dtype=float)
 
-        # 匈牙利算法匹配
-        row_ind, col_ind = linear_sum_assignment(C)
+        # 针对每个邻点累加代价
+        for neighbor, grow_dir in neighbors:
+            v_prev = Zg[neighbor]
 
-        # 根据匹配结果填充 Zg[idx]
+            # 若是原点且提供了初始导数，则用之
+            if neighbor == origin and initial_derivatives is not None:
+                d_prev = initial_derivatives.copy()
+            else:
+                d_prev = np.zeros((m, n_dims), dtype=float)
+                for s in range(m):
+                    for d in range(n_dims):
+                        d_prev[s, d] = estimate_derivative_one_sided(
+                            Zg, assigned, neighbor, s, d, deltas[d]
+                        )
+
+            # 构造该邻点的局部 C 矩阵
+            C_nb = np.zeros((m, m), dtype=float)
+            for s in range(m):
+                for c_idx, c in enumerate(candidates):
+                    # 值连续性（按 value_weights[grow_dir, :] 加权）
+                    cost_val = sum(
+                        value_weights[grow_dir, j] * abs(c - v_prev[s])
+                        for j in range(n_dims)
+                    )
+                    # 导数连续性（按 deriv_weights[grow_dir, :] 加权）
+                    cost_der = sum(
+                        deriv_weights[grow_dir, j]
+                        * abs((c - v_prev[s]) / deltas[j] - d_prev[s, j])
+                        for j in range(n_dims)
+                    )
+                    C_nb[s, c_idx] = cost_val + cost_der
+
+            C_total += C_nb
+
+        # 全局最优指派
+        row_ind, col_ind = linear_sum_assignment(C_total)
+
+        # 填入 Zg
         ordered = [None] * m
         for s, c_idx in zip(row_ind, col_ind):
             ordered[s] = candidates[c_idx]
@@ -107,60 +138,72 @@ def group_surfaces_one_sided_hungarian(Z, deltas, lams):
 
     return Zg
 
-
 if __name__ == '__main__':
-    # === 3D 测试参数 ===
+    # === 3D 示例 ===
     nx, ny, nz, m = 30, 20, 15, 3
     dims3 = (nx, ny, nz)
-    deltas3 = (1.0, 1.0, 1.0)  # 三个维度的网格间距
-    lams3 = (10.0, 5.0, 2.0)  # 三个维度的导数连续性权重
+    deltas3 = (1.0, 1.0, 1.0)
 
-    # 构建三维网格
-    x = np.linspace(0, 2 * np.pi, nx)
-    y = np.linspace(0, 2 * np.pi, ny)
-    z = np.linspace(0, 2 * np.pi, nz)
+    # 当沿维度 d 生长时，值差权重矩阵（n×n）
+    # 例如：value_weights[d, j] = 在 grow_dir=d 时，对维度 j 的值差权重
+    value_weights = np.array([
+        [1.0, 0.5, 0.2],   # 沿维度0生长时，对 0,1,2 维度的值差权重
+        [0.5, 1.0, 0.3],   # 沿维度1生长时
+        [0.2, 0.3, 1.0],   # 沿维度2生长时
+    ])
+
+    # 当沿维度 d 生长时，导数不连续权重矩阵（n×n）
+    deriv_weights = np.array([
+        [10.0, 2.0, 1.0],
+        [2.0, 5.0, 1.5],
+        [1.0, 1.5, 2.0],
+    ])*0
+
+    # 可选：原点初始导数（m×n）
+    initial_derivs = np.zeros((m, len(deltas3)))
+
+    # 构建格点与真曲面
+    x = np.linspace(0, 2*np.pi, nx)
+    y = np.linspace(0, 2*np.pi, ny)
+    z = np.linspace(0, 2*np.pi, nz)
     X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
-
-    # 生成 m 条“真曲面”：这里取 sin*cos*sin 叠加相位
-    # true3.shape = (nx, ny, nz, m)
     true3 = np.stack([
         np.sin(X + s) * np.cos(Y + s) * np.sin(Z + s)
         for s in range(m)
     ], axis=-1)
 
-    # 构造 Z3：object 数组，每个格点存一个乱序的 m 元素列表
+    # 乱序数据初始化
     Z3 = np.empty(dims3, dtype=object)
     for idx in np.ndindex(*dims3):
-        vals = list(true3[idx])  # 取出长度 m 的 array
+        vals = list(true3[idx])
         random.shuffle(vals)
         Z3[idx] = vals
 
-    # 调用分组算法
-    Zg3 = group_surfaces_one_sided_hungarian(Z3, deltas3, lams3)
+    # 调用分组，传入两个权重矩阵
+    Zg3 = group_surfaces_one_sided_hungarian(
+        Z3, deltas3,
+        value_weights=value_weights,
+        deriv_weights=deriv_weights,
+        initial_derivatives=initial_derivs
+    )
 
-    # === 可视化：固定 y、z，沿 x 方向切片 ===
-    j0 = ny // 2
-    k0 = nz // 2
+    # 可视化：固定 y,z
+    j0, k0 = ny//2, nz//2
+    plt.figure(figsize=(10,4))
 
-    plt.figure(figsize=(10, 4))
-
-    # 分组前 (散点)
-    plt.subplot(1, 2, 1)
+    plt.subplot(1,2,1)
     for i in range(nx):
-        for val in Z3[i, j0, k0]:
-            plt.scatter(x[i], val.real, s=5, alpha=0.6)
+        for v in Z3[i, j0, k0]:
+            plt.scatter(x[i], v.real, s=5, alpha=0.6)
     plt.title(f'分组前 (y={y[j0]:.2f}, z={z[k0]:.2f})')
-    plt.xlabel('x');
-    plt.ylabel('实部')
+    plt.xlabel('x'); plt.ylabel('实部')
 
-    # 分组后 (曲线)
-    plt.subplot(1, 2, 2)
+    plt.subplot(1,2,2)
     for s in range(m):
-        y_s = [Zg3[i, j0, k0][s].real for i in range(nx)]
-        plt.plot(x, y_s, label=f'曲面{s}')
+        ys = [Zg3[i, j0, k0][s].real for i in range(nx)]
+        plt.plot(x, ys, label=f'曲面{s}')
     plt.title(f'分组后 (y={y[j0]:.2f}, z={z[k0]:.2f})')
-    plt.xlabel('x');
-    plt.legend()
+    plt.xlabel('x'); plt.legend()
 
     plt.tight_layout()
     plt.show()

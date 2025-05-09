@@ -1,3 +1,4 @@
+from plot_3D.core.data_postprocess.data_grouper import group_surfaces_one_sided_hungarian
 from plot_3D.core.plot_3D_params_space_plt import *
 from plot_3D.core.plot_3D_params_space_pv import plot_Z_diff_pyvista
 from plot_3D.core.process_multi_dim_params_space import *
@@ -61,6 +62,25 @@ if __name__ == '__main__':
     # result = query_data_grid(grid_coords, Z, query)
     # print("\n查询结果（保留列表）：", result)
 
+    deltas3 = (1.0e-3, 1.0)  # n个维度的网格间距
+    # 当沿维度 d 生长时，值差权重矩阵（n×n）
+    # 例如：value_weights[d, j] = 在 grow_dir=d 时，对维度 j 的值差权重
+    value_weights = np.array([
+        [1, 0],   # 沿维度0生长时，对 0,1,2 维度的值差权重
+        [0, 1],   # 沿维度2生长时
+    ])
+
+    # 当沿维度 d 生长时，导数不连续权重矩阵（n×n）
+    deriv_weights = np.array([
+        [0, 0],
+        [0, 0],
+    ])
+    Z = group_surfaces_one_sided_hungarian(
+        Z, deltas3,
+        value_weights=value_weights,
+        deriv_weights=deriv_weights,
+    )
+
     # 假设你已经得到了 grid_coords, Z
     new_coords, Z_target1 = group_eigensolution(
         grid_coords, Z,
@@ -103,7 +123,7 @@ if __name__ == '__main__':
     # 画二维曲面：a vs w1 对 Δ频率
     plot_params = {
         'zlabel': 'RIU',
-        'cmap1': 'viridis',
+        'cmap1': 'Blues',
         'cmap2': 'Reds',
         'log_scale': False,
         'alpha': 1,
@@ -117,6 +137,7 @@ if __name__ == '__main__':
     }
     plot_Z_diff_pyvista(
         new_coords, [Z_target1, Z_target2, Z_target3],
+        # new_coords, [Z_target2],
         x_key="a",
         y_key="b",
         fixed_params={

@@ -105,12 +105,16 @@ def plot_Z_diff_pyvista(
         # 将 scalars 设置为 Fortran 顺序展平的数据
         grid_real.point_data["scalars"] = Z_real_plot.ravel(order="F")
         grid_real.set_active_scalars("scalars")
+        surf_real = grid_real.extract_surface()
+        surf_real.save(f'real_surface-{i}.obj')
 
         grid_imag = None
         if np.iscomplexobj(Z):
             grid_imag = pv.StructuredGrid(X, Z_imag_plot, Y)
             grid_imag.point_data["scalars"] = Z_imag_plot.ravel(order="F")
             grid_imag.set_active_scalars("scalars")
+            surf_imag = grid_imag.extract_surface()
+            surf_imag.save(f'imag_surface-{i}.obj')
 
         # 5. 向绘图器添加网格
         if grid_imag is not None and render_imag:  # render imag part
