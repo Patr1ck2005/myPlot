@@ -6,7 +6,8 @@ def create_data_grid(
         df: pd.DataFrame,
         param_keys: list,
         z_key: str,
-        aggregator=None
+        aggregator=None,
+        deduplication=False
 ):
     """
     根据指定的参数组合 (param_keys) 和目标数据列 (z_key) 构造多维数据网格，
@@ -19,6 +20,7 @@ def create_data_grid(
         z_key: 最终结果数据的列名，例如 "特征频率 (THz)" 或其他经过后处理的结果
         aggregator: 可选的聚合函数，接受列表作为输入，返回单一值，比如 np.mean、np.median 等，
                     若为 None，则每个单元存放该组合下所有值的列表
+        deduplication: 可选的去重功能, 保证每一个单元格的数据组不重复.
 
     返回:
         grid_coords: dict，存储每个参数对应的唯一取值（已排序），便于后续查找。例如：
@@ -53,6 +55,12 @@ def create_data_grid(
             if idx.size == 0:
                 raise ValueError(f"数值 {row[key]} 在参数 {key} 中未找到匹配项。")
             indices.append(idx[0])
+        # # 去重
+        # if deduplication:
+        #     Z[tuple(indices)] = list(set(Z[tuple(indices)]))
+        if deduplication and row[z_key] in Z[tuple(indices)]:
+            continue
+        print(row[z_key])
         # 将目标数据添加到对应单元格的列表中
         Z[tuple(indices)].append(row[z_key])
 

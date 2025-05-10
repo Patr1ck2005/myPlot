@@ -36,9 +36,10 @@ def group_eigensolution(grid_coords, Z, freq_index=1):
 
     return new_coords, Z_diff
 
+
 if __name__ == '__main__':
-    # data_path = './data/3EP-test.csv'
-    data_path = './data/expanded-xy2EP-test.csv'
+    # data_path = './data/expanded-xy2EP-test.csv'
+    data_path = './data/xy2EP-test.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -48,17 +49,25 @@ if __name__ == '__main__':
 
     # 指定用于构造网格的参数以及目标数据列
     param_keys = ["m1", "m2"]
-    z_key = "特征频率 (THz)"
+    # z_key = "特征频率 (THz)"
+    # z_key = "phi (rad)"
+    z_key = "tanchi (1)"
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
-    grid_coords, Z = create_data_grid(df_sample, param_keys, z_key)
+    grid_coords, Z = create_data_grid(df_sample, param_keys, z_key, deduplication=True)
     print("网格参数：")
     for key, arr in grid_coords.items():
         print(f"  {key}: {arr}")
     print("数据网格 Z 的形状：", Z.shape)
 
+    for m1 in grid_coords['m1']:
+        for m2 in grid_coords['m2']:
+            # print(f"m1={m1}, m2={m2}")
+            # print(Z[(m1, m2)])
+            pass
+
     # 示例查询某个参数组合对应的数据
-    query = {"m1": 0.00, "m2": 0.00}
+    query = {"m1": 0.00, "m2": 0.01}
     result = query_data_grid(grid_coords, Z, query)
     print("\n查询结果（保留列表）：", result)
 
@@ -66,8 +75,8 @@ if __name__ == '__main__':
     # 当沿维度 d 生长时，值差权重矩阵（n×n）
     # 例如：value_weights[d, j] = 在 grow_dir=d 时，对维度 j 的值差权重
     value_weights = np.array([
-        [1, 0],   # 沿维度0生长时，对 0,1,2 维度的值差权重
-        [0, 1],   # 沿维度2生长时
+        [1, 1],   # 沿维度0生长时，对 0,1,2 维度的值差权重
+        [1, 1],   # 沿维度2生长时
     ])
 
     # 当沿维度 d 生长时，导数不连续权重矩阵（n×n）
@@ -84,19 +93,21 @@ if __name__ == '__main__':
     # 假设你已经得到了 grid_coords, Z
     new_coords, Z_target1 = group_eigensolution(
         grid_coords, Z,
-        freq_index=0  # 第n个频率
-        # freq_index=2  # 第n个频率
+        freq_index=5  # 第n个频率
     )
     new_coords, Z_target2 = group_eigensolution(
         grid_coords, Z,
-        freq_index=1  # 第n个频率
-        # freq_index=2  # 第n个频率
+        freq_index=6  # 第n个频率
     )
-    new_coords, Z_target3 = group_eigensolution(
-        grid_coords, Z,
-        freq_index=2  # 第n个频率
-        # freq_index=2  # 第n个频率
-    )
+    # new_coords, Z_target3 = group_eigensolution(
+    #     grid_coords, Z,
+    #     freq_index=6  # 第n个频率
+    # )
+    # new_coords, Z_target3 = group_eigensolution(
+    #     grid_coords, Z,
+    #     freq_index=2  # 第n个频率
+    #     # freq_index=2  # 第n个频率
+    # )
 
     print("去掉 bg_n 后的参数：")
     for k, v in new_coords.items():
@@ -111,9 +122,9 @@ if __name__ == '__main__':
     # 画一维曲线：params 对 target
     plot_Z_diff_plt(
         new_coords, Z_target1,
-        x_key="a",
+        x_key="m1",
         fixed_params={
-            "b": 0.0000
+            "m2": 0.0000
         },
         plot_params={
             'zlabel': 'freq',
@@ -122,12 +133,12 @@ if __name__ == '__main__':
     )
     # 画二维曲面：a vs w1 对 Δ频率
     plot_params = {
-        'zlabel': 'RIU',
+        'zlabel': 'f',
         'cmap1': 'Blues',
         'cmap2': 'Reds',
         'log_scale': False,
         'alpha': 1,
-        'data_scale': [20000, 2e-3, 100],
+        'data_scale': [100, 2e-3, 100],
         # 'data_scale': [10000, 1, 1],
         # 'vmax_real': 95,
         # 'vmax_imag': 1,
@@ -136,10 +147,35 @@ if __name__ == '__main__':
         'apply_abs': True
     }
     plot_Z_diff_pyvista(
-        new_coords, [Z_target1, Z_target2, Z_target3],
+        new_coords, [Z_target1, Z_target2],
         # new_coords, [Z_target2],
-        x_key="a",
-        y_key="b",
+        x_key="m1",
+        y_key="m2",
+        fixed_params={
+        },
+        plot_params=plot_params,
+        show_live=True
+    )
+    # 画二维曲面：a vs w1 对 Δ频率
+    plot_params = {
+        'zlabel': 'f',
+        'cmap1': 'Blues',
+        'cmap2': 'Reds',
+        'log_scale': False,
+        'alpha': 1,
+        'data_scale': [100, 10e-3, 100],
+        # 'data_scale': [10000, 1, 1],
+        # 'vmax_real': 95,
+        # 'vmax_imag': 1,
+        'render_real': False,
+        'render_imag': True,
+        'apply_abs': True
+    }
+    plot_Z_diff_pyvista(
+        new_coords, [Z_target1, Z_target2],
+        # new_coords, [Z_target2],
+        x_key="m1",
+        y_key="m2",
         fixed_params={
         },
         plot_params=plot_params,

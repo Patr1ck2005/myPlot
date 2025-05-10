@@ -4,7 +4,7 @@ import numpy as np
 df = pd.read_csv('xy2EP-test.csv', sep='\t')
 
 m_max = df['m1'].max()
-m_step = 0.005
+m_step = 0.01
 # 假设原始数据中的 'm1' 和 'm2' 是坐标列
 # 并且其他列是函数值
 
@@ -16,14 +16,8 @@ def generate_c4_symmetry_coords(x, y):
     return coords
 
 
-def generate_anti_symmetry_coords(x, y):
-    coords = [(y, x)]
-    return coords
-
-
 # STEP 2 ##############################################################################################################
-# 读取原始数据
-expanded_df = pd.read_csv('temp-expanded_SOP.csv', sep='\t')
+expanded_df = df
 
 # 原始坐标范围
 original_range = np.linspace(0, m_max, int(m_max / m_step + 1))

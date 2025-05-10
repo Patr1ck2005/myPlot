@@ -164,6 +164,8 @@ def plot_Z_diff_pyvista(
 
     if show_live:
         p.show()
+        print("关闭绘图窗口后函数返回 None")
+        return
 
     # 6. 保存截图
     def safe_str(val):

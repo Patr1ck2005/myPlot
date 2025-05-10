@@ -43,9 +43,13 @@ for _, row in df.iterrows():
         function_df = row.drop(['m1', 'm2'])
         m1 = anti_coord[0]
         m2 = anti_coord[1]
-        if (m1s, m2s) == (m1, m2):
-            continue
-        # 存储坐标
+        # if (m1s, m2s) == (m1, m2):
+        #     continue
+        # if not (m1, m2) in expanded_dict['coordinates']:
+        #     # 存储坐标
+        #     expanded_dict['coordinates'].append(anti_coord)
+        # else:
+        #     continue
         expanded_dict['coordinates'].append(anti_coord)
         phi = row['phi (rad)']
         theta = np.arctan(m2/m1) if m1 != 0 else np.pi/2
@@ -78,7 +82,8 @@ expanded_df.to_csv('temp-expanded_SOP.csv', sep='\t', index=False)
 
 # STEP 2 ##############################################################################################################
 # 读取原始数据
-df = pd.read_csv('temp-expanded_SOP.csv', sep='\t')
+# df = pd.read_csv('temp-expanded_SOP.csv', sep='\t')
+expanded_df = pd.read_csv('xy2EP-test.csv', sep='\t')
 
 # 原始坐标范围
 original_range = np.linspace(0, m_max, int(m_max / m_step + 1))
@@ -102,13 +107,23 @@ for _, row in expanded_df.iterrows():
     for i, coord in enumerate(expanded_coords):
         # 存储对应的函数值，假设除了'm1'和'm2'以外的列为函数值
         function_df = row.drop(['m1', 'm2'])
-        m1 = coord[0]
-        m2 = coord[1]
-        if (m1s, m2s) == (m1, m2):
-            continue
-        # 存储坐标
+        # m1 = coord[0]
+        # m2 = coord[1]
+        # if (m1s, m2s) == (m1, m2):
+        #     # pass
+        #     if (m1, m2) in expanded_dict['coordinates']:
+        #         continue
+        #     else:
+        #         # 存储坐标
+        #         expanded_dict['coordinates'].append(coord)
+        # else:
+        #     expanded_dict['coordinates'].append(coord)
+        # if not (m1, m2) in expanded_dict['coordinates']:
+        #     # 存储坐标
+        #     expanded_dict['coordinates'].append(coord)
+        # else:
+        #     continue
         expanded_dict['coordinates'].append(coord)
-
         # 存储对应的函数值，假设除了'm1'和'm2'以外的列为函数值
         function_df['phi (rad)'] += np.pi / 2 * i
         expanded_dict['function_df'].append(function_df)
