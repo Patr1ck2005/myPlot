@@ -1,3 +1,5 @@
+from typing import List
+
 import numpy as np
 import pandas as pd
 
@@ -5,22 +7,21 @@ import pandas as pd
 def create_data_grid(
         df: pd.DataFrame,
         param_keys: list,
-        z_key: str,
+        z_key_lst: List[str],
         aggregator=None,
         deduplication=False
 ):
     """
-    根据指定的参数组合 (param_keys) 和目标数据列 (z_key) 构造多维数据网格，
-    每个参数组合对应的目标数据可能有多个，默认收集为列表，
+    根据指定的参数组合 (param_keys) 和多目标数据列 (z_key_lst) 构造多维数据网格，
+    每个参数组合对应的目标数据可能有多个，默认收集为多维列表，
     可通过 aggregator 参数对列表数据进行聚合处理。
 
     参数:
         df: 原始数据集 (DataFrame)，数据集由各参数组合生成，每一行对应一种组合下的观测值
         param_keys: 需要处理的参数名称列表，例如 ["w1 (nm)", "buffer (nm)", "h_grating (nm)"]
-        z_key: 最终结果数据的列名，例如 "特征频率 (THz)" 或其他经过后处理的结果
-        aggregator: 可选的聚合函数，接受列表作为输入，返回单一值，比如 np.mean、np.median 等，
-                    若为 None，则每个单元存放该组合下所有值的列表
-        deduplication: 可选的去重功能, 保证每一个单元格的数据组不重复.
+        z_key_lst: 包含最终结果数据的列名的列表，例如 ["特征频率 (THz)", 或其他需要后处理的结果]
+        aggregator: 可选的聚合函数，接受多维列表作为输入，返回单一值，比如 np.mean、np.median 等
+        deduplication: 可选的去重功能, 保证每一个单元格的数据组不重复
 
     返回:
         grid_coords: dict，存储每个参数对应的唯一取值（已排序），便于后续查找。例如：
@@ -30,7 +31,7 @@ def create_data_grid(
                         "h_grating (nm)": np.array([...])
                      }
         Z: 多维 numpy 数组（dtype=object），维度顺序与 param_keys 相同，
-           每个单元格存放该组合下 z_key 的值列表（或者通过 aggregator 聚合后的值）
+           每个单元格存放该组合下包含 z_key_lst 中的所有 z_key 的值的多维列表（或者通过 aggregator 聚合后的值）
     """
     grid_coords = {}
     grid_shape = []
@@ -41,12 +42,12 @@ def create_data_grid(
         grid_coords[key] = unique_vals
         grid_shape.append(len(unique_vals))
 
-    # 创建一个多维数组，每个位置存放一个列表（dtype=object）
+    # 创建一个多维数组，每个位置存放一个多维列表（dtype=object）
     Z = np.empty(shape=grid_shape, dtype=object)
     for index in np.ndindex(*grid_shape):
-        Z[index] = []
+        Z[index] = [[] for _ in range(len(z_key_lst))]
 
-    # 遍历 DataFrame 中的每一行，将对应的 z_key 值添加到相应位置的列表中
+    # 遍历 DataFrame 中的每一行，将每行的多个 z_key 对应的值添加到相应位置的单元格的多维列表中
     for _, row in df.iterrows():
         indices = []
         for key in param_keys:
@@ -58,13 +59,14 @@ def create_data_grid(
         # # 去重
         # if deduplication:
         #     Z[tuple(indices)] = list(set(Z[tuple(indices)]))
-        if deduplication and row[z_key] in Z[tuple(indices)]:
-            continue
-        print(row[z_key])
-        # 将目标数据添加到对应单元格的列表中
-        Z[tuple(indices)].append(row[z_key])
+        for z_order, z_key in enumerate(z_key_lst):
+            if deduplication and row[z_key] in Z[tuple(indices)][z_order]:
+                continue
+            # print(row[z_key])
+            # 将目标数据添加到对应单元格的列表中
+            Z[tuple(indices)][z_order].append(row[z_key])
 
-    # 如果指定了聚合函数，则对每个单元格的列表进行聚合处理
+    # 如果指定了聚合函数，则对每个单元格的数据进行聚合处理
     if aggregator is not None:
         for index in np.ndindex(*grid_shape):
             try:

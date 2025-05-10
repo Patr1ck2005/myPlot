@@ -51,10 +51,10 @@ if __name__ == '__main__':
     param_keys = ["m1", "m2"]
     # z_key = "特征频率 (THz)"
     # z_key = "phi (rad)"
-    z_key = "tanchi (1)"
+    z_keys = ["特征频率 (THz)", "tanchi (1)", "phi (rad)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
-    grid_coords, Z = create_data_grid(df_sample, param_keys, z_key, deduplication=True)
+    grid_coords, Z = create_data_grid(df_sample, param_keys, z_keys, deduplication=True)
     print("网格参数：")
     for key, arr in grid_coords.items():
         print(f"  {key}: {arr}")
@@ -66,6 +66,10 @@ if __name__ == '__main__':
             # print(Z[(m1, m2)])
             pass
 
+    # 示例查询某个参数组合对应的数据
+    query = {"m1": 0.00, "m2": 0.00}
+    result = query_data_grid(grid_coords, Z, query)
+    print("\n查询结果（保留列表）：", result)
     # 示例查询某个参数组合对应的数据
     query = {"m1": 0.00, "m2": 0.01}
     result = query_data_grid(grid_coords, Z, query)
@@ -84,8 +88,16 @@ if __name__ == '__main__':
         [0, 0],
         [0, 0],
     ])
+
+    # 创建一个新的数组，用于存储更新后的结果
+    Z_new = np.empty_like(Z, dtype=object)
+    # 使用直接的循环来更新 Z_new
+    for i in range(Z.shape[0]):
+        for j in range(Z.shape[1]):
+            Z_new[i, j] = Z[i, j][0]  # 提取每个 lst_ij 的第 b 列
+
     Z = group_surfaces_one_sided_hungarian(
-        Z, deltas3,
+        Z_new, deltas3,
         value_weights=value_weights,
         deriv_weights=deriv_weights,
     )
@@ -127,13 +139,13 @@ if __name__ == '__main__':
             "m2": 0.0000
         },
         plot_params={
-            'zlabel': 'freq',
+            'zlabel': '***',
             'imag': False,
         }
     )
     # 画二维曲面：a vs w1 对 Δ频率
     plot_params = {
-        'zlabel': 'f',
+        'zlabel': '***',
         'cmap1': 'Blues',
         'cmap2': 'Reds',
         'log_scale': False,
@@ -158,7 +170,7 @@ if __name__ == '__main__':
     )
     # 画二维曲面：a vs w1 对 Δ频率
     plot_params = {
-        'zlabel': 'f',
+        'zlabel': '***',
         'cmap1': 'Blues',
         'cmap2': 'Reds',
         'log_scale': False,
