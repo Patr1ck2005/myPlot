@@ -31,6 +31,10 @@ logs/
 *.zip
 *.rar
 *.pov
+*.obj
+*.c4d
+*.gif
+*.webp
 
 # 忽略多个文件夹
 my_folder/
