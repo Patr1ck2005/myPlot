@@ -38,7 +38,7 @@ def group_eigensolution(grid_coords, Z, freq_index=1):
 
 if __name__ == '__main__':
     # data_path = './data/3EP-test.csv'
-    data_path = './data/3EP-topological_band.csv'
+    data_path = 'data/3EPinGrating/3EP-topological_band.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程

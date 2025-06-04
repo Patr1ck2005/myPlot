@@ -67,7 +67,7 @@ if __name__ == '__main__':
     # )
 
     # 载入数据并调用函数
-    data_path = './data/EP_flatband.csv'
+    data_path = 'data/xxEP_band/EP_flatband.csv'
     data = pd.read_csv(data_path, sep='\t').to_numpy()
     plot_3D_params_space(
         data,
