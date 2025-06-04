@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-df = pd.read_csv('xy2EP-test.csv', sep='\t')
+df = pd.read_csv('xy2EP-BIC-test.csv', sep='\t')
 
 m_max = df['m1'].max()
 m_step = 0.005
@@ -83,7 +83,7 @@ expanded_df.to_csv('temp-expanded_SOP.csv', sep='\t', index=False)
 # STEP 2 ##############################################################################################################
 # 读取原始数据
 # df = pd.read_csv('temp-expanded_SOP.csv', sep='\t')
-expanded_df = pd.read_csv('xy2EP-test.csv', sep='\t')
+expanded_df = pd.read_csv('xy2EP-BIC-test.csv', sep='\t')
 
 # 原始坐标范围
 original_range = np.linspace(0, m_max, int(m_max / m_step + 1))
@@ -146,6 +146,6 @@ expanded_df = pd.DataFrame(expanded_dict['coordinates'], columns=['m1', 'm2'])
 for i, func_col in enumerate(df.drop(['m1', 'm2'], axis=1)):
     expanded_df[func_col] = expanded_dict['function_df'][:, i]
 
-expanded_df.to_csv('expanded-xy2EP-test.csv', sep='\t', index=False)
+expanded_df.to_csv('expanded-xy2EP-BIC-test.csv', sep='\t', index=False)
 
 print("坐标和函数值已成功存储并保存.")
