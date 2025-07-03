@@ -3,7 +3,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.collections import PolyCollection
 
-plt.rcParams['font.size'] = 12
+plt.rcParams['font.size'] = 20
 
 
 def plot_3d_slices(
@@ -35,9 +35,11 @@ def plot_3d_slices(
     for i, slice in enumerate(slice_positions):
         x = dataset[slice]['x']
         y = dataset[slice]['z']
+        y_max = y.max()
+        print(y_max)
         verts.append(polygon_under_graph(x, y))
 
-    fig1 = plt.figure(figsize=(8, 8))
+    fig1 = plt.figure(figsize=(6, 6))
     ax = fig1.add_subplot(111, projection='3d')
 
     facecolors = plt.colormaps['inferno_r'](np.linspace(0, 1, len(verts)))[::-1]
@@ -67,7 +69,7 @@ def plot_3d_slices(
 
     ax.tick_params(axis='x', pad=1)
     ax.tick_params(axis='y', pad=1)
-    ax.tick_params(axis='z', pad=1)
+    ax.tick_params(axis='z', pad=5)
     ax.view_init(elev=30, azim=60)
     ax.set_box_aspect(box_aspect)
 

@@ -9,19 +9,19 @@ import plotly.graph_objects as go
 
 def plot_Z_diff_plotly(
         new_coords,
-        Z_diff,
+        Z,
         x_key,
         plot_params,
         y_key=None,
         fixed_params=None,
 ):
     """
-    根据 new_coords 和 Z_diff，指定一个或两个 key 作为坐标轴，其它 key 固定，
-    使用 Plotly 绘制 Z_diff 的曲线或曲面，并保存绘图文件（文件名中包含绘图参数）。
+    根据 new_coords 和 Z，指定一个或两个 key 作为坐标轴，其它 key 固定，
+    使用 Plotly 绘制 Z 的曲线或曲面，并保存绘图文件（文件名中包含绘图参数）。
 
     参数：
         new_coords: dict，键为参数名，值为该参数的坐标数组（已排序）。
-        Z_diff: np.ndarray，多维数组，维度与 new_coords 顺序一致，存放差值数据。
+        Z: np.ndarray，多维数组，维度与 new_coords 顺序一致，存放差值数据。
         x_key: str，要作为横坐标的参数名。
         plot_params: dict，绘图时的一些参数，例如：
             - 'cmap1': 实部使用的 colorscale 名称（Plotly 内置 colorscale 名称，如 'Viridis'）
@@ -37,7 +37,7 @@ def plot_Z_diff_plotly(
     绘图文件将以 "plot_<参数信息>.png" 命名，并保存在当前工作目录。
     例如：
         # 一维折线图
-        plot_Z_diff_plotly(new_coords, Z_diff,
+        plot_Z_diff_plotly(new_coords, Z,
                            x_key="w1 (nm)",
                            plot_params={
                                'zlabel': "Δ频率 (kHz)",
@@ -47,7 +47,7 @@ def plot_Z_diff_plotly(
                            fixed_params={"buffer (nm)": 1345.0, "h_grating (nm)": 113.5, "a": 0.0085})
 
         # 二维曲面
-        plot_Z_diff_plotly(new_coords, Z_diff,
+        plot_Z_diff_plotly(new_coords, Z,
                            x_key="w1 (nm)",
                            y_key="buffer (nm)",
                            plot_params={
@@ -87,7 +87,7 @@ def plot_Z_diff_plotly(
     slicer = tuple(slicer)
 
     # 3. 取出子数组及 x 轴数据
-    sub = Z_diff[slicer]
+    sub = Z[slicer]
     x_vals = new_coords[x_key]
 
     # 提取绘图参数
@@ -181,19 +181,20 @@ def plot_Z_diff_plotly(
 
 def plot_Z_diff_plt(
         new_coords,
-        Z_diff,
+        Z,
         x_key,
         plot_params,
         y_key=None,
         fixed_params=None,
+        show=False,
 ):
     """
-    根据 new_coords 和 Z_diff，指定一个或两个 key 作为坐标轴，其它 key 固定，绘制 Z_diff 的曲线或曲面，
+    根据 new_coords 和 Z，指定一个或两个 key 作为坐标轴，其它 key 固定，绘制 Z 的曲线或曲面，
     并保存绘图文件（文件名中包含绘图参数）。
 
     参数：
         new_coords: dict，键为参数名，值为该参数的坐标数组（已排序）。
-        Z_diff: np.ndarray，多维数组，维度与 new_coords 顺序一致，存放差值数据。
+        Z: np.ndarray，多维数组，维度与 new_coords 顺序一致，存放差值数据。
         x_key: str，要作为横坐标的参数名。
         plot_params: dict，绘图时的一些参数，例如：
             - 'cmap1': 实部使用的 colormap 名称
@@ -205,11 +206,12 @@ def plot_Z_diff_plt(
         y_key: str or None，要作为纵坐标的参数名；若为 None，则绘制一维曲线图。
         fixed_params: dict，固定其它参数的取值，例如 {"a": 0.0085}。
                       固定参数的键应为 new_coords 中除 x_key, y_key 外的参数名。
+        show: bool, 决定是否显示交互式绘图窗口
 
     绘图文件将以 "plot_<参数信息>.png" 命名，并保存在当前工作目录。
     例如：
         # 一维曲线
-        plot_Z_diff(new_coords, Z_diff,
+        plot_Z_diff(new_coords, Z,
                     x_key="w1 (nm)",
                     plot_params={
                         'zlabel': "Δ频率 (kHz)",
@@ -219,7 +221,7 @@ def plot_Z_diff_plt(
                     fixed_params={"buffer (nm)": 1345.0, "h_grating (nm)": 113.5, "a": 0.0085})
 
         # 二维曲面
-        plot_Z_diff(new_coords, Z_diff,
+        plot_Z_diff(new_coords, Z,
                     x_key="w1 (nm)",
                     y_key="buffer (nm)",
                     plot_params={
@@ -255,7 +257,7 @@ def plot_Z_diff_plt(
     slicer = tuple(slicer)
 
     # 3. 取出子数组
-    sub = Z_diff[slicer]
+    sub = Z[slicer]
     x_vals = new_coords[x_key]
 
     # 提取绘图参数
@@ -283,6 +285,35 @@ def plot_Z_diff_plt(
         if log_scale:
             plt.yscale('log')
         fig = plt.gcf()
+    elif True:
+        # 二维曲面
+        y_vals = new_coords[y_key]
+        X, Y = np.meshgrid(y_vals, x_vals, indexing='ij')
+        # 注意：sub 的 shape 应为 (len(x_vals), len(y_vals))
+        Z = sub.T / 0.001  # 将数据进行缩放
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(111)
+
+        # 根据 log_scale 选择绘图数据
+        if log_scale:
+            Z_real_plot = np.log10(np.abs(Z.real))
+            Z_imag_plot = np.log10(np.abs(Z.imag))
+        else:
+            Z_real_plot = Z.real
+            Z_imag_plot = Z.imag
+
+        # 绘制实部曲面
+        surf1 = ax.pcolormesh(X, Y, Z_real_plot, cmap=cmap1_name,
+                                alpha=alpha_val)
+        # 绘制虚部曲面；为了保证交互性，先绘制一部分，再次绘制交叠区域
+        if sub.dtype == np.dtype(complex) and plot_imaginary:
+            surf2 = ax.pcolormesh(X, Y, Z_imag_plot, cmap=cmap2_name,
+                                    alpha=alpha_val)
+            fig.colorbar(surf2, ax=ax, shrink=0.5, aspect=20, pad=0.1)
+        ax.set_xlabel(x_key)
+        ax.set_ylabel(y_key)
+        ax.set_title(f"{x_key} vs {y_key} @ { {k: v for k, v in fixed_params.items()} }")
+        fig.colorbar(surf1, ax=ax, shrink=0.5, aspect=20, pad=0.0, label=zlabel)
     else:
         # 二维曲面
         y_vals = new_coords[y_key]
@@ -327,4 +358,5 @@ def plot_Z_diff_plt(
         filename = filename[:200] + ".png"
     plt.savefig(filename, dpi=300, bbox_inches="tight")
     print(f"图像已保存为：{filename}")
-    # plt.show()
+    if show:
+        plt.show()
