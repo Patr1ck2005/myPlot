@@ -8,6 +8,8 @@ from utils.utils import clear_ax_ticks
 
 
 def main(freq, Q, x, xlim=None, plot_ylim=None, selection_ylim=None, selection=None, save_name='default'):
+    # plt.style.use('classic')
+    plt.style.use('default')
     plt.rcParams['font.sans-serif'] = ['Arial']
     plt.rcParams['font.size'] = 18
 
@@ -78,49 +80,26 @@ def main(freq, Q, x, xlim=None, plot_ylim=None, selection_ylim=None, selection=N
 
 
 if __name__ == '__main__':
-    # 修改此处为实际的文件路径
-    # main('./data/VBG-band2D-freq-Gamma_M-0.12.txt', './data/VBG-band2D-Q-Gamma_M-0.12.txt')  # period = 61
-    # main('./data/VBG-band2D-freq-Gamma_X-0.12.txt', './data/VBG-band2D-Q-Gamma_X-0.12.txt')
-    # 加载频率和 Q 数据
-    # freq = np.loadtxt('./data/3EP_noslab/perturbations/3EP-band2D-freq.txt')[:, 1] - 7.120e13
-    # Q = np.loadtxt('./data/3EP_noslab/perturbations/3EP-band2D-Q.txt')[:, 1]
-    # main(
-    #     freq,
-    #     Q,
-    #     x=np.linspace(0.0055, 0.0070, 151) - 0.006285,
-    #     # ylim=[7.0e13-7.12e13, 7.22e13-7.12e13],
-    #     # xlim=[1e-5, 1e-3],
-    #     # plot_ylim=[1e10, 1e12],
-    #     selection=[1, 2, 3],
-    # )
-    # ifreq = np.loadtxt('./data/3EP_noslab/perturbations/3EP-band2D-iomega.txt')[:, 1]/2/np.pi+1.22e13/2/np.pi
-    # main(
-    #     ifreq,
-    #     Q,
-    #     x=np.linspace(0.0055, 0.0070, 151) - 0.006285,
-    #     # xlim=[1e-5, 1e-3],
-    #     # ylim=[-2*1e13+1.2e13, 0+1.2e13],
-    #     # plot_ylim=[1e10, 1e12],
-    #     selection=[1, 2, 3]
-    # )
-    freq = np.loadtxt('./data/3EP_noslab/0~3e-2k/3EP-band2D-freq.txt')[:, 1]
-    Q = np.loadtxt('./data/3EP_noslab/0~3e-2k/3EP-band2D-Q.txt')[:, 1]
+    freq = np.loadtxt('./data/3EP_noslab/0~5e-2k/3EP-band2D-freq.txt')[:, 1]
+    Q = np.loadtxt('./data/3EP_noslab/0~5e-2k/3EP-band2D-Q.txt')[:, 1]
     main(
         freq,
         Q,
-        x=np.linspace(0.00, 0.03, 601),
+        x=np.linspace(0.00, 0.05, 501),
         # ylim=[7.0e13-7.12e13, 7.22e13-7.12e13],
         # xlim=[1e-5, 1e-3],
         # plot_ylim=[1e10, 1e12],
         selection=[1, 2, 3],
+        save_name='3EP_noslab_0~5e-2k-freq'
     )
-    ifreq = np.loadtxt('./data/3EP_noslab/0~3e-2k/3EP-band2D-iomega.txt')[:, 1]/2/np.pi
+    ifreq = np.loadtxt('./data/3EP_noslab/0~5e-2k/3EP-band2D-ifreq.txt')[:, 1]/2/np.pi
     main(
         ifreq,
         Q,
-        x=np.linspace(0.00, 0.03, 601),
+        x=np.linspace(0.00, 0.05, 501),
         # xlim=[1e-5, 1e-3],
         # ylim=[-2*1e13+1.2e13, 0+1.2e13],
         # plot_ylim=[1e10, 1e12],
-        selection=[1, 2, 3]
+        selection=[1, 2, 3],
+        save_name='3EP_noslab_0~5e-2k-ifreq'
     )

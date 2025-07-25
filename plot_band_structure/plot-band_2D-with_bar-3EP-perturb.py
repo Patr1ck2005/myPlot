@@ -94,7 +94,7 @@ if __name__ == '__main__':
         plot_ylim=[1e10, 1e12],
         selection=[1, 2, 3],
     )
-    ifreq = np.loadtxt('./data/3EP_noslab/perturbations/3EP-band2D-iomega.txt')[:, 1]/2/np.pi+1.22e13/2/np.pi
+    ifreq = np.loadtxt('./data/3EP_noslab/perturbations/3EP-band2D-ifreq.txt')[:, 1]/2/np.pi+1.22e13/2/np.pi
     main(
         ifreq,
         Q,
@@ -112,7 +112,7 @@ if __name__ == '__main__':
     #     selection=[1, 2, 3]
     # )
     # main(
-    #     'data/3EP_noslab/0~3e-2k/3EP-band2D-iomega.txt',
+    #     'data/3EP_noslab/0~3e-2k/3EP-band2D-ifreq.txt',
     #     'data/3EP_noslab/0~3e-2k/3EP-band2D-Q.txt',
     #     [-3 * 1e13, 0],
     #     period=601,

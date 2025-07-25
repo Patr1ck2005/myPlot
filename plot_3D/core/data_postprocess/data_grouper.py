@@ -132,6 +132,7 @@ def group_surfaces_one_sided_hungarian(
         # 填入 Zg
         ordered = [None] * m
         for s, c_idx in zip(row_ind, col_ind):
+            # ordered[s] = candidates[min(c_idx, len(candidates)-1)]
             ordered[s] = candidates[c_idx]
         Zg[idx] = np.array(ordered, dtype=complex)
         assigned[idx] = True
