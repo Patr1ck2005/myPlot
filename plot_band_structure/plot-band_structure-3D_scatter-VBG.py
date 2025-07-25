@@ -14,7 +14,7 @@ def plot_band_surfaces(data):
     freq_real = [freq.real for freq in frequencies]  # 实部用于颜色映射
     freq_imag = [freq.imag for freq in frequencies]  # 虚部用于透明度
 
-    freq_min, freq_max = 400, 440
+    freq_min, freq_max = 98+4, 136+4
     freq_length = freq_max-freq_min
 
     # 创建颜色映射对象
@@ -23,29 +23,33 @@ def plot_band_surfaces(data):
 
     # 选择坐标和频率数据进行绘制
     for i, d in enumerate(data):
-        m1, m2, freq, freq_real, Q, S_air_prop, tanchi, phi, a, b, c = d
-        if S_air_prop > 0.5:
+        m1, m2, freq, tanchi, phi, Q, S_air_prop, rank = d
+        if Q < 7:
+            print('Q skip')
+            continue
+        elif S_air_prop > 10:
             print('S_air_prop skip')
         freq_complex = complex(freq.replace('i', 'j'))
         freq_re = freq_complex.real
         freq_im = freq_complex.imag
-
+        # .98~136
+        # if freq_re < 98 or freq_re > 136:
         if freq_re < freq_min or freq_re > freq_max:
             print('freq skip')
             continue
 
         edge = False
-        # phi = np.arctan2(m2, m1)
-        # if 0 < phi < 3*np.pi/4:
-        #     print('phi skip')
-        #     continue
-        # elif phi == 0 or phi == 3*np.pi/4:
-        #     print('phi skip')
-        #     edge = True
+        phi = np.arctan2(m2, m1)
+        if 0 < phi < 3*np.pi/4:
+            print('phi skip')
+            continue
+        elif phi == 0 or phi == 3*np.pi/4:
+            print('phi skip')
+            edge = True
 
         # 频率的实部和虚部影响颜色和透明度
         color = cmap(norm(freq_re))
-        alpha = np.clip(30/Q/2, 0.5, 1)  # 透明度由虚部控制
+        alpha = np.clip(30/Q/2, 0, 1)  # 透明度由虚部控制
 
         # 绘制曲面
         if edge:
@@ -58,14 +62,16 @@ def plot_band_surfaces(data):
     # ax.set_ylabel('ky (2π/P)', labelpad=12)
     # ax.set_zlabel('Frequency (THz)', labelpad=30)
     # ax.grid(False)
-    ax.set_xlim(0, 0.5)
-    ax.set_ylim(0, 0.5)
+    ax.set_xlim(-0.15, 0.15)
+    ax.set_ylim(-0.15, 0.15)
     ax.set_zlim(freq_min-.05*freq_length, freq_max+.1*freq_length)
-    # ax.set_xticks([-0.1, 0, 0.1])
-    # ax.set_yticks([-0.1, 0, 0.1])
-    # ax.set_zticks([100, 120, 140])
-    # ax.set_xticklabels([-0.1, 0, 0.1])
-    # ax.set_yticklabels([-0.1, 0, 0.1])
+    ax.set_xticks([-0.1, 0, 0.1])
+    ax.set_yticks([-0.1, 0, 0.1])
+    ax.set_zticks([100, 120, 140])
+    ax.set_xticklabels([-0.1, 0, 0.1])
+    ax.set_yticklabels([-0.1, 0, 0.1])
+    # ax.set_zticklabels([1800, 1500, 1300])
+    ax.set_zticklabels([1800, 1500, 1300])
     # 调整刻度位置
     ax.tick_params(axis='x', pad=1, length=15)
     ax.tick_params(axis='y', pad=1, length=15)
@@ -81,11 +87,11 @@ def plot_band_surfaces(data):
 
     # plt.savefig(f'./rsl/band3D-{cmap.name}-{"comparison_design"}.png', dpi=500, bbox_inches='tight', pad_inches=0.3, transparent=True)
     # plt.savefig(f'./rsl/band3D-{cmap.name}-{"comparison_design"}.svg', bbox_inches='tight', pad_inches=0.3, transparent=True)
-    plt.savefig(f'./rsl/band3D-{cmap.name}-{"test"}.png', dpi=500, bbox_inches='tight', pad_inches=0.3, transparent=True)
-    plt.savefig(f'./rsl/band3D-{cmap.name}-{"test"}.svg', bbox_inches='tight', pad_inches=0.3, transparent=True)
-    plt.show()
+    plt.savefig(f'./rsl/band3D-{cmap.name}-{"final_design"}.png', dpi=500, bbox_inches='tight', pad_inches=0.3, transparent=True)
+    plt.savefig(f'./rsl/band3D-{cmap.name}-{"final_design"}.svg', bbox_inches='tight', pad_inches=0.3, transparent=True)
+    # plt.show()
 
 # 载入数据并调用函数
 # data = pd.read_csv('./data/expanded_VBG-comparison_design-0.12.csv', sep='\t').to_numpy()
-data = pd.read_csv('../plot_3D/data/in_plane_chirality/test_full_kspace.csv', sep='\t').to_numpy()
+data = pd.read_csv('./data/expanded_VBG-final_design.csv', sep='\t').to_numpy()
 plot_band_surfaces(data)

@@ -1,0 +1,223 @@
+from plot_3D.core.data_postprocess.data_grouper import group_surfaces_one_sided_hungarian
+from plot_3D.core.plot_3D_params_space_plt import *
+from plot_3D.core.plot_3D_params_space_pv import plot_Z_diff_pyvista
+from plot_3D.core.process_multi_dim_params_space import *
+
+import numpy as np
+
+c_const = 299792458
+
+def group_eigensolution(grid_coords, Z, freq_index=1):
+
+    # 2. 构造新的 coords
+    new_coords = grid_coords
+
+    # 3. 新数组的 shape
+    new_shape = list(Z.shape)
+    Z_new = np.zeros(shape=new_shape, dtype=complex)
+
+    # 4. 遍历所有索引，计算差值
+    #    我们需要对原始 Z 的所有索引 i1,...,iN（含 bg_n_dim）取两次值
+    it = np.ndindex(*new_shape)
+    for idx in it:
+        idx_full_A = list(idx)
+
+        # 取出对应的列表
+        list_A = Z[tuple(idx_full_A)]
+
+        # 检查长度
+        if len(list_A) <= freq_index:
+            raise IndexError(f"在索引 {idx} 处，列表长度不足以取到第 {freq_index + 1} 个元素")
+
+        Z_new[idx] = list_A[freq_index]
+
+    return new_coords, Z_new
+
+
+def filter_eigensolution(grid_coords, Z, z_keys):
+
+    # 2. 构造新的 coords
+    new_coords = grid_coords
+
+    # 3. 新数组的 shape
+    new_shape = list(Z.shape)
+    Z_new = np.zeros(shape=new_shape, dtype=object)
+    min_lens = 999
+    # 4. 遍历所有索引，计算差值
+    #    我们需要对原始 Z 的所有索引 i1,...,iN（含 bg_n_dim）取两次值
+    it = np.ndindex(*new_shape)
+    for idx in it:
+        idx_full_A = list(idx)
+
+        # 取出对应的列表
+        data_elements = Z[tuple(idx_full_A)]
+        # 构造一个 4×10 的数组
+        arr = np.array(data_elements)
+        # 生成一个布尔掩码，选出第 3 行（第 4 个列表）中 >0.5 的列
+        mask = arr[3] > 0.5
+        mask_lens = sum(mask)
+        if mask_lens < min_lens:
+            min_lens = mask_lens
+        # 用布尔掩码在列维度上筛选
+        # filtered_arr = arr[:, mask]
+        # filtered = filtered_arr.tolist()
+        arr[0, mask] = -1
+        filtered = arr.tolist()
+
+        Z_new[idx] = filtered
+
+    return new_coords, Z_new, min_lens
+
+
+if __name__ == '__main__':
+    data_path = './data/in_plane_chirality/test_full_kspace.csv'
+    df_sample = pd.read_csv(data_path, sep='\t')
+
+    # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
+    def convert_complex(freq_str):
+        return complex(freq_str.replace('i', 'j'))
+    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex)
+
+    # 指定用于构造网格的参数以及目标数据列
+    param_keys = ["m1", "m2"]
+    z_keys = ["特征频率 (THz)", "tanchi (1)", "phi (rad)", "S_air_prop (1)"]
+
+    # 构造数据网格，此处不进行聚合，每个单元格保存列表
+    grid_coords, Z = create_data_grid(df_sample, param_keys, z_keys, deduplication=True)
+    print("网格参数：")
+    for key, arr in grid_coords.items():
+        print(f"  {key}: {arr}")
+    print("数据网格 Z 的形状：", Z.shape)
+
+    # 示例查询某个参数组合对应的数据
+    query = {"m1": 0.00, "m2": 0.00}
+    result = query_data_grid(grid_coords, Z, query)
+    print("\n查询结果（保留列表）：", result)
+    # 示例查询某个参数组合对应的数据
+    query = {"m1": 0.00, "m2": 0.1}
+    result = query_data_grid(grid_coords, Z, query)
+    print("\n查询结果（保留列表）：", result)
+
+    # 假设你已经得到了 grid_coords, Z
+    new_coords, Z, min_lens = filter_eigensolution(
+        grid_coords, Z,
+        z_keys=z_keys,
+    )
+
+    deltas3 = (.1, .1)  # n个维度的网格间距
+    # 当沿维度 d 生长时，值差权重矩阵（n×n）
+    # 例如：value_weights[d, j] = 在 grow_dir=d 时，对维度 j 的值差权重
+    value_weights = np.array([
+        [1, 1],   # 沿维度0生长时，对 0,1,2 维度的值差权重
+        [1, 1],   # 沿维度2生长时
+    ])
+
+    # 当沿维度 d 生长时，导数不连续权重矩阵（n×n）
+    deriv_weights = np.array([
+        [0, 0],
+        [0, 0],
+    ])
+    # 创建一个新的数组，用于存储更新后的结果
+    Z_new = np.empty_like(Z, dtype=object)
+    # 使用直接的循环来更新 Z_new
+    for i in range(Z.shape[0]):
+        for j in range(Z.shape[1]):
+            Z_new[i, j] = Z[i, j][0]  # 提取每个 lst_ij 的第 b 列
+
+    Z_grouped = group_surfaces_one_sided_hungarian(
+        Z_new, deltas3,
+        value_weights=value_weights,
+        deriv_weights=deriv_weights,
+    )
+
+    # 假设你已经得到了 grid_coords, Z
+    new_coords, Z_target1 = group_eigensolution(
+        grid_coords, Z_grouped,
+        freq_index=0  # 第n个频率
+    )
+    new_coords, Z_target2 = group_eigensolution(
+        grid_coords, Z_grouped,
+        freq_index=0  # 第n个频率
+    )
+    new_coords, Z_target3 = group_eigensolution(
+        grid_coords, Z_grouped,
+        freq_index=0  # 第n个频率
+    )
+    new_coords, Z_target4 = group_eigensolution(
+        grid_coords, Z_grouped,
+        freq_index=0  # 第n个频率
+        # freq_index=2  # 第n个频率
+    )
+
+    print("去掉 bg_n 后的参数：")
+    for k, v in new_coords.items():
+        print(f"  {k}: {v}")
+    print("Z_diff 形状：", Z_target1.shape)
+    # # 示例查询某个参数组合对应的数据
+    # query = {"a": 0.00, "b": 0.0000}
+    # result = query_data_grid(grid_coords, Z_target1, query)
+    # print("\n差值查询结果（保留列表）：", result)
+
+    # 假设已经得到 new_coords, Z_target
+    # 画一维曲线：params 对 target
+    plot_Z_diff_plt(
+        new_coords, Z_target1,
+        x_key="m1",
+        fixed_params={
+            "m2": 0.0000
+        },
+        plot_params={
+            'zlabel': '***',
+            'imag': False,
+        }
+    )
+    # 画二维曲面：a vs w1 对 Δ频率
+    plot_params = {
+        'zlabel': '***',
+        'cmap1': 'Blues',
+        'cmap2': 'Reds',
+        'log_scale': False,
+        'alpha': 1,
+        'data_scale': [100, 5e-4, 100],
+        # 'data_scale': [10000, 1, 1],
+        # 'vmax_real': 95,
+        # 'vmax_imag': 1,
+        'render_real': True,
+        'render_imag': False,
+        'apply_abs': True
+    }
+    plot_Z_diff_pyvista(
+        new_coords, [Z_target1, Z_target2, Z_target3, Z_target4],
+        # new_coords, [Z_target2],
+        x_key="m1",
+        y_key="m2",
+        fixed_params={
+        },
+        plot_params=plot_params,
+        show_live=True
+    )
+    # 画二维曲面：a vs w1 对 Δ频率
+    plot_params = {
+        'zlabel': '***',
+        'cmap1': 'Blues',
+        'cmap2': 'Reds',
+        'log_scale': False,
+        'alpha': 1,
+        'data_scale': [100, 10e-3, 100],
+        # 'data_scale': [10000, 1, 1],
+        # 'vmax_real': 95,
+        # 'vmax_imag': 1,
+        'render_real': False,
+        'render_imag': True,
+        'apply_abs': True
+    }
+    plot_Z_diff_pyvista(
+        new_coords, [Z_target1, Z_target2],
+        # new_coords, [Z_target2],
+        x_key="m1",
+        y_key="m2",
+        fixed_params={
+        },
+        plot_params=plot_params,
+        show_live=True
+    )
