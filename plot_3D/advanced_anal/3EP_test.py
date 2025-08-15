@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 from mpl_toolkits.mplot3d import Axes3D
 
-# 1. 定[object Object]参数和函数
+# 1. 定参数和函数
 Ω0, Ω1, Ω2 = 0.0, 0.0, 0.0
 γ_bg, γ1, γ3 = 0.0, 0.0, 1.0
 v = 1.0
