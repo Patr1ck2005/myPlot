@@ -1,4 +1,5 @@
 import numpy as np
+from matplotlib import pyplot as plt
 from scipy.interpolate import griddata
 
 
@@ -9,20 +10,21 @@ def lorenz_func(delta_omega, gamma=1, gamma_nr=0.001):
     Returns:
         float: The calculated Lorenz function value.
     """
-    return (gamma ** 2) / ((delta_omega ** 2) + ((gamma+gamma_nr) ** 2))
+    # return (gamma ** 2) / ((delta_omega ** 2) + ((gamma+gamma_nr) ** 2))
+    return -(gamma) / (1j*(delta_omega) - ((gamma+gamma_nr)))
 
-def VBG_single_resonance_efficiency(kx, ky, omega=1.2, omega_Gamma=1.5, a=-1., gamma=0.1):
+def VBG_single_resonance_converted(kx, ky, omega=1.2, omega_Gamma=1.5, a=-1., Q_ref=0.1, gamma_slope=0.1, gamma_nr=0.001):
     """
-    Calculate the efficiency of the VBG single resonance.
+    Calculate the converted beam of the VBG single resonance.
 
     Returns:
-        float: The calculated efficiency.
+        complex: The calculated converted amplitude.
     """
     kr = np.sqrt(kx ** 2 + ky ** 2)
     omega_0 = omega_Gamma+a*kr**2
     delta_omega = omega - omega_0
-    gamma = 0.1*kr**2
-    return lorenz_func(delta_omega=delta_omega, gamma=gamma)
+    gamma = gamma_slope*kr**2/(gamma_slope*Q_ref*kr**2+1)
+    return lorenz_func(delta_omega=delta_omega, gamma=gamma, gamma_nr=gamma_nr)
 
 
 def gaussian_profile(x, y, w=0.5, l=0):
@@ -67,4 +69,134 @@ def interpolate_2d(z, x_new, y_new):
     z_new = griddata(points, values, (x_new, y_new), method='cubic')
 
     return z_new
+
+
+def skyrmion_density(S1, S2, S3):
+    # ----------------------
+    #    Compute skyrmion density n_sk = S · (∂x S × ∂y S)
+    #    Use centered finite differences via np.gradient with physical spacings
+    # ----------------------
+    # gradients of each component w.r.t x and y
+    dS1dy, dS1dx = np.gradient(S1, 1, 1, edge_order=2)
+    dS2dy, dS2dx = np.gradient(S2, 1, 1, edge_order=2)
+    dS3dy, dS3dx = np.gradient(S3, 1, 1, edge_order=2)
+
+    # cross product ∂x S × ∂y S (component-wise formula)
+    cx = dS2dx * dS3dy - dS3dx * dS2dy
+    cy = dS3dx * dS1dy - dS1dx * dS3dy
+    cz = dS1dx * dS2dy - dS2dx * dS1dy
+
+    nsk = S1 * cx + S2 * cy + S3 * cz  # skyrmion density
+    return nsk
+
+
+def skyrmion_number(nsk, dx, dy, mask=None):
+    # ----------------------
+    #    Compute skyrmion number s = (∑_i nsk_i * dx * dy) / (4π)
+    # ----------------------
+    if mask is None:
+        mask = np.ones_like(nsk, dtype=bool)
+    s = (nsk[mask].sum() * dx * dy) / (4.0 * np.pi)
+
+    print(f"Computed skyrmion number s ≈ {s:.6f}")
+    # print(f"Grid: {N}x{N}, box size: [-{L}, {L}]^2, dx=dy={dx:.4f}, radius R={R}")
+    return s
+
+
+from scipy import ndimage
+
+def divide_regions_by_zero(z, X=None, Y=None, visualize=False):
+    """
+    以值为 0 作为分界线划分二维数组的区域，生成 mask，并可选可视化。
+
+    参数:
+    z (np.ndarray): 二维数组 (height, width)。
+    X (np.ndarray, optional): 网格 x 坐标，与 z 同形状。如果 None，则使用 np.arange(z.shape[1])。
+    Y (np.ndarray, optional): 网格 y 坐标，与 z 同形状。如果 None，则使用 np.arange(z.shape[0])。
+    visualize (bool, optional): 是否绘制 =0 曲线和区域。默认 False。
+
+    返回:
+    dict: {
+        'n': 总区域数 (int),
+        'num_pos': 正区域数 (int),
+        'num_neg': 负区域数 (int),
+        'masks': n 个 mask 的列表 (list of bool np.ndarray),
+        'middle_mask': 中间区域的 mask (bool np.ndarray 或 None),
+    }
+    """
+    if X is None:
+        X = np.meshgrid(np.arange(z.shape[1]), np.arange(z.shape[0]))[0]
+    if Y is None:
+        Y = np.meshgrid(np.arange(z.shape[1]), np.arange(z.shape[0]))[1]
+
+    # 符号数组
+    sign_z = np.sign(z)
+
+    # 标签正区域 (z > 0)
+    positive = (sign_z > 0).astype(int)
+    pos_labels, num_pos = ndimage.label(positive)
+
+    # 标签负区域 (z < 0)，偏移标签
+    negative = (sign_z < 0).astype(int)
+    neg_labels, num_neg = ndimage.label(negative)
+    neg_labels[neg_labels > 0] += num_pos
+
+    # 总区域数 n
+    n = num_pos + num_neg
+
+    # 生成所有 mask
+    masks = []
+    for i in range(1, n + 1):
+        if i <= num_pos:
+            mask = (pos_labels == i)
+        else:
+            mask = (neg_labels == i)
+        masks.append(mask)
+
+    # 选择中间区域
+    center_y, center_x = z.shape[0] // 2, z.shape[1] // 2
+    center_sign = sign_z[center_y, center_x]
+    middle_label = None
+    if center_sign > 0:
+        middle_label = pos_labels[center_y, center_x]
+    elif center_sign < 0:
+        middle_label = neg_labels[center_y, center_x]
+    else:
+        print("警告: 中心点在边界上，无法直接选择中间区域。")
+
+    middle_mask = masks[middle_label - 1] if middle_label is not None else None
+
+    # 可视化
+    if visualize:
+        plt.figure(figsize=(8, 6))
+        plt.contour(X, Y, z, levels=[0], colors='red', linewidths=2)  # =0 曲线
+        plt.contourf(X, Y, pos_labels + neg_labels, cmap='tab20', alpha=0.5)  # 区域填充
+        plt.title('=0 边界线和划分区域')
+        plt.colorbar()
+        plt.show()
+
+    return {
+        'n': n,
+        'num_pos': num_pos,
+        'num_neg': num_neg,
+        'masks': masks,
+        'middle_mask': middle_mask
+    }
+
+if __name__ == '__main__':
+    # 示例使用：生成同心圆环数组并调用函数
+    x = np.linspace(-3, 3, 100)
+    y = np.linspace(-3, 3, 100)
+    X, Y = np.meshgrid(x, y)
+    r = np.sqrt(X**2 + Y**2)
+    z = (r - 1) * (r - 2)  # 示例数组
+
+    result = divide_regions_by_zero(z, X=X, Y=Y, visualize=True)
+
+    # 输出示例结果
+    print(f"总区域数 n: {result['n']}")
+    print(f"正区域数: {result['num_pos']}, 负区域数: {result['num_neg']}")
+    print(f"中间 mask 形状: {result['middle_mask'].shape if result['middle_mask'] is not None else 'None'}, "
+          f"非零元素数: {np.sum(result['middle_mask']) if result['middle_mask'] is not None else 'N/A'}")
+    print("所有 mask 已生成，可供选择（result['masks'] 列表）。")
 

@@ -3,7 +3,7 @@ from plot_math.core.plt_func_2D import plot_2d_function
 
 if __name__ == '__main__':
     plot_2d_function(
-        VBG_single_resonance_efficiency,
+        VBG_single_resonance_converted,
         x_range=(-1, 1), y_range=(-1, 1),
         filename='./rsl/VBG_single_resonance_efficiency.png',
         vmin=0, vmax=1, cmap_name='magma',
@@ -24,7 +24,7 @@ if __name__ == '__main__':
     )
 
     plot_2d_function(
-        lambda x, y: gaussian_profile(x, y)**2 * VBG_single_resonance_efficiency(x, y),
+        lambda x, y: gaussian_profile(x, y) ** 2 * VBG_single_resonance_converted(x, y),
         x_range=(-1, 1), y_range=(-1, 1),
         filename='./rsl/multiplication.png',
         vmin=0, vmax=1, cmap_name='magma',
