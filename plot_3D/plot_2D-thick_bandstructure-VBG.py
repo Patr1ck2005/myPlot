@@ -179,7 +179,13 @@ if __name__ == '__main__':
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
     def convert_complex(freq_str):
         return complex(freq_str.replace('i', 'j'))
-    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex)
+    def norm_freq(freq, period):
+        return freq/(c_const/period)
+    def convert_special_k(k):
+        return k*np.sqrt(2) if k < 0 else k
+    # period = 720e-9*1.8
+    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq, period=720e-9*1.8*1e12)
+    df_sample["m1"] = df_sample["m1"].apply(convert_special_k)
 
     # 指定用于构造网格的参数以及目标数据列
     param_keys = ["delta_shrink (nm)", "m1"]
@@ -201,21 +207,19 @@ if __name__ == '__main__':
     new_coords, Z_filtered, min_lens = advanced_filter_eigensolution(
         grid_coords, Z,
         z_keys=z_keys,
-        fixed_params={"delta_shrink (nm)": 60},  # 固定 delta_shrink=60
-        filter_conditions={"S_air_prop (1)": {"<": 100.0}}  # 筛选 S_air_prop < 10.0
+        fixed_params={"delta_shrink (nm)": 85},  # 固定 delta_shrink=60
+        filter_conditions={"S_air_prop (1)": {"<": 10.0}}  # 筛选 S_air_prop < 10.0
     )
 
-    deltas3 = (.1, .1)  # n个维度的网格间距
+    deltas3 = (1e-2,)  # n个维度的网格间距
     # 当沿维度 d 生长时，值差权重矩阵（n×n）
     # 例如：value_weights[d, j] = 在 grow_dir=d 时，对维度 j 的值差权重
     value_weights = np.array([
-        [1, 1],   # 沿维度0生长时，对 0,1,2 维度的值差权重
-        [1, 1],   # 沿维度2生长时
+        [1,],   # 沿维度生长时
     ])
     # 当沿维度 d 生长时，导数不连续权重矩阵（n×n）
     deriv_weights = np.array([
-        [0, 0],
-        [0, 0],
+        [1,],
     ])
     # 创建一个新的数组，用于存储更新后的结果
     Z_new = np.empty_like(Z_filtered, dtype=object)
@@ -236,15 +240,20 @@ if __name__ == '__main__':
     )
     new_coords, Z_target2 = group_eigensolution(
         new_coords, Z_grouped,
-        freq_index=0  # 第n个频率
+        freq_index=1  # 第n个频率
     )
     new_coords, Z_target3 = group_eigensolution(
         new_coords, Z_grouped,
-        freq_index=0  # 第n个频率
+        freq_index=2  # 第n个频率
     )
     new_coords, Z_target4 = group_eigensolution(
         new_coords, Z_grouped,
-        freq_index=0  # 第n个频率
+        freq_index=3  # 第n个频率
+    )
+
+    new_coords, Z_target5 = group_eigensolution(
+        new_coords, Z_grouped,
+        freq_index=4  # 第n个频率
     )
 
     print("去掉 bg_n 后的参数：")
@@ -258,14 +267,12 @@ if __name__ == '__main__':
 
     # 假设已经得到 new_coords, Z_target
     # 画一维曲线：params 对 target
-    plot_Z(
-        new_coords, Z_target1,
-        x_key="m1",
-        # fixed_params={
-        # },
-        plot_params={
-            'zlabel': '***',
-            'imag': False,
-        },
-        show=True,
-    )
+
+    plot_Z(new_coords, [Z_target1, Z_target2, Z_target3, Z_target4, Z_target5], x_key="m1",
+           plot_params={
+               'zlabel': "f", 'enable_line_fill': True, 'alpha': 0.3, 'legend': False,
+               'line_colors': ['blue', 'red', 'red', 'blue', 'red']
+           },
+           # plot_params={'zlabel': "freq (kHz)", 'enable_line_fill': True, 'enable_dynamic_color': True, 'line_cmap': 'magma', 'add_colorbar': False},
+           fixed_params={}, show=True)
+

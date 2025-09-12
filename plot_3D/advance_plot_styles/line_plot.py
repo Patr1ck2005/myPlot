@@ -21,7 +21,7 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, **kwargs):
         - alpha_fill: float, 填充透明度 (默认 0.3)。
         - cmap: str 或 Colormap, 自定义颜色表 (默认 'RdBu' for 动态颜色, 'Blues' for 纯色)。
         - default_color: str, 默认颜色 (默认 'blue')。
-        - add_colorbar: bool, 是否添加颜色条 (默认 True)。
+        - add_colorbar: bool, 是否添加颜色条 (默认 False)。
         - linewidth_base: float, 基础线宽 (默认 1)。
 
     返回: 绘图后的 ax 对象。
@@ -36,7 +36,7 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, **kwargs):
     if isinstance(cmap, str):
         cmap = cm.get_cmap(cmap)
     default_color = kwargs.get('default_color', 'blue')
-    add_colorbar = kwargs.get('add_colorbar', True)
+    add_colorbar = kwargs.get('add_colorbar', False)
     linewidth_base = kwargs.get('linewidth_base', 1)
 
     # 验证数组长度
@@ -52,7 +52,8 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, **kwargs):
     y_upper, y_lower = z1, z1  # 默认无填充
     if z2 is not None and enable_fill:
         widths = np.abs(z2)  # 绝对值用于宽度
-        widths_norm = (widths - np.min(widths)) / (np.max(widths) - np.min(widths) + 1e-8)  # 归一化 [0,1]
+        # widths_norm = (widths - np.min(widths)) / (np.max(widths) - np.min(widths) + 1e-8)  # 归一化 [0,1]
+        widths_norm = widths
         y_upper = z1 + scale * widths_norm
         y_lower = z1 - scale * widths_norm
 
@@ -105,13 +106,6 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, **kwargs):
             sm.set_array(color_vals)
             cbar = plt.colorbar(sm, ax=ax)
             cbar.set_label('z3 (controls color)')
-        elif enable_fill and z2 is not None and not enable_dynamic_color:
-            # 颜色条 for 宽度 (z2)
-            norm_width = plt.Normalize(vmin=np.min(np.abs(z2)), vmax=np.max(np.abs(z2)))
-            sm = cm.ScalarMappable(norm=norm_width, cmap=cmap)
-            sm.set_array(np.abs(z2))
-            cbar = plt.colorbar(sm, ax=ax)
-            cbar.set_label('z2 (controls width)')
 
     # 设置轴限
     ax.set_xlim(x_vals.min(), x_vals.max())
