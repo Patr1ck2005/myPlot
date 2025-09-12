@@ -4,60 +4,66 @@ from matplotlib import pyplot as plt
 from scipy.optimize import linear_sum_assignment
 
 
-def estimate_derivative_one_sided(Zg, assigned, idx, s, axis, delta):
+# --- 辅助函数：估计向量分量的偏导数 ---
+def estimate_derivative_one_sided_vector_component(Zg_out, assigned, idx, s, axis, delta, vector_component_idx,
+                                                   output_dtype):
     """
-    在多维数组 Zg 上，沿 axis 方向在点 idx 处
-    用单边差分估计第 s 条曲面的偏导数。
+    在多维数组 Zg_out (存储形状为 (m, num_vector_dims) 的 np.array) 上，
+    沿 axis 方向在点 idx 处，估计第 s 条曲面在第 vector_component_idx 个向量分量上的偏导数。
     优先使用已赋值的后向差分，不可用时使用已赋值的前向差分；
-    若都不可用，返回 0.0。
-    如果 Zg[idx][s] 或邻居点的值为 None/NaN，则无法计算导数，返回 0.0。
+    若都不可用，返回 0.0 (或 0.0+0.0j)。
+    如果 Zg_out[idx][s, vector_component_idx] 或邻居点的值为 NaN，则无法计算导数，返回 0.0 (或 0.0+0.0j)。
     """
     idx_list = list(idx)
 
-    # 检查当前点的值是否存在
-    if Zg[idx] is None or Zg[idx][s] is None or np.isnan(Zg[idx][s]):
-        return 0.0
+    current_val_s_comp = Zg_out[idx][s, vector_component_idx]
+    if np.isnan(current_val_s_comp):
+        return output_dtype(0.0)
 
     # 后向差分
     if idx[axis] - 1 >= 0:
         idx_list_b = idx_list.copy()
         idx_list_b[axis] -= 1
         nb = tuple(idx_list_b)
-        # 检查邻点是否已赋值且值存在
-        if assigned[nb] and Zg[nb] is not None and Zg[nb][s] is not None and not np.isnan(Zg[nb][s]):
-            return (Zg[idx][s] - Zg[nb][s]) / delta
+        if assigned[nb]:
+            prev_val_s_comp = Zg_out[nb][s, vector_component_idx]
+            if not np.isnan(prev_val_s_comp):
+                return (current_val_s_comp - prev_val_s_comp) / delta
 
     # 前向差分
-    if idx[axis] + 1 < Zg.shape[axis]:
+    if idx[axis] + 1 < Zg_out.shape[axis]:
         idx_list_f = idx_list.copy()
         idx_list_f[axis] += 1
         nf = tuple(idx_list_f)
-        # 检查邻点是否已赋值且值存在
-        if assigned[nf] and Zg[nf] is not None and Zg[nf][s] is not None and not np.isnan(Zg[nf][s]):
-            return (Zg[nf][s] - Zg[idx][s]) / delta
+        if assigned[nf]:
+            next_val_s_comp = Zg_out[nf][s, vector_component_idx]
+            if not np.isnan(next_val_s_comp):
+                return (next_val_s_comp - current_val_s_comp) / delta
 
-    # 都不可用，或者值缺失
-    return 0.0
+    return output_dtype(0.0)
 
 
-def group_surfaces_one_sided_hungarian(
-        Z,
+def group_vectors_one_sided_hungarian(
+        Z_vector_components,  # list of np.ndarray, each containing lists of numbers (float or complex)
         deltas,
-        value_weights,
-        deriv_weights,
-        max_m=None,  # 新增参数：显式指定要追踪的最大曲面数量
-        initial_derivatives=None,
-        nan_cost_penalty=1e9  # 新增参数：NaN曲面与真实值匹配的惩罚
+        value_weights,  # (n_dims, n_dims)
+        deriv_weights,  # (n_dims, n_dims)
+        max_m=None,
+        initial_derivatives=None,  # (max_m, n_dims, num_vector_dims)
+        nan_cost_penalty=1e9
 ):
     """
-    任意 n 维参数空间的分组算法，可用矩阵指定不同生长方向上的
-    值连续性权重（value_weights）与导数连续性权重（deriv_weights）。
-    此版本可处理每个格点处 Z 列表中元素数量不一致的情况。
+    任意 n 维参数空间中，对多维向量场进行分组。
+    每个格点上的数据是 K 维向量的列表，向量分量可以是 float 或 complex。
 
     参数
     ----
-    Z : np.ndarray, dtype=object, shape=dims
-        每个格点存放长度可变的 complex 列表（乱序）。
+    Z_vector_components : list of np.ndarray
+        长度为 num_vector_dims 的列表。每个元素 Z_k 是一个 np.ndarray，
+        其 dtype=object, shape=dims。Z_k[idx] 存放长度可变的 numbers 列表，
+        代表在点 idx 处所有观测向量的第 k 个分量。
+        如果需要处理复数作为一个整体，则 list 长度为 1，
+        Z_vector_components[0][idx] = [complex1, complex2, ...]
     deltas : sequence of float, length = n_dims
         各维度的网格步长 Δ_d。
     value_weights : np.ndarray, shape=(n_dims, n_dims)
@@ -65,61 +71,84 @@ def group_surfaces_one_sided_hungarian(
     deriv_weights : np.ndarray, shape=(n_dims, n_dims)
         生长方向 d（行）对应的“导数不连续”权重向量，列索引 j。
     max_m : int, optional
-        要追踪的最大曲面数量。如果未指定，则取所有格点中列表长度的最大值。
-    initial_derivatives : optional np.ndarray, shape=(max_m, n_dims)
-        原点处 max_m 条曲面的初始偏导数猜测值。
+        要追踪的最大曲面/向量流数量。如果未指定，则取所有格点中
+        Z_vector_components[0] 列表中长度的最大值。
+    initial_derivatives : optional np.ndarray, shape=(max_m, n_dims, num_vector_dims)
+        原点处 max_m 条曲面/向量流的初始偏导数猜测值。
+        d_prev[s, grow_dir, vector_comp]
     nan_cost_penalty : float, optional
-        当一个曲面在前一个点是 np.nan 时，它与当前点真实候选值匹配的惩罚。
-        此值应足够大，以避免随意匹配，但又不能是 np.inf。
+        当一个向量流在前一个点是 np.nan 时，它与当前点真实观测值匹配的惩罚。
 
     返回
     ----
-    Zg : np.ndarray, same shape and dtype as Z
-        每个点存放已排序（按曲面索引）长度 max_m 的 complex np.array。
-        如果某个曲面在某个点没有找到匹配，对应位置将为 np.nan。
+    Zg_out : np.ndarray, dtype=object, shape=dims
+        每个点存放已排序（按向量流索引）的 np.ndarray，形状为 (max_m, num_vector_dims)。
+        如果某个向量流在某个点没有找到匹配，对应位置的所有分量将为 np.nan。
     """
-    dims = Z.shape
+    if not Z_vector_components:
+        raise ValueError("Z_vector_components cannot be empty.")
+
+    dims = Z_vector_components[0].shape
     n_dims = len(dims)
+    num_vector_dims = len(Z_vector_components)
     origin = tuple([0] * n_dims)
 
-    # 确定要追踪的曲面数量 m
+    # 确定输出数组的dtype，基于输入数据的类型
+    # 检查第一个非空列表的第一个元素的类型
+    output_dtype = float
+    for idx in np.ndindex(*dims):
+        if Z_vector_components[0][idx] is not None and len(Z_vector_components[0][idx]) > 0:
+            if isinstance(Z_vector_components[0][idx][0], complex):
+                output_dtype = complex
+            break
+
+    # 确定要追踪的向量流数量 m
     if max_m is None:
         m = 0
         has_data = False
         for idx in np.ndindex(*dims):
-            if Z[idx] is not None:
-                m = max(m, len(Z[idx]))
-                if len(Z[idx]) > 0:
+            if Z_vector_components[0][idx] is not None:
+                m = max(m, len(Z_vector_components[0][idx]))
+                if len(Z_vector_components[0][idx]) > 0:
                     has_data = True
-        if not has_data:  # 如果Z中所有列表都为空或None，则m为0
-            raise ValueError("Z appears to contain no data for any point.")
-        if m == 0:  # 如果有数据但是所有列表都是空的，也可能到这里
-            raise ValueError("Z contains data points, but all lists are empty.")
+        if not has_data:
+            raise ValueError("Z_vector_components appears to contain no data for any point.")
+        if m == 0:
+            raise ValueError("Z_vector_components contains data points, but all lists are empty.")
     else:
         m = max_m
 
     # 输出与标记数组
-    # Zg 存储 np.array，其中包含 m 个 complex 值或 np.nan
-    Zg = np.empty(dims, dtype=object)
+    # Zg_out[idx] 存储一个形状为 (m, num_vector_dims) 的 np.array
+    Zg_out = np.empty(dims, dtype=object)
     assigned = np.zeros(dims, dtype=bool)
 
-    # 处理原点
-    origin_vals = Z[origin] if (Z[origin] is not None and len(Z[origin]) > 0) else []
+    # --- 处理原点 ---
+    origin_num_candidates = 0
+    if Z_vector_components[0][origin] is not None:
+        origin_num_candidates = len(Z_vector_components[0][origin])
 
-    if not origin_vals:
-        # 如果原点没有值，所有曲面初始化为 NaN
-        Zg[origin] = np.full(m, np.nan, dtype=complex)
+    if origin_num_candidates == 0:
+        Zg_out[origin] = np.full((m, num_vector_dims), np.nan, dtype=output_dtype)
     else:
-        # 对原点的值进行排序，然后填充到 Zg[origin]
-        sorted_origin_vals = np.array(sorted(origin_vals, key=lambda c: c.real), dtype=complex)
-        temp_arr = np.full(m, np.nan, dtype=complex)
-        # 确保不会越界
-        num_to_fill = min(m, len(sorted_origin_vals))
-        temp_arr[:num_to_fill] = sorted_origin_vals[:num_to_fill]
-        Zg[origin] = temp_arr
+        # 收集原点处的观测向量
+        origin_vectors = []
+        for i in range(origin_num_candidates):
+            vec = [Z_k[origin][i] for Z_k in Z_vector_components]
+            origin_vectors.append(np.array(vec, dtype=output_dtype))
+
+        # 对向量进行排序（例如，按第一个分量的实部/值）
+        # 对于复数，默认会按模和角度排序，或按实部，再按虚部
+        # 这里为了稳定，我们强制按第一个分量的实部（如果存在）或直接值排序
+        origin_vectors.sort(key=lambda v: (v[0].real if isinstance(v[0], complex) else v[0]))
+
+        temp_arr = np.full((m, num_vector_dims), np.nan, dtype=output_dtype)
+        num_to_fill = min(m, len(origin_vectors))
+        temp_arr[:num_to_fill, :] = np.array(origin_vectors[:num_to_fill])
+        Zg_out[origin] = temp_arr
     assigned[origin] = True
 
-    # 按字典序遍历
+    # --- 按字典序遍历 ---
     for idx in np.ndindex(*dims):
         if assigned[idx]:
             continue
@@ -134,238 +163,343 @@ def group_surfaces_one_sided_hungarian(
                 if assigned[nb]:
                     neighbors.append((nb, d))
 
-        # 如果没有已赋值的后向邻点（除了原点，原点已处理），则无法计算连续性。
-        # 这里，我们选择将所有曲面标记为NaN，并继续。
-        # 或者可以选择回溯到原点作为唯一的邻点（如果非原点的话）。
-        # 当前实现是：如果没有有效邻居，就标记为 NaN
         if not neighbors:
-            Zg[idx] = np.full(m, np.nan, dtype=complex)
-            assigned[idx] = True
-            continue  # 跳过代价计算
-
-        candidates = Z[idx] if (Z[idx] is not None and len(Z[idx]) > 0) else []
-        num_candidates = len(candidates)
-
-        if num_candidates == 0:
-            # 如果当前点没有候选值，所有曲面都设为 NaN
-            Zg[idx] = np.full(m, np.nan, dtype=complex)
+            Zg_out[idx] = np.full((m, num_vector_dims), np.nan, dtype=output_dtype)
             assigned[idx] = True
             continue
 
+        # 收集当前格点处的候选观测向量
+        num_candidates = 0
+        if Z_vector_components[0][idx] is not None:
+            num_candidates = len(Z_vector_components[0][idx])
+
+        if num_candidates == 0:
+            Zg_out[idx] = np.full((m, num_vector_dims), np.nan, dtype=output_dtype)
+            assigned[idx] = True
+            continue
+
+        candidates = []  # list of (num_vector_dims,) np.array
+        for i in range(num_candidates):
+            vec = [Z_k[idx][i] for Z_k in Z_vector_components]
+            candidates.append(np.array(vec, dtype=output_dtype))
+
         # 构建代价矩阵，维度为 (m, num_candidates)
-        # m 是要追踪的曲面数量，num_candidates 是当前点的实际观测值数量
         C_total = np.zeros((m, num_candidates), dtype=float)
 
-        # 针对每个邻点累加代价
         for neighbor, grow_dir in neighbors:
-            v_prev_arr = Zg[neighbor]  # 这是 m 长度的 np.array，可能含 NaN
+            v_prev_arr = Zg_out[neighbor]  # (m, num_vector_dims) np.array, possibly with NaNs
 
-            # 只有当 v_prev_arr 确实是一个数组时才处理
             if v_prev_arr is None:
-                # 如果邻点数据本身就是None，那么我们无法从它继承信息
-                # 可以选择跳过这个邻点，或者给它一个默认的惩罚
                 continue
 
-            d_prev = np.zeros((m, n_dims), dtype=float)
+            # d_prev: (m, n_dims, num_vector_dims)
+            d_prev = np.zeros((m, n_dims, num_vector_dims), dtype=output_dtype)
             for s in range(m):
-                # 只有当 v_prev[s] 不是 NaN 时才计算导数
-                if not np.isnan(v_prev_arr[s]):
+                # 只有当此向量流在邻点至少有一个非NaN分量时才尝试计算导数
+                if not np.all(np.isnan(v_prev_arr[s])):
                     for d in range(n_dims):
-                        d_prev[s, d] = estimate_derivative_one_sided(
-                            Zg, assigned, neighbor, s, d, deltas[d]
-                        )
+                        for k in range(num_vector_dims):
+                            d_prev[s, d, k] = estimate_derivative_one_sided_vector_component(
+                                Zg_out, assigned, neighbor, s, d, deltas[d], k, output_dtype
+                            )
 
-            # 构造该邻点的局部 C 矩阵
-            # 初始化为一个足够大的值，但不至于 infeasible
             C_nb = np.full((m, num_candidates), fill_value=nan_cost_penalty * 2, dtype=float)
-            # 使用 nan_cost_penalty * 2 是为了确保如果一个点是NaN，
-            # 那么它匹配到真实值的代价高于从非NaN到真实值的“正常”高代价。
-            # 这里的目的是让nan的曲面更倾向于不匹配真实值，
-            # 但如果所有曲面都曾是NaN，且只有少量真实值，它仍然可以选择匹配。
 
             for s in range(m):
-                if np.isnan(v_prev_arr[s]):
-                    # 如果前一个点此曲面是 NaN，与任何真实候选值匹配的代价
-                    # 应该是一个较大的惩罚，但不能是 np.inf
-                    # 这样它会优先保持 NaN，除非没有其他选择
+                if np.all(np.isnan(v_prev_arr[s])):
+                    # 如果前一个点此向量流所有分量都是 NaN
                     for c_idx in range(num_candidates):
                         C_nb[s, c_idx] = nan_cost_penalty
                 else:
-                    v_prev_s = v_prev_arr[s]
-                    for c_idx, c in enumerate(candidates):
-                        # 值连续性（按 value_weights[grow_dir, :] 加权）
-                        cost_val = sum(
-                            value_weights[grow_dir, j] * abs(c - v_prev_s)
-                            for j in range(n_dims)
-                        )
-                        # 导数连续性（按 deriv_weights[grow_dir, :] 加权）
-                        cost_der = sum(
-                            deriv_weights[grow_dir, j]
-                            * abs((c - v_prev_s) / deltas[j] - d_prev[s, j])
-                            for j in range(n_dims)
-                        )
+                    v_prev_s_vector = v_prev_arr[s]  # (num_vector_dims,) np.array
+                    for c_idx, c_vector in enumerate(candidates):  # c_vector is (num_vector_dims,) np.array
+                        # 值连续性
+                        cost_val = 0.0
+                        for j in range(n_dims):
+                            cost_val_j = value_weights[grow_dir, j] * np.linalg.norm(c_vector - v_prev_s_vector)
+                            cost_val += cost_val_j
+
+                            # 导数连续性
+                        cost_der = 0.0
+                        for j in range(n_dims):
+                            deriv_diff_vector = (c_vector - v_prev_s_vector) / deltas[j] - d_prev[s, j,
+                                                                                           :]  # (num_vector_dims,) vector
+                            cost_der_j = deriv_weights[grow_dir, j] * np.linalg.norm(deriv_diff_vector)
+                            cost_der += cost_der_j
+
                         C_nb[s, c_idx] = cost_val + cost_der
 
             C_total += C_nb
 
-        # 全局最优指派
-        # linear_sum_assignment 可以在非方阵上工作，它会尝试找到最小的匹配。
         row_ind, col_ind = linear_sum_assignment(C_total)
 
-        # 填入 Zg
-        ordered = np.full(m, np.nan, dtype=complex)  # 默认所有曲面为 NaN
+        ordered = np.full((m, num_vector_dims), np.nan, dtype=output_dtype)
         for s_idx, c_idx in zip(row_ind, col_ind):
-            # 确保 s_idx 在 m 范围内
-            if s_idx < m:  # 这通常应该为真，除非 row_ind 包含了超出 m 的索引（不应该发生）
-                ordered[s_idx] = candidates[c_idx]
+            if s_idx < m:
+                ordered[s_idx, :] = candidates[c_idx]
 
-        Zg[idx] = ordered
+        Zg_out[idx] = ordered
         assigned[idx] = True
 
-    return Zg
+    return Zg_out
 
 
 if __name__ == '__main__':
-    plt.rcParams['font.sans-serif'] = ['SimHei']  # 使用黑体
-    plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
-    # === 1D 示例：零散曲线分类 ===
-    nx = 100
-    dims1 = (nx,)
-    deltas1 = (1.0,)  # 1D 只有一个维度，步长为1.0
+    # --- 1D 示例：普通复数曲线分类 (复数作为整体处理) ---
+    nx_comp = 100
+    dims_comp = (nx_comp,)
+    deltas_comp = (1.0,)
 
-    # 权重矩阵降为 1x1
-    value_weights = np.array([[1.0]])
-    deriv_weights = np.array([[10.0]])
+    value_weights_comp = np.array([[1.0]])
+    deriv_weights_comp = np.array([[10.0]])
 
-    # 要追踪的曲面数量，这里假设最多有 3 条曲线（即使并非所有点都有 3 条）
-    m_1d_curves = 3
-    initial_derivs_1d = np.zeros((m_1d_curves, len(deltas1)))
+    m_comp_curves = 3
+    num_vector_dims_complex_as_whole = 1  # 复数作为单个“向量分量”
 
-    # 构建格点与真曲线：模拟零散曲线段
-    x = np.linspace(0, 4 * np.pi, nx)  # 扩大范围，让曲线形态更明显
-    Z1_scattered = np.empty(dims1, dtype=object)
-    for i in range(nx):
-        vals = []
-        # Curve 0: 贯穿始终
-        vals.append(np.sin(x[i]))
+    initial_derivs_comp_as_whole = np.zeros((m_comp_curves, len(deltas_comp), num_vector_dims_complex_as_whole),
+                                            dtype=complex)
 
-        # Curve 1: 在中间部分出现
-        if nx // 4 <= i < 3 * nx // 4:
-            vals.append(np.cos(x[i] * 0.8 + 1))  # 不同频率的cos曲线
+    x_comp = np.linspace(0, 4 * np.pi, nx_comp)
 
-        # Curve 2: 在另一部分出现
-        if nx // 2 <= i < nx:
-            vals.append(np.sin(x[i] * 1.2 - 0.5) + 0.5)  # 另一个不同的sin曲线
+    Z_complex = np.empty(dims_comp, dtype=object)
 
-        random.shuffle(vals)  # 模拟乱序
-        Z1_scattered[i] = vals
+    for i in range(nx_comp):
+        vals_complex_total = []
+        # Curve 0: z = sin(x) + i * cos(x)
+        vals_complex_total.append(np.sin(x_comp[i]) + 1j * np.cos(x_comp[i]))
+
+        # Curve 1: z = cos(0.8x+1) + i * sin(0.8x+1)
+        if nx_comp // 4 <= i < 3 * nx_comp // 4:
+            vals_complex_total.append(0.5*np.cos(x_comp[i] * 0.8 + 1) + 1j * np.sin(x_comp[i] * 0.8 + 1))
+
+        # Curve 2: z = (sin(1.2x-0.5)+0.5) + i * x/10
+        if nx_comp // 2 <= i < nx_comp:
+            vals_complex_total.append((np.sin(x_comp[i] * 1.2 - 0.5) + 0.5) + 1j * (x_comp[i] / 10))
+
+        random.shuffle(vals_complex_total)
+
+        # 作为一个整体，只有一个分量列表
+        Z_complex[i] = vals_complex_total
+
+    # 传递给函数时，Z_vector_components 列表只包含一个元素
+    Z_vector_components_comp_as_whole = [Z_complex]
 
     print(
-        f"1D Scattered Data: Max m detected in Z1_scattered is {max(len(Z1_scattered[i]) for i in np.ndindex(*dims1))}")
+        f"\n1D Scattered Complex Data (As Whole): Max m detected is {max(len(Z_vector_components_comp_as_whole[0][i]) for i in np.ndindex(*dims_comp))}")
 
-    # 调用分组，传入 max_m 参数
-    Zg1_scattered = group_surfaces_one_sided_hungarian(
-        Z1_scattered, deltas1,
-        value_weights=value_weights,
-        deriv_weights=deriv_weights,
-        max_m=m_1d_curves,  # 显式指定要追踪 3 条曲线
-        initial_derivatives=initial_derivs_1d,
-        nan_cost_penalty=1e5  # 适当的惩罚值
+    Zg_comp_as_whole = group_vectors_one_sided_hungarian(
+        Z_vector_components_comp_as_whole, deltas_comp,
+        value_weights=value_weights_comp,
+        deriv_weights=deriv_weights_comp,
+        max_m=m_comp_curves,
+        initial_derivatives=initial_derivs_comp_as_whole,
+        nan_cost_penalty=1e5
     )
 
-    # 可视化 1D 零散曲线
-    plt.figure(figsize=(12, 5))
+    plt.figure(figsize=(14, 6))
 
     plt.subplot(1, 2, 1)
-    for i in range(nx):
-        if Z1_scattered[i] is not None:
-            for v in Z1_scattered[i]:
-                plt.scatter(x[i], v.real, s=5, alpha=0.6, color='gray')
-    plt.title('分组前 (1D 零散曲线)')
-    plt.xlabel('x');
-    plt.ylabel('实部')
+    for i in range(nx_comp):
+        complex_vals = Z_vector_components_comp_as_whole[0][i]
+        if complex_vals is not None:
+            for c_val in complex_vals:
+                plt.scatter(x_comp[i], c_val.real, s=10, alpha=0.6, color='gray')
+    plt.title('分组前 (复平面上的散点 - 复数整体)')
+    plt.xlabel('实部');
+    plt.ylabel('虚部')
+    plt.grid(True)
 
     plt.subplot(1, 2, 2)
-    colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k']  # 更多颜色以防万一
-    for s in range(m_1d_curves):
-        # 提取曲面 s 的实部值，忽略 NaN
-        ys = [Zg1_scattered[i][s].real if not np.isnan(Zg1_scattered[i][s]) else np.nan for i in range(nx)]
-        # 使用 np.ma.masked_invalid 可以自动处理NaN
-        plt.plot(x, np.ma.masked_invalid(ys), label=f'曲面{s}', color=colors[s % len(colors)])
-    plt.title('分组后 (1D 零散曲线)')
-    plt.xlabel('x');
-    plt.ylabel('实部');
+    colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k']
+    for s in range(m_comp_curves):
+        # Zg_comp_as_whole[i] 是一个 (m_comp_curves, 1) 数组，其中唯一分量是复数
+        re_coords = [Zg_comp_as_whole[i][s, 0].real if not np.isnan(Zg_comp_as_whole[i][s, 0]) else np.nan for i in
+                     range(nx_comp)]
+        im_coords = [Zg_comp_as_whole[i][s, 0].imag if not np.isnan(Zg_comp_as_whole[i][s, 0]) else np.nan for i in
+                     range(nx_comp)]
+
+        plt.plot(x_comp, np.ma.masked_invalid(re_coords),
+                 label=f'复数流{s}', color=colors[s % len(colors)], marker='.', markersize=4)
+    plt.title('分组后 (复平面上的复数流 - 复数整体)')
+    plt.xlabel('实部')
+    plt.ylabel('虚部')
     plt.legend()
+    plt.grid(True)
 
     plt.tight_layout()
     plt.show()
 
-    # === 3D 示例 (保持不变，以验证修改未破坏原有功能) ===
-    nx, ny, nz, m_3d_surfaces = 30, 20, 15, 3
+    # --- 1D 示例：零散复数曲线分类 (现在作为2D向量处理) ---
+    # 保持不变，以验证双模式兼容性
+    nx = 100
+    dims1 = (nx,)
+    deltas1 = (1.0,)
+
+    value_weights_1d = np.array([[1.0]])
+    deriv_weights_1d = np.array([[10.0]])
+
+    m_curves = 3
+    num_vector_dims_complex = 2  # Real and Imaginary parts
+    initial_derivs_1d_vec = np.zeros((m_curves, len(deltas1), num_vector_dims_complex),
+                                     dtype=float)  # Note dtype=float here
+
+    Z_real = np.empty(dims1, dtype=object)
+    Z_imag = np.empty(dims1, dtype=object)
+
+    for i in range(nx):
+        vals_complex = Z_complex[i]
+        Z_real[i] = [c.real for c in vals_complex]
+        Z_imag[i] = [c.imag for c in vals_complex]
+
+    Z_vector_components_1d = [Z_real, Z_imag]
+
+    print(
+        f"\n1D Scattered Complex Data (Separated): Max m detected is {max(len(Z_vector_components_1d[0][i]) for i in np.ndindex(*dims1))}")
+
+    Zg1_vectorized = group_vectors_one_sided_hungarian(
+        Z_vector_components_1d, deltas1,
+        value_weights=value_weights_1d,
+        deriv_weights=deriv_weights_1d,
+        max_m=m_curves,
+        initial_derivatives=initial_derivs_1d_vec,
+        nan_cost_penalty=1e5
+    )
+
+    plt.figure(figsize=(14, 6))
+
+    plt.subplot(1, 2, 1)
+    for i in range(nx):
+        real_vals = Z_vector_components_1d[0][i]
+        imag_vals = Z_vector_components_1d[1][i]
+        if real_vals is not None:
+            for r, im in zip(real_vals, imag_vals):
+                plt.scatter(r, im, s=10, alpha=0.6, color='gray')
+    plt.title('分组前 (复平面上的散点 - 实虚分离)')
+    plt.xlabel('实部');
+    plt.ylabel('虚部')
+    plt.grid(True)
+    plt.axis('equal')
+
+    plt.subplot(1, 2, 2)
+    colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k']
+    for s in range(m_curves):
+        re_coords = [Zg1_vectorized[i][s, 0] if not np.isnan(Zg1_vectorized[i][s, 0]) else np.nan for i in range(nx)]
+        im_coords = [Zg1_vectorized[i][s, 1] if not np.isnan(Zg1_vectorized[i][s, 1]) else np.nan for i in range(nx)]
+
+        plt.plot(np.ma.masked_invalid(re_coords), np.ma.masked_invalid(im_coords),
+                 label=f'向量流{s}', color=colors[s % len(colors)], marker='.', markersize=4)
+    plt.title('分组后 (复平面上的向量流 - 实虚分离)')
+    plt.xlabel('实部');
+    plt.ylabel('虚部');
+    plt.legend()
+    plt.grid(True)
+    plt.axis('equal')
+
+    plt.tight_layout()
+    plt.show()
+
+    # --- 3D 示例 (多维向量，例如 3D 向量场) ---
+    # 保持不变
+    nx, ny, nz = 10, 10, 10
     dims3 = (nx, ny, nz)
     deltas3 = (1.0, 1.0, 1.0)
+    m_3d_vectors = 2
+    num_vector_dims_3d = 3
 
-    value_weights = np.array([
+    value_weights_3d = np.array([
         [1.0, 0.5, 0.2],
         [0.5, 1.0, 0.3],
         [0.2, 0.3, 1.0],
     ])
 
-    deriv_weights = np.array([
+    deriv_weights_3d = np.array([
         [10.0, 2.0, 1.0],
         [2.0, 5.0, 1.5],
         [1.0, 1.5, 2.0],
     ])
 
-    initial_derivs = np.zeros((m_3d_surfaces, len(deltas3)))
+    initial_derivs_3d_vec = np.zeros((m_3d_vectors, len(deltas3), num_vector_dims_3d), dtype=float)
 
     x = np.linspace(0, 2 * np.pi, nx)
     y = np.linspace(0, 2 * np.pi, ny)
     z = np.linspace(0, 2 * np.pi, nz)
     X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
-    true3 = np.stack([
-        np.sin(X + s) * np.cos(Y + s) * np.sin(Z + s)
-        for s in range(m_3d_surfaces)
-    ], axis=-1)
 
-    Z3 = np.empty(dims3, dtype=object)
+    Z_X_comp = np.empty(dims3, dtype=object)
+    Z_Y_comp = np.empty(dims3, dtype=object)
+    Z_Z_comp = np.empty(dims3, dtype=object)
+
     for idx in np.ndindex(*dims3):
-        vals = list(true3[idx])
-        random.shuffle(vals)
-        Z3[idx] = vals
+        vectors = []
+        v0_x = -np.sin(Y[idx]) * np.cos(Z[idx])
+        v0_y = np.cos(X[idx]) * np.sin(Z[idx])
+        v0_z = np.sin(X[idx]) * np.cos(Y[idx])
+        vectors.append(np.array([v0_x, v0_y, v0_z]))
 
-    print(f"\n3D Full Data: Max m detected in Z3 is {max(len(Z3[idx]) for idx in np.ndindex(*dims3))}")
+        if (X[idx] > np.pi / 2 and X[idx] < 3 * np.pi / 2) and \
+                (Y[idx] > np.pi / 2 and Y[idx] < 3 * np.pi / 2):
+            v1_x = np.cos(Y[idx]) + 0.5
+            v1_y = -np.sin(X[idx]) + 0.3
+            v1_z = np.cos(Z[idx]) * 0.8
+            vectors.append(np.array([v1_x, v1_y, v1_z]))
 
-    Zg3 = group_surfaces_one_sided_hungarian(
-        Z3, deltas3,
-        value_weights=value_weights,
-        deriv_weights=deriv_weights,
-        max_m=m_3d_surfaces,  # 显式指定 m
-        initial_derivatives=initial_derivs,
+        random.shuffle(vectors)
+
+        Z_X_comp[idx] = [v[0] for v in vectors]
+        Z_Y_comp[idx] = [v[1] for v in vectors]
+        Z_Z_comp[idx] = [v[2] for v in vectors]
+
+    Z_vector_components_3d = [Z_X_comp, Z_Y_comp, Z_Z_comp]
+
+    print(
+        f"\n3D Scattered Vector Data: Max m detected is {max(len(Z_vector_components_3d[0][idx]) for idx in np.ndindex(*dims3))}")
+
+    Zg3_vectorized = group_vectors_one_sided_hungarian(
+        Z_vector_components_3d, deltas3,
+        value_weights=value_weights_3d,
+        deriv_weights=deriv_weights_3d,
+        max_m=m_3d_vectors,
+        initial_derivatives=initial_derivs_3d_vec,
         nan_cost_penalty=1e5
     )
 
-    j0, k0 = ny // 2, nz // 2
-    plt.figure(figsize=(10, 4))
+    y0_slice = ny // 2
+    plt.figure(figsize=(10, 8))
 
     plt.subplot(1, 2, 1)
     for i in range(nx):
-        if Z3[i, j0, k0] is not None:
-            for v in Z3[i, j0, k0]:
-                plt.scatter(x[i], v.real, s=5, alpha=0.6, color='gray')
-    plt.title(f'分组前 (y={y[j0]:.2f}, z={z[k0]:.2f})')
-    plt.xlabel('x');
-    plt.ylabel('实部')
+        for k in range(nz):
+            vecs_at_point = []
+            if Z_vector_components_3d[0][i, y0_slice, k] is not None:
+                for c_idx in range(len(Z_vector_components_3d[0][i, y0_slice, k])):
+                    vecs_at_point.append(np.array([Z_X_comp[i, y0_slice, k][c_idx], Z_Y_comp[i, y0_slice, k][c_idx],
+                                                   Z_Z_comp[i, y0_slice, k][c_idx]]))
+
+            for vec in vecs_at_point:
+                plt.arrow(x[i], z[k], vec[0] * 0.1, vec[1] * 0.1, color='gray', alpha=0.5, head_width=0.05,
+                          head_length=0.1)
+    plt.title(f'分组前 3D 向量场 (y={y[y0_slice]:.2f} 切片)')
+    plt.xlabel('X');
+    plt.ylabel('Z')
+    plt.axis('equal')
 
     plt.subplot(1, 2, 2)
-    for s in range(m_3d_surfaces):
-        ys = [Zg3[i, j0, k0][s].real if not np.isnan(Zg3[i, j0, k0][s]) else np.nan for i in range(nx)]
-        plt.plot(x, np.ma.masked_invalid(ys), label=f'曲面{s}', color=colors[s % len(colors)])
-    plt.title(f'分组后 (y={y[j0]:.2f}, z={z[k0]:.2f})')
-    plt.xlabel('x');
-    plt.ylabel('实部');
+    for s in range(m_3d_vectors):
+        x_coords = [x[i] for i in range(nx) for k in range(nz) if not np.isnan(Zg3_vectorized[i, y0_slice, k][s, 0])]
+        z_coords = [z[k] for i in range(nx) for k in range(nz) if not np.isnan(Zg3_vectorized[i, y0_slice, k][s, 0])]
+        u_coords = [Zg3_vectorized[i, y0_slice, k][s, 0] for i in range(nx) for k in range(nz) if
+                    not np.isnan(Zg3_vectorized[i, y0_slice, k][s, 0])]
+        v_coords = [Zg3_vectorized[i, y0_slice, k][s, 1] for i in range(nx) for k in range(nz) if
+                    not np.isnan(Zg3_vectorized[i, y0_slice, k][s, 0])]
+
+        for i_idx, _x in enumerate(x_coords):
+            plt.arrow(_x, z_coords[i_idx], u_coords[i_idx] * 0.1, v_coords[i_idx] * 0.1,
+                      color=colors[s % len(colors)], alpha=0.7, head_width=0.05, head_length=0.1)
+    plt.title(f'分组后 3D 向量场 (y={y[y0_slice]:.2f} 切片)')
+    plt.xlabel('X');
+    plt.ylabel('Z')
+    plt.axis('equal')
     plt.legend()
 
     plt.tight_layout()
     plt.show()
-
