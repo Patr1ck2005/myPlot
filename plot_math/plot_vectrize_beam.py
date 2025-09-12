@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import hsv_to_rgb
 
 # --- Parameters ---
-l = 0      # Phase topological charge
-m = -2     # Polarization topological charge
+l = 3      # Phase topological charge
+m = -3     # Polarization topological charge
 initial_polar = 0*np.pi  # Initial polarization of the beam
 w = 0.3    # Beam waist
 
@@ -48,7 +48,7 @@ S4 = np.abs(E_L)**2 + np.abs(E_R)**2
 
 # --- 4. To s, p basis via rotation matrix ---
 Es = -np.sin(phi)*Ex + np.cos(phi)*Ey
-Ep =  np.cos(phi)*Ex + np.sin(phi)*Ey
+Ep = np.cos(phi)*Ex + np.sin(phi)*Ey
 
 # --- 5. Visualization function ---
 def plot_complex(field, title):
@@ -64,6 +64,13 @@ def plot_complex(field, title):
     plt.axis('off')
     plt.show()
 
+plt.imshow(np.angle(Es), origin='lower', extent=(-1, 1, -1, 1), cmap='rainbow')
+plt.colorbar()
+plt.show()
+plt.imshow(np.real(Es), origin='lower', extent=(-1, 1, -1, 1), cmap='rainbow')
+plt.colorbar()
+plt.show()
+
 # Plot all fields
 plot_complex(E_L, r'Left Circular $E_L$')
 plot_complex(E_R, r'Right Circular $E_R$')
@@ -75,4 +82,5 @@ plot_complex(E_R, r'Right Circular $E_R$')
 plot_complex(Es, r's-polarized $E_s$')
 plot_complex(np.real(Es), r's-polarized $E_s$')
 plot_complex(Ep, r'p-polarized $E_p$')
+
 

@@ -6,7 +6,7 @@ if __name__ == '__main__':
         VBG_single_resonance_converted,
         x_range=(-1, 1), y_range=(-1, 1),
         filename='./rsl/VBG_single_resonance_efficiency.png',
-        vmin=0, vmax=1, cmap_name='magma',
+        vmin=0, vmax=1, cmap_name='magma', transparent=False,
     )
 
     plot_2d_function(
@@ -24,10 +24,9 @@ if __name__ == '__main__':
     )
 
     plot_2d_function(
-        lambda x, y: gaussian_profile(x, y) ** 2 * VBG_single_resonance_converted(x, y),
+        lambda x, y: gaussian_profile(x, y, w=0.8) ** 2 * np.abs(VBG_single_resonance_converted(x, y))**2,
         x_range=(-1, 1), y_range=(-1, 1),
-        filename='./rsl/multiplication.png',
-        vmin=0, vmax=1, cmap_name='magma',
+        filename='./rsl/multiplication.png', cmap_name='magma',
     )
 
     file_path = r"D:\DELL\Documents\myPlots\plot_2D\data\opt\NIR-mystructure-conversion-efficiency-Opt-Si-193.54THz-1549.0nm-25deg-E0.8896-kx=-1.35-1.35-101_ky=-1.35-1.35-101.npy"

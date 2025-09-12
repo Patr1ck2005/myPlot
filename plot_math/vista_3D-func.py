@@ -29,7 +29,8 @@ def create_paraboloid(kx_range, ky_range, resolution, omega_Gamma, a_1, a_2, sca
     grid = pv.StructuredGrid(KX, KY, omega)
     grid.point_data[scalar_field] = omega.flatten()
     R2 = (KX ** 2 + KY ** 2)
-    efficiency = 0 + np.exp(-R2/4*0)*np.clip(R2*2, 0, 0.8)*0.25/0.8
+    # efficiency = 0 + np.exp(-R2/4*0)*np.clip(R2*2, 0, 0.8)/1
+    efficiency = 0 + np.exp(-R2/4)*np.clip(R2*100, 0, 1.0)
     grid.point_data['efficiency'] = efficiency.flatten()
 
     return grid
@@ -72,22 +73,23 @@ def create_xy_plane(kx_range, ky_range, z_value, resolution, scalar_field="omega
     return plane
 
 
-def create_xy_base_plane(kx_range, ky_range, resolution):
+def create_xy_base_plane(kx_range, ky_range, z_value, resolution):
     """
     创建一个基础的 xy 平面，z 坐标设为 0。
 
     :param kx_range: kx 轴范围。
     :param ky_range: ky 轴范围。
+    :param z_value: ...
     :param resolution: 网格分辨率。
     :return: 一个 xy 平面的 StructuredGrid 对象。
     """
-    return create_xy_plane(kx_range, ky_range, z_value=0, resolution=resolution, scalar_field="omega")
+    return create_xy_plane(kx_range, ky_range, z_value=z_value, resolution=resolution, scalar_field="omega")
 
 
 def add_surface(plotter, surface, scalar_field="omega", cmap="Blues_r", clim=None,
-                opacity=1.0, lighting=False):
+                opacity=1.0, lighting=False, show_edges=False, edge_color="black"):
     """
-    添加曲面到 Plotter 上，同时可以指定用于颜色映射的数据字段。
+    添加曲面到 Plotter 上，同时可以指定用于颜色映射的数据字段，并可选显示网格线。
 
     :param plotter: pyvista.Plotter 实例。
     :param surface: 要添加的 surface 对象（例如 StructuredGrid）。
@@ -96,6 +98,8 @@ def add_surface(plotter, surface, scalar_field="omega", cmap="Blues_r", clim=Non
     :param clim: 颜色范围 [min, max]。
     :param opacity: 不透明度。
     :param lighting: 是否启用光照计算。
+    :param show_edges: 是否显示网格线，默认为 False。
+    :param edge_color: 网格线颜色，默认为 "black"。
     """
     plotter.add_mesh(
         surface,
@@ -104,23 +108,22 @@ def add_surface(plotter, surface, scalar_field="omega", cmap="Blues_r", clim=Non
         opacity=opacity,
         clim=clim,
         lighting=lighting,
-        # interpolation="phong",  # 使用 Phong 着色
-        ambient=0.2,  # 环境光系数（越大整体越亮）
-        # diffuse=0.7,  # 漫反射系数（控制面光滑度）
-        # specular=0.6,  # 镜面反射系数（高光强度）
-        # specular_power=20  # 镜面高光粗糙度（越大高光越集中）
+        show_edges=show_edges,  # 启用网格线显示
+        edge_color=edge_color,  # 设置网格线颜色
+        ambient=0.2,
     )
+
 
 
 def main():
     # 设置常数
     omega_Gamma = 1.4
-    # a_1 = 0.8
-    # a_2 = -1
-    a_1 = -1.5
-    a_2 = 0
-    # a_1 = 0.6
+    a_1 = 0.1
+    a_2 = -0.2
+    # a_1 = -1.5
     # a_2 = 0
+    # a_1 = 0.5
+    # a_2 = -0
     kx_range = (-1, 1)
     ky_range = (-1, 1)
     resolution = 100
@@ -142,7 +145,8 @@ def main():
     z_arrow = create_arrow(origin, (0, 0, 1), scale=5, shaft_radius=0.01, tip_radius=0.02)
 
     # 创建基础 xy 平面（例如辅助显示）
-    xy_base_plane = create_xy_base_plane(kx_range, ky_range, resolution=resolution)
+    # xy_base_plane = create_xy_base_plane(kx_range, ky_range, z_value=0.7, resolution=resolution)
+    xy_base_plane = create_xy_base_plane(kx_range, ky_range, z_value=1.4, resolution=resolution)
 
     # 设置 Plotter，注意此处 off_screen=True 用于批量渲染或自动保存图像
     plotter = pv.Plotter(off_screen=True, window_size=[2048, 2048])
@@ -155,11 +159,11 @@ def main():
         cmap="magma",
         clim=[0, 1],
         opacity=1.0,
-        lighting=False
+        lighting=False,
     )
 
     # 根据实际需要，可以添加 xy 基础平面或箭头等其它几何体
-    # plotter.add_mesh(xy_base_plane, color="white", opacity=1)
+    plotter.add_mesh(xy_base_plane, color="white", opacity=0.6)
     # # 添加箭头
     # for arrow in (x_arrow, y_arrow, z_arrow):
     #     plotter.add_mesh(arrow, color="black")
@@ -169,6 +173,7 @@ def main():
 
     # 设置相机视角并启用正交投影
     plotter.camera.azimuth = 10
+    plotter.camera.elevation = -15
     plotter.enable_parallel_projection()
     plotter.set_background("white")
 

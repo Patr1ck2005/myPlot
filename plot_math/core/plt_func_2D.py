@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from utils.utils import clear_ax_ticks
 
 
-def plot_2d_function(f, x_range, y_range, cmap_name, filename='function_plot.png', **kwargs):
+def plot_2d_function(f, x_range, y_range, cmap_name, filename='function_plot.png', transparent=False, **kwargs):
     """
     绘制二维函数 f(x, y) 的颜色映射图并保存为图像文件。
 
@@ -12,6 +12,7 @@ def plot_2d_function(f, x_range, y_range, cmap_name, filename='function_plot.png
     :param x_range: x 轴的范围 (min, max)。
     :param y_range: y 轴的范围 (min, max)。
     :param filename: 保存的文件名 (默认 'function_plot.png')。
+    :param transparent: ...
     """
     # 创建网格
     x = np.linspace(x_range[0], x_range[1], 400)
@@ -22,8 +23,12 @@ def plot_2d_function(f, x_range, y_range, cmap_name, filename='function_plot.png
     Z = f(X, Y)
 
     # 标准化 Z 至 [0, 1]，用于 alpha 通道
-    norm = plt.Normalize(vmin=np.min(Z), vmax=1)
-    norm = plt.Normalize(vmin=np.min(Z), vmax=np.max(Z))
+    if 'vmin' not in kwargs:
+        kwargs['vmin'] = np.min(Z)
+    if 'vmax' not in kwargs:
+        kwargs['vmax'] = np.max(Z)
+    norm = plt.Normalize(vmin=kwargs['vmin'], vmax=kwargs['vmax'])
+    # norm = plt.Normalize(vmin=np.min(Z), vmax=np.max(Z))
     Z_norm = norm(Z)
 
     # # 获取颜色映射
@@ -40,7 +45,9 @@ def plot_2d_function(f, x_range, y_range, cmap_name, filename='function_plot.png
 
     # 应用颜色映射获得 RGBA 图像
     # rgba_img = cmap(vortex_pattern)
-    rgba_img = cmap(Z_norm)
+    rgb_img = cmap(Z_norm)
+    rgba_img = rgb_img.copy()
+
 
     # 将透明度通道设定为标准化后的函数值（也可以根据需要进行非线性变换）
     rgba_img[..., 3] = Z_norm
@@ -56,7 +63,10 @@ def plot_2d_function(f, x_range, y_range, cmap_name, filename='function_plot.png
     fig, ax = plt.subplots(figsize=(8, 6))
 
     # 绘制热图
-    im = ax.imshow(rgba_img, extent=(x_range[0], x_range[1], y_range[0], y_range[1]), origin='lower', **kwargs)
+    if transparent:
+        im = ax.imshow(rgba_img, extent=(x_range[0], x_range[1], y_range[0], y_range[1]), origin='lower', **kwargs)
+    else:
+        im = ax.imshow(rgb_img, extent=(x_range[0], x_range[1], y_range[0], y_range[1]), origin='lower', **kwargs)
     # cbar = fig.colorbar(im, ax=ax, label='f(x, y)')  # 添加颜色条
     ax.set_xlabel('x')
     ax.set_ylabel('y')
