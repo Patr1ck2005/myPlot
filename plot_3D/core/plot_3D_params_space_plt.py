@@ -7,6 +7,9 @@ import os
 
 import plotly.graph_objects as go
 
+from plot_3D.advance_plot_styles.line_plot import plot_line_advanced
+
+
 def plot_Z_diff_plotly(
         new_coords,
         Z,
@@ -179,7 +182,7 @@ def plot_Z_diff_plotly(
     fig.show()
 
 
-def plot_Z_diff_plt(
+def plot_Z(
         new_coords,
         Z,
         x_key,
@@ -272,11 +275,14 @@ def plot_Z_diff_plt(
     # 4. 绘图
     if y_key is None:
         # 一维曲线图
-        y_vals = sub/0.001  # 对数据进行缩放（根据实际需要调整）
-        plt.figure(figsize=(8, 6))
-        plt.plot(x_vals, y_vals.real, label='real', color='blue')
-        if sub.dtype == np.dtype(complex) and plot_imaginary:
-            plt.plot(x_vals, y_vals.imag, label='imag', color='red', linestyle='--')
+        y_vals = sub  # 对数据进行缩放（根据实际需要调整）
+        fig, ax = plt.subplots(figsize=(8, 6))
+        # 旧模式: 分别绘制出实部和虚部
+        # plt.plot(x_vals, y_vals.real, label='real', color='blue')
+        # if sub.dtype == np.dtype(complex) and plot_imaginary:
+        #     plt.plot(x_vals, y_vals.imag, label='imag', color='red', linestyle='--')
+        #新模式: 采用高级的映射, 一次项可以搞定最多三种变量z1, z2, z3
+        ax = plot_line_advanced(ax, x_vals, z1=y_vals.real, z2=y_vals.imag, label='real', color='blue', enable_fill=True)
         plt.xlabel(x_key)
         plt.ylabel(zlabel)
         plt.title(f"{x_key} vs {ylabel_title} @ {fixed_params}")
@@ -356,7 +362,7 @@ def plot_Z_diff_plt(
     # 如果文件名过长，可以截断或采用 hash 值，这里仅作简单处理
     if len(filename) > 200:
         filename = filename[:200] + ".png"
-    plt.savefig(filename, dpi=300, bbox_inches="tight")
+    plt.savefig('./rsl/2D/'+filename, dpi=300, bbox_inches="tight")
     print(f"图像已保存为：{filename}")
     if show:
         plt.show()

@@ -39,7 +39,8 @@ def plot_3d_slices(
         print(y_max)
         verts.append(polygon_under_graph(x, y))
 
-    fig1 = plt.figure(figsize=(6, 6))
+    fig1 = plt.figure(figsize=(8, 8))
+    # fig1 = plt.figure(figsize=(6, 6))
     ax = fig1.add_subplot(111, projection='3d')
 
     facecolors = plt.colormaps['inferno_r'](np.linspace(0, 1, len(verts)))[::-1]
@@ -65,7 +66,7 @@ def plot_3d_slices(
         ax.set_zticks(zticks)
     ax.set_xticklabels([])
     ax.set_yticklabels([])
-    # ax.set_zticklabels([])
+    ax.set_zticklabels([])
 
     ax.tick_params(axis='x', pad=1)
     ax.tick_params(axis='y', pad=1)

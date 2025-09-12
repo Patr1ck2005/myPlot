@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     # 假设已经得到 new_coords, Z_target
     # 画一维曲线：params 对 target
-    plot_Z_diff_plt(
+    plot_Z(
         grid_coords, Z_new,
         x_key="freq (THz)",
         y_key="a",

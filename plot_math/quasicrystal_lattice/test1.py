@@ -2,26 +2,18 @@ import math
 import itertools
 import numpy as np
 import ezdxf
+from joblib import Parallel, delayed
 
+# 缓存窗口多边形
+_window_cache = None
 
-# ===================== 基础：投影矩阵 =====================
 
 def projection_matrices():
-    """返回 (P_par, P_perp) 两个 2x4 投影矩阵。"""
     a = 1 / np.sqrt(2)
-    # a = 2 / 3
-    P_par = np.array([
-        [1.0, a, 0.0, -a],
-        [0.0, a, 1.0, a],
-    ], dtype=float)
-    P_perp = np.array([
-        [1.0, -a, 0.0, a],
-        [0.0, -a, 1.0, -a],
-    ], dtype=float)
+    P_par = np.array([[1.0, a, 0.0, -a], [0.0, a, 1.0, a]], dtype=float)
+    P_perp = np.array([[1.0, -a, 0.0, a], [0.0, -a, 1.0, -a]], dtype=float)
     return P_par, P_perp
 
-
-# ===================== 几何工具：凸包与点在多边形内 =====================
 
 def convex_hull(points):
     pts = sorted(points.tolist())
@@ -45,22 +37,12 @@ def convex_hull(points):
     return np.array(hull, dtype=float)
 
 
-def point_in_convex_polygon(pt, poly, eps=1e-12):
-    x, y = pt
-    n = len(poly)
-    for i in range(n):
-        x1, y1 = poly[i]
-        x2, y2 = poly[(i + 1) % n]
-        if (x2 - x1) * (y - y1) - (y2 - y1) * (x - x1) < -eps:
-            return False
-    return True
-
-
-# ===================== 构造典范八边形窗 =====================
-
 def canonical_octagon_window(P_perp):
-    corners4d = np.array(list(itertools.product([-0.5, 0.5], repeat=4)), dtype=float)  # (16,4)
-    projected = corners4d @ P_perp.T  # (16,2)
+    global _window_cache
+    if _window_cache is not None:
+        return _window_cache
+    corners4d = np.array(list(itertools.product([-0.5, 0.5], repeat=4)), dtype=float)
+    projected = corners4d @ P_perp.T
     hull = convex_hull(projected)
     c = hull.mean(axis=0)
     ang = np.arctan2(hull[:, 1] - c[1], hull[:, 0] - c[0])
@@ -72,64 +54,58 @@ def canonical_octagon_window(P_perp):
             cleaned.append(p)
     if np.linalg.norm(cleaned[0] - cleaned[-1]) < 1e-10 and len(cleaned) > 1:
         cleaned.pop()
-    return np.array(cleaned, dtype=float)  # 期望长度为 8
+    _window_cache = np.array(cleaned, dtype=float)
+    return _window_cache
 
 
-# ===================== 生成格点 =====================
+def process_chunk(n_chunk, P_par, P_perp, window_poly, R):
+    pts_perp = n_chunk @ P_perp.T
+    pts_par = n_chunk @ P_par.T
+    in_circle = np.sum(pts_par ** 2, axis=1) <= R ** 2 + 1e-12
+    in_window = np.ones(len(n_chunk), dtype=bool)
+    for i in range(len(window_poly)):
+        x1, y1 = window_poly[i]
+        x2, y2 = window_poly[(i + 1) % len(window_poly)]
+        cross = (x2 - x1) * (pts_perp[:, 1] - y1) - (y2 - y1) * (pts_perp[:, 0] - x1)
+        in_window &= cross >= -1e-12
+    return pts_par[in_circle & in_window]
 
-def ammann_beenker_points(R=12.0, max_coeff=None, return_internal=False):
+
+def ammann_beenker_points(R=12.0, max_coeff=None, return_internal=False, n_jobs=4):
     P_par, P_perp = projection_matrices()
     window_poly = canonical_octagon_window(P_perp)
 
     if max_coeff is None:
-        max_coeff = int(math.ceil(R))
+        norm_perp = np.linalg.norm(P_perp, ord='fro')
+        window_radius = 0.99
+        max_coeff = int(math.ceil(R / norm_perp + window_radius))
 
-    pts = []
-    pts_perp = []
+    rng = np.arange(-max_coeff, max_coeff + 1)
+    N = np.array(list(np.ndindex((2 * max_coeff + 1,) * 4))) - max_coeff
+    chunks = np.array_split(N, n_jobs)
 
-    rng = range(-max_coeff, max_coeff + 1)
-    for n0 in rng:
-        for n1 in rng:
-            for n2 in rng:
-                for n3 in rng:
-                    n = np.array([n0, n1, n2, n3], dtype=float)
-                    p_perp = P_perp @ n
-                    if not point_in_convex_polygon(p_perp, window_poly, eps=1e-12):
-                        continue
+    results = Parallel(n_jobs=n_jobs)(
+        delayed(process_chunk)(chunk, P_par, P_perp, window_poly, R) for chunk in chunks
+    )
+    pts = np.vstack([r for r in results if len(r) > 0])
 
-                    p = P_par @ n
-                    if p[0] * p[0] + p[1] * p[1] <= R * R + 1e-12:
-                        pts.append(p)
-                        if return_internal:
-                            pts_perp.append(p_perp)
-
-    if len(pts) == 0:
-        return (np.empty((0, 2)), np.empty((0, 2))) if return_internal else np.empty((0, 2))
-
-    pts = np.vstack(pts)
-
-    # 去重
     rounded = np.round(pts, 12)
     _, idx = np.unique(rounded, axis=0, return_index=True)
     pts = pts[idx]
 
     if return_internal:
-        pts_perp = np.vstack(pts_perp)[idx]
-        return pts, pts_perp
-    else:
-        return pts
+        pts_perp = N @ P_perp.T
+        valid = np.isin(np.arange(len(N)), idx)
+        return pts, pts_perp[valid]
+    return pts
 
-
-# ===================== 导出为 DXF 文件 =====================
 
 def export_to_dxf(pts, filename='quasicrystal.dxf', shape='circle', radius=0.1):
-    """将点导出为 DXF 文件，支持圆形或方形图案。"""
     doc = ezdxf.new()
     msp = doc.modelspace()
-
     for pt in pts:
         if shape == 'circle':
-            msp.add_circle(center=pt, radius=radius)  # 圆形
+            msp.add_circle(center=pt, radius=radius)
         elif shape == 'square':
             half_size = radius / np.sqrt(2)
             msp.add_lwpolyline([
@@ -138,22 +114,21 @@ def export_to_dxf(pts, filename='quasicrystal.dxf', shape='circle', radius=0.1):
                 (pt[0] + half_size, pt[1] + half_size),
                 (pt[0] - half_size, pt[1] + half_size),
                 (pt[0] - half_size, pt[1] - half_size),
-            ], close=True)  # 方形
-
+            ], close=True)
     doc.saveas(filename)
     print(f"DXF 文件已保存为 {filename}")
 
 
-# ===================== 示例与绘图（可选） =====================
-
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
+    import time
 
-    R = 30.0
-    pts = ammann_beenker_points(R=R)
+    R = 45.0
+    start_time = time.time()
+    pts = ammann_beenker_points(R=R, n_jobs=4)
+    end_time = time.time()
+    print(f"生成点数: {len(pts)}，耗时: {end_time - start_time:.2f}秒")
 
-    # 可选择绘制图形
-    print(f"生成点数: {len(pts)}")
     plt.figure(figsize=(6, 6))
     plt.scatter(pts[:, 0], pts[:, 1], s=6, c='red')
     plt.gca().set_aspect('equal', adjustable='box')
@@ -163,7 +138,6 @@ if __name__ == "__main__":
     plt.savefig('quasicrystal_plot.svg', transparent=True)
     plt.show()
 
-    # 导出为DXF文件，选择图案：'circle' 或 'square'，并指定半径
     export_to_dxf(pts, filename='quasicrystal.dxf', shape='circle', radius=0.2)
 
     # 生成 Lumerical 脚本，简化为一串 addcircle() 命令
@@ -183,7 +157,7 @@ if __name__ == "__main__":
             f'addtogroup("AB_quasicrystal_group");'
         )
     # 保存生成的 Lumerical 脚本
-    lumerical_script_file_simplified = './ammann_beenker_simplified_lumerical_script.lsf'
+    lumerical_script_file_simplified = './ammann_beenker_simplified_lumerical_script.txt'
     with open(lumerical_script_file_simplified, 'w') as f:
         f.write(lumerical_script_simplified)
     print(lumerical_script_simplified)

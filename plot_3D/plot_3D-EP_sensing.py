@@ -122,7 +122,7 @@ if __name__ == '__main__':
 
     # 假设已经得到 new_coords, Z_diff
     # 画一维曲线：params 对 Δ
-    plot_Z_diff_plt(
+    plot_Z(
         new_coords, Z_diff,
         x_key="a",
         fixed_params={
@@ -181,7 +181,7 @@ if __name__ == '__main__':
 
     # 假设已经得到 new_coords, Z_diff
     # 画一维曲线：params 对 Δ
-    plot_Z_diff_plt(
+    plot_Z(
         new_coords_compressed, Z_diff_compressed,
         x_key="w1 (nm)",
         fixed_params={

@@ -63,7 +63,8 @@ def group_surfaces_one_sided_hungarian(
     dims    = Z.shape
     n_dims  = len(dims)
     origin  = tuple([0] * n_dims)
-    m       = len(Z[origin])
+    # m       = len(Z[origin])
+    m       = min(len(Z[idx]) for idx in np.ndindex(*dims))  # 对于长度不齐的列表数据, 选取最保守的处理数量
 
     # 输出与标记数组
     Zg       = np.empty(dims, dtype=object)
@@ -111,6 +112,8 @@ def group_surfaces_one_sided_hungarian(
             C_nb = np.zeros((m, m), dtype=float)
             for s in range(m):
                 for c_idx, c in enumerate(candidates):
+                    if c_idx >= m:
+                        break
                     # 值连续性（按 value_weights[grow_dir, :] 加权）
                     cost_val = sum(
                         value_weights[grow_dir, j] * abs(c - v_prev[s])

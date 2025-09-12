@@ -160,7 +160,7 @@ if __name__ == '__main__':
 
     # 假设已经得到 new_coords, Z_target
     # 画一维曲线：params 对 target
-    plot_Z_diff_plt(
+    plot_Z(
         new_coords, Z_target1,
         x_key="m1",
         fixed_params={
