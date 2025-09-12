@@ -173,7 +173,8 @@ def advanced_filter_eigensolution(grid_coords, Z, z_keys, fixed_params=None, fil
 
 
 if __name__ == '__main__':
-    data_path = './data/VBG/k_space-lossy_material.csv'
+    # data_path = './data/VBG/k_space-lossy_material.csv'
+    data_path = './data/VBG/k_space-lossy_material-2.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -189,7 +190,7 @@ if __name__ == '__main__':
 
     # 指定用于构造网格的参数以及目标数据列
     param_keys = ["delta_shrink (nm)", "m1"]
-    z_keys = ["特征频率 (THz)", "tanchi (1)", "phi (rad)", "S_air_prop (1)"]
+    z_keys = ["特征频率 (THz)", "tanchi (1)", "phi (rad)", "S_air_prop (1)", "频率 (Hz)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
     grid_coords, Z = create_data_grid(df_sample, param_keys, z_keys, deduplication=True)
@@ -207,8 +208,12 @@ if __name__ == '__main__':
     new_coords, Z_filtered, min_lens = advanced_filter_eigensolution(
         grid_coords, Z,
         z_keys=z_keys,
-        fixed_params={"delta_shrink (nm)": 85},  # 固定 delta_shrink=60
-        filter_conditions={"S_air_prop (1)": {"<": 10.0}}  # 筛选 S_air_prop < 10.0
+        fixed_params={"delta_shrink (nm)": 85},  # 固定 delta_shrink=85
+        # fixed_params={"delta_shrink (nm)": 60},  # 固定 delta_shrink=60
+        filter_conditions={
+            "S_air_prop (1)": {"<": 10.0},  # 筛选 S_air_prop < 10.0
+            "频率 (Hz)": {">": 0.6e14},  # 筛选
+        }
     )
 
     deltas3 = (1e-2,)  # n个维度的网格间距
@@ -219,7 +224,7 @@ if __name__ == '__main__':
     ])
     # 当沿维度 d 生长时，导数不连续权重矩阵（n×n）
     deriv_weights = np.array([
-        [1,],
+        [1e-2,],
     ])
     # 创建一个新的数组，用于存储更新后的结果
     Z_new = np.empty_like(Z_filtered, dtype=object)
@@ -268,11 +273,20 @@ if __name__ == '__main__':
     # 假设已经得到 new_coords, Z_target
     # 画一维曲线：params 对 target
 
-    plot_Z(new_coords, [Z_target1, Z_target2, Z_target3, Z_target4, Z_target5], x_key="m1",
-           plot_params={
-               'zlabel': "f", 'enable_line_fill': True, 'alpha': 0.3, 'legend': False,
-               'line_colors': ['blue', 'red', 'red', 'blue', 'red']
-           },
+    plot_Z(new_coords,
+           [Z_target1, Z_target2, Z_target3, Z_target4, Z_target5],
+           x_key="m1",
+           # plot_params={
+           #     'zlabel': "f", 'enable_line_fill': True, 'alpha': 0.3, 'legend': False,
+           #     'line_colors': ['blue', 'red', 'red', 'blue', 'red']
+           # },
            # plot_params={'zlabel': "freq (kHz)", 'enable_line_fill': True, 'enable_dynamic_color': True, 'line_cmap': 'magma', 'add_colorbar': False},
+           plot_params={
+               'figsize': (3, 3),
+               'zlabel': "freq (c/P)", 'xlabel': r"k ($2\pi/P$)",
+               'enable_fill': True, 'gradient_fill': True, 'gradient_direction': 'z3', 'cmap': 'magma', 'add_colorbar': False,
+               "global_color_vmin": 0, "global_color_vmax": 0.02, "default_color": 'gray', 'legend': False, 'alpha_fill': 0.5,
+               'edge_color': 'none', 'title': False,
+           },
            fixed_params={}, show=True)
 

@@ -9,6 +9,9 @@ import plotly.graph_objects as go
 
 from plot_3D.advance_plot_styles.line_plot import plot_line_advanced
 
+# fontsize
+fs = 12
+plt.rcParams.update({'font.size': fs})
 
 def plot_Z_diff_plotly(
         new_coords,
@@ -188,50 +191,34 @@ def plot_Z_2D(subs, x_vals, x_key, y_vals=None, y_key=None, plot_params=None, fi
     """
     plot_params = plot_params or {}
     fixed_params = fixed_params or {}
+    title = plot_params.get('title', '')
+    figsize = plot_params.get('figsize', (8, 6))
     cmap1_name = plot_params.get('cmap1', 'viridis')
     cmap2_name = plot_params.get('cmap2', 'plasma')
     log_scale = plot_params.get('log_scale', False)
+    xlabel = plot_params.get('xlabel', x_key)
     zlabel = plot_params.get('zlabel', "Δ")
     ylabel_title = plot_params.get('ylabel', "Δ")
     alpha_val = plot_params.get('alpha', 1.0)
     plot_imaginary = plot_params.get('imag', True)
     enable_line_fill = plot_params.get('enable_line_fill', True)
-    enable_dynamic_color = plot_params.get('enable_dynamic_color', False)
-    line_colors = plot_params.get('line_colors', ['blue', 'red', 'green', 'purple'])
-    curve_labels = plot_params.get('curve_labels', [f'Curve {i+1}' for i in range(len(subs))])
     enable_legend = plot_params.get('legend', True)
 
     if is_1d:
         # 一维多曲线：循环绘制每个 sub
-        fig, ax = plt.subplots(figsize=(8, 6))
+        fig, ax = plt.subplots(figsize=figsize)
         y_mins, y_maxs = [], []
         for i, sub in enumerate(subs):
             y_vals = sub  # 复数数组
-            kwargs_line = {
-                'enable_fill': enable_line_fill,
-                'enable_dynamic_color': enable_dynamic_color,
-                'scale': plot_params.get('scale', 0.5),
-                'alpha_line': plot_params.get('alpha_line', 0.8),
-                'alpha_fill': alpha_val,
-                'default_color': line_colors[i % len(line_colors)],  # 循环颜色
-                'linewidth_base': plot_params.get('linewidth_base', 1),
-                'label': curve_labels[i % len(curve_labels)],  # 图例标签
-            }
-            # 处理 cmap 和 colorbar
-            if enable_line_fill and not enable_dynamic_color:
-                kwargs_line['cmap'] = None  # 无需 cmap（纯色）
-                kwargs_line['add_colorbar'] = False  # 无 colorbar
-            else:
-                kwargs_line['cmap'] = plot_params.get('line_cmap', 'RdBu')  # 动态时用
 
-            ax = plot_line_advanced(ax, x_vals, z1=y_vals.real, z2=y_vals.imag, z3=y_vals.imag, **kwargs_line)
+            ax = plot_line_advanced(ax, x_vals, z1=y_vals.real, z2=y_vals.imag, z3=y_vals.imag, **plot_params)
 
             # 收集轴限（容纳填充）
             if enable_line_fill:
                 # widths_norm = (np.abs(y_vals.imag) - np.min(np.abs(y_vals.imag))) / (np.max(np.abs(y_vals.imag)) - np.min(np.abs(y_vals.imag)) + 1e-8)
                 widths = np.abs(y_vals.imag)
-                y_upper = y_vals.real + kwargs_line['scale'] * widths
-                y_lower = y_vals.real - kwargs_line['scale'] * widths
+                y_upper = y_vals.real + plot_params.get('scale', 0.5) * widths
+                y_lower = y_vals.real - plot_params.get('scale', 0.5) * widths
                 y_mins.append(np.min(y_lower))
                 y_maxs.append(np.max(y_upper))
             else:
@@ -241,10 +228,11 @@ def plot_Z_2D(subs, x_vals, x_key, y_vals=None, y_key=None, plot_params=None, fi
         # 设置轴限、标签等
         ax.set_xlim(x_vals.min(), x_vals.max())
         ax.set_ylim(min(y_mins), max(y_maxs))
-        ax.set_xlabel(x_key)
+        ax.set_xlabel(xlabel)
         ax.set_ylabel(zlabel)
-        ax.set_title(f"{x_key} vs {ylabel_title} @ {fixed_params}" + (" (Multiple Curves)" if len(subs) > 1 else ""))
-        ax.grid(True)
+        if title:
+            ax.set_title(f"{x_key} vs {ylabel_title} @ {fixed_params}" + (" (Multiple Curves)" if len(subs) > 1 else ""))
+        # ax.grid(True)
         if enable_legend:
             ax.legend()
         if log_scale:
@@ -339,11 +327,11 @@ def plot_Z(new_coords, Z_list, x_key, plot_params=None, y_key=None, fixed_params
         return re.sub(r'[^\w.-]', '', str(val))
     full_params = {**fixed_params, **plot_params}
     param_items = [f"{k}-{safe_str(v)}" for k, v in sorted(full_params.items())]
-    filename = "plot_" + "_".join(param_items) + ".png"
+    filename = "plot_" + "_".join(param_items) + ".svg"
     if len(filename) > 200:
-        filename = filename[:200] + ".png"
+        filename = filename[:200] + ".svg"
     os.makedirs(save_dir, exist_ok=True)
-    plt.savefig(save_dir + filename, dpi=300, bbox_inches="tight")
+    plt.savefig(save_dir + filename, dpi=300, bbox_inches="tight", transparent=True)
     print(f"图像已保存为：{save_dir + filename}")
 
     if show:

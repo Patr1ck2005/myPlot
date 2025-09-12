@@ -15,7 +15,7 @@ fig, ax = plt.subplots()
 verts = np.vstack([np.column_stack([x_vals, y_lower]),
                    np.column_stack([x_vals[::-1], y_upper[::-1]])])
 path = Path(verts)
-patch = PathPatch(path, facecolor='none')  # 无色patch，只用于剪裁
+patch = PathPatch(path, facecolor='none', edgecolor='gray',)  # 无色patch，只用于剪裁
 ax.add_patch(patch)
 
 # 创建渐变图像：水平渐变（基于x）
@@ -30,7 +30,7 @@ im = ax.imshow(
     extent=[xlim[0], xlim[1], ylim[0], ylim[1]],  # 覆盖axes范围
     alpha=alpha_fill,
     clip_path=patch,  # 剪裁到路径内
-    clip_on=True
+    clip_on=True,
 )
 
 # 绘制曲线
