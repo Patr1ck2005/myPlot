@@ -191,27 +191,34 @@ def plot_Z_2D(subs, x_vals, x_key, y_vals=None, y_key=None, plot_params=None, fi
     """
     plot_params = plot_params or {}
     fixed_params = fixed_params or {}
-    title = plot_params.get('title', '')
     figsize = plot_params.get('figsize', (8, 6))
-    cmap1_name = plot_params.get('cmap1', 'viridis')
+    cmap1_name = plot_params.get('cmap', 'viridis')
     cmap2_name = plot_params.get('cmap2', 'plasma')
     log_scale = plot_params.get('log_scale', False)
     xlabel = plot_params.get('xlabel', x_key)
     zlabel = plot_params.get('zlabel', "Δ")
     ylabel_title = plot_params.get('ylabel', "Δ")
     alpha_val = plot_params.get('alpha', 1.0)
-    plot_imaginary = plot_params.get('imag', True)
+    plot_imaginary = plot_params.get('imag', False)
     enable_line_fill = plot_params.get('enable_line_fill', True)
-    enable_legend = plot_params.get('legend', True)
+    title = plot_params.get('title', '')
+    add_colorbar = plot_params.get('add_colorbar', False)
+    enable_legend = plot_params.get('legend', False)
+    # # 将曲线关于y轴镜像对称复制处理
+    # x_vals = np.concatenate([-x_vals[::-1], x_vals])
 
+    fig, ax = plt.subplots(figsize=figsize)
     if is_1d:
         # 一维多曲线：循环绘制每个 sub
-        fig, ax = plt.subplots(figsize=figsize)
         y_mins, y_maxs = [], []
         for i, sub in enumerate(subs):
             y_vals = sub  # 复数数组
 
+            # # 将曲线关于y轴镜像对称复制处理
+            # y_vals = np.concatenate([y_vals[::-1], y_vals])
+
             ax = plot_line_advanced(ax, x_vals, z1=y_vals.real, z2=y_vals.imag, z3=y_vals.imag, **plot_params)
+            # ax = plot_line_advanced(ax, x_vals, z1=y_vals.real, z2=y_vals.imag, z3=y_vals.imag, **plot_params)
 
             # 收集轴限（容纳填充）
             if enable_line_fill:
@@ -227,24 +234,17 @@ def plot_Z_2D(subs, x_vals, x_key, y_vals=None, y_key=None, plot_params=None, fi
 
         # 设置轴限、标签等
         ax.set_xlim(x_vals.min(), x_vals.max())
-        ax.set_ylim(min(y_mins), max(y_maxs))
+        ax.set_ylim(np.nanmin(y_mins)*0.95, np.nanmax(y_maxs)*1.05)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(zlabel)
-        if title:
-            ax.set_title(f"{x_key} vs {ylabel_title} @ {fixed_params}" + (" (Multiple Curves)" if len(subs) > 1 else ""))
         # ax.grid(True)
-        if enable_legend:
-            ax.legend()
-        if log_scale:
-            ax.set_yscale('log')
-        return fig, ax
     else:
         # 二维热图：暂取第一个 sub（不支持多 Z）
         if len(subs) > 1:
             print("Warning: 多 Z 在二维模式下仅使用第一个 Z。")
         sub = subs[0]
-        X, Y = np.meshgrid(y_vals, x_vals, indexing='ij')  # 注意顺序
-        Z_plot = sub.T  # 转置匹配 shape
+        X, Y = np.meshgrid(x_vals, y_vals, indexing='ij')  # 注意顺序
+        Z_plot = sub  # 转置匹配 shape
         if log_scale:
             Z_real_plot = np.log10(np.abs(Z_plot.real))
             Z_imag_plot = np.log10(np.abs(Z_plot.imag))
@@ -252,16 +252,25 @@ def plot_Z_2D(subs, x_vals, x_key, y_vals=None, y_key=None, plot_params=None, fi
             Z_real_plot = Z_plot.real
             Z_imag_plot = Z_plot.imag
 
-        fig, ax = plt.subplots(figsize=(10, 8))
-        surf1 = ax.pcolormesh(X, Y, Z_real_plot, cmap=cmap1_name, alpha=alpha_val)
+        # surf1 = ax.pcolormesh(X, Y, Z_real_plot, cmap=cmap1_name, alpha=alpha_val)
+        surf1 = ax.imshow(
+            Z_real_plot.T, cmap=cmap1_name, alpha=alpha_val, extent=[X.min(), X.max(), Y.min(), Y.max()], origin='lower', aspect='auto'
+        )
         if sub.dtype == np.complex128 and plot_imaginary:
             surf2 = ax.pcolormesh(X, Y, Z_imag_plot, cmap=cmap2_name, alpha=alpha_val)
-            fig.colorbar(surf2, ax=ax, shrink=0.5, aspect=20, pad=0.1)
-        fig.colorbar(surf1, ax=ax, shrink=0.5, aspect=20, pad=0.0, label=zlabel)
-        ax.set_xlabel(x_key)
-        ax.set_ylabel(y_key)
-        ax.set_title(f"{x_key} vs {y_key} @ {fixed_params}")
-        return fig, ax
+            # fig.colorbar(surf2, ax=ax, shrink=0.5, aspect=20, pad=0.1)
+        # fig.colorbar(surf1, ax=ax, shrink=0.5, aspect=20, pad=0.0, label=zlabel)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel_title)
+    if title:
+        ax.set_title(f"{xlabel}({x_key}) (and {ylabel_title}({y_key})) vs {zlabel} @ {fixed_params}" + (" (Multiple Datas)" if len(subs) > 1 else ""))
+    if enable_legend:
+        ax.legend()
+    if log_scale:
+        ax.set_yscale('log')
+    if add_colorbar:
+        fig.colorbar()
+    return fig, ax
 
 # plot_Z_3D 函数（扩展，非重点；类似原）
 def plot_Z_3D(subs, x_vals, x_key, y_vals, y_key, plot_params=None, fixed_params=None):
