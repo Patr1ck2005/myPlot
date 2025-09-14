@@ -1,8 +1,13 @@
+import pickle
+import time
+
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 from mpl_toolkits.mplot3d import Axes3D
 import re
 import os
+from .utils import safe_str
 
 
 import plotly.graph_objects as go
@@ -13,177 +18,7 @@ from plot_3D.advance_plot_styles.line_plot import plot_line_advanced
 fs = 12
 plt.rcParams.update({'font.size': fs})
 
-def plot_Z_diff_plotly(
-        new_coords,
-        Z,
-        x_key,
-        plot_params,
-        y_key=None,
-        fixed_params=None,
-):
-    """
-    根据 new_coords 和 Z，指定一个或两个 key 作为坐标轴，其它 key 固定，
-    使用 Plotly 绘制 Z 的曲线或曲面，并保存绘图文件（文件名中包含绘图参数）。
-
-    参数：
-        new_coords: dict，键为参数名，值为该参数的坐标数组（已排序）。
-        Z: np.ndarray，多维数组，维度与 new_coords 顺序一致，存放差值数据。
-        x_key: str，要作为横坐标的参数名。
-        plot_params: dict，绘图时的一些参数，例如：
-            - 'cmap1': 实部使用的 colorscale 名称（Plotly 内置 colorscale 名称，如 'Viridis'）
-            - 'cmap2': 虚部使用的 colorscale 名称（例如 'Plasma'）
-            - 'log_scale': 是否对数显示（True/False）
-            - 'zlabel': z 轴标签文本
-            - 'ylabel': 用于标题中的描述文字
-            - 'alpha': 曲面透明度（0~1之间，一般取 0.5-0.7）
-        y_key: str or None，要作为纵坐标的参数名；若为 None，则绘制一维折线图。
-        fixed_params: dict，固定其它参数的取值，例如 {"a": 0.0085}。
-                      固定参数的键应为 new_coords 中除 x_key, y_key 外的参数名。
-
-    绘图文件将以 "plot_<参数信息>.png" 命名，并保存在当前工作目录。
-    例如：
-        # 一维折线图
-        plot_Z_diff_plotly(new_coords, Z,
-                           x_key="w1 (nm)",
-                           plot_params={
-                               'zlabel': "Δ频率 (kHz)",
-                               'ylabel': "Δ频率实部 (kHz)",
-                               'alpha': 1.0
-                           },
-                           fixed_params={"buffer (nm)": 1345.0, "h_grating (nm)": 113.5, "a": 0.0085})
-
-        # 二维曲面
-        plot_Z_diff_plotly(new_coords, Z,
-                           x_key="w1 (nm)",
-                           y_key="buffer (nm)",
-                           plot_params={
-                               'cmap1': 'Viridis',
-                               'cmap2': 'Plasma',
-                               'log_scale': False,
-                               'zlabel': "Δ频率 (kHz)",
-                               'alpha': 0.6
-                           },
-                           fixed_params={"h_grating (nm)": 113.5, "a": 0.0085})
-    """
-    # 1. 参数检查
-    keys = list(new_coords.keys())
-    if x_key not in keys:
-        raise ValueError(f"{x_key} 不在 new_coords 中")
-    if y_key:
-        if (y_key not in keys) or (y_key == x_key):
-            raise ValueError(f"{y_key} 不在 new_coords 中或与 {x_key} 重复")
-    fixed_params = fixed_params or {}
-    for k in fixed_params:
-        if k not in keys or k in (x_key, y_key):
-            raise ValueError(f"固定参数 {k} 无效")
-
-    # 2. 构建切片索引：对每个维度，x_key 与 y_key 设 slice(None)，其它根据 fixed_params指定索引
-    slicer = []
-    for k in keys:
-        if k == x_key or k == y_key:
-            slicer.append(slice(None))
-        else:
-            val = fixed_params.get(k)
-            if val is None:
-                raise ValueError(f"参数 {k} 未在 fixed_params 中指定")
-            idx = np.where(new_coords[k] == val)[0]
-            if idx.size != 1:
-                raise ValueError(f"{k} 中未找到唯一值 {val}")
-            slicer.append(idx[0])
-    slicer = tuple(slicer)
-
-    # 3. 取出子数组及 x 轴数据
-    sub = Z[slicer]
-    x_vals = new_coords[x_key]
-
-    # 提取绘图参数
-    cmap1_name = plot_params.get('cmap1', 'Viridis')
-    cmap2_name = plot_params.get('cmap2', 'Plasma')
-    log_scale = plot_params.get('log_scale', False)
-    zlabel = plot_params.get('zlabel', "Δ")
-    ylabel_title = plot_params.get('ylabel', "Δ")
-    alpha_val = plot_params.get('alpha', 1.0)
-
-    # 数据缩放（根据需求调整，这里与 matplotlib 版本保持一致）
-    scale = 1 / 0.001
-
-    # 4. 根据是否有 y_key 分情况绘图
-    if y_key is None:
-        # 一维折线图
-        y_vals = sub * scale  # sub shape 为 (len(x_vals),)
-        fig = go.Figure()
-        # 实部
-        fig.add_trace(go.Scatter(x=x_vals, y=y_vals.real, mode='lines',
-                                 name='real', line=dict(color='blue')))
-        # 如果是复数，则也绘制虚部
-        if np.iscomplexobj(sub):
-            fig.add_trace(go.Scatter(x=x_vals, y=y_vals.imag, mode='lines',
-                                     name='imag', line=dict(color='red', dash='dash')))
-        fig.update_layout(
-            title=f"{x_key} vs {ylabel_title} @ {fixed_params}",
-            xaxis_title=x_key,
-            yaxis_title=zlabel,
-            template='plotly_white'
-        )
-    else:
-        # 二维曲面图
-        y_vals = new_coords[y_key]
-        # 构造网格数据，注意保持和原来一致，sub 的 shape 应为 (len(x_vals), len(y_vals))
-        X, Y = np.meshgrid(x_vals, y_vals, indexing='ij')
-        Z = sub.T * scale  # 这里注意转置以匹配网格
-
-        # 若对数显示，则计算对数值（注意对于零值或负值可能需要额外处理，这里假设数据取绝对值后再对数）
-        if log_scale:
-            Z_real_plot = np.log10(np.abs(Z.real))
-            Z_imag_plot = np.log10(np.abs(Z.imag))
-        else:
-            Z_real_plot = Z.real
-            Z_imag_plot = Z.imag
-
-        # 创建 3D 图形
-        fig = go.Figure()
-
-        # 实部曲面
-        fig.add_trace(go.Surface(
-            x=X, y=Y, z=Z_real_plot, colorscale=cmap1_name,
-                                 opacity=alpha_val, name='real', showscale=True,
-                                 colorbar=dict(title=zlabel)),
-        )
-        # 如果数据为复数，添加虚部曲面
-        if np.iscomplexobj(sub):
-            fig.add_trace(go.Surface(x=X, y=Y, z=Z_imag_plot, colorscale=cmap2_name,
-                                     opacity=alpha_val, name='imag', showscale=True,
-                                     colorbar=dict(title=zlabel)))
-        fig.update_layout(
-            title=f"{x_key} vs {y_key} @ { {k: v for k, v in fixed_params.items()} }",
-            scene=dict(
-                xaxis_title=x_key,
-                yaxis_title=y_key,
-                zaxis_title=zlabel,
-                camera=dict(
-                    eye=dict(x=1.5, y=1.5, z=1.0),  # 调整 x, y, z 的比例，决定视角
-                    # 投影类型：'perspective'（透视）或 'orthographic'（正交）
-                    projection=dict(type='orthographic')
-                )
-            ),
-            template='plotly_white'
-        )
-
-    # 5. 自动生成文件名，并保存图像
-    def safe_str(val):
-        return re.sub(r'[^\w.-]', '', str(val))
-
-    param_items = [f"{k}-{safe_str(v)}" for k, v in sorted(plot_params.items())]
-    filename = "plot_" + "_".join(param_items) + ".png"
-    if len(filename) > 200:
-        filename = filename[:200] + ".png"
-    # 保存图像为 PNG（需要安装 kaleido 库：pip install -U kaleido）
-    fig.write_image(filename, scale=2)
-    print(f"图像已保存为：{filename}")
-
-    # 同时显示交互图形
-    fig.show()
-
+# 注意: 20250914移除plotly的绘图模块
 
 def plot_Z_2D(subs, x_vals, x_key, y_vals=None, y_key=None, plot_params=None, fixed_params=None, is_1d=True):
     """
@@ -194,47 +29,83 @@ def plot_Z_2D(subs, x_vals, x_key, y_vals=None, y_key=None, plot_params=None, fi
     figsize = plot_params.get('figsize', (8, 6))
     cmap1_name = plot_params.get('cmap', 'viridis')
     cmap2_name = plot_params.get('cmap2', 'plasma')
+    default_color_list = plot_params.get('default_color_list', None)
     log_scale = plot_params.get('log_scale', False)
     xlabel = plot_params.get('xlabel', x_key)
     zlabel = plot_params.get('zlabel', "Δ")
     ylabel_title = plot_params.get('ylabel', "Δ")
+    xlim = plot_params.get('xlim', None)
+    ylim = plot_params.get('ylim', None)
+    imshow_aspect = plot_params.get('imshow_aspect', 'auto')
     alpha_val = plot_params.get('alpha', 1.0)
     plot_imaginary = plot_params.get('imag', False)
     enable_line_fill = plot_params.get('enable_line_fill', True)
     title = plot_params.get('title', '')
     add_colorbar = plot_params.get('add_colorbar', False)
     enable_legend = plot_params.get('legend', False)
-    # # 将曲线关于y轴镜像对称复制处理
-    # x_vals = np.concatenate([-x_vals[::-1], x_vals])
+    advanced_process = plot_params.get('advanced_process', False)
+    save_raw_data = plot_params.get('save_raw_data', True)
+
+    # 创建保存目录
+    save_dir = plot_params.get('save_dir', './rsl/2D/')
+    timestamp = time.strftime("%Y%m%d_%H%M%S")  # 添加时间戳确保唯一性
+    data_dir = os.path.join(save_dir, f"raw_data_{timestamp}")
+    if save_raw_data:
+        os.makedirs(data_dir, exist_ok=True)
+
+    if advanced_process == 'y_mirror' and is_1d:
+        # 将曲线关于y轴镜像对称复制处理（仅适用于一维）
+        x_vals = np.concatenate([-x_vals[::-1], x_vals])
+        subs = [np.concatenate([sub[::-1], sub]) for sub in subs]
 
     fig, ax = plt.subplots(figsize=figsize)
     if is_1d:
-        # 一维多曲线：循环绘制每个 sub
         y_mins, y_maxs = [], []
         for i, sub in enumerate(subs):
-            y_vals = sub  # 复数数组
+            y_vals = sub
+            mask = np.isnan(y_vals)
+            if np.any(mask):
+                print(f"Warning: 存在非法数据，已移除。")
+                y_vals = y_vals[~mask]
+                temp_x_vals = x_vals[~mask]
+            else:
+                temp_x_vals = x_vals
 
-            # # 将曲线关于y轴镜像对称复制处理
-            # y_vals = np.concatenate([y_vals[::-1], y_vals])
+            if default_color_list is not None:
+                plot_params['default_color'] = default_color_list[i % len(default_color_list)]
 
-            ax = plot_line_advanced(ax, x_vals, z1=y_vals.real, z2=y_vals.imag, z3=y_vals.imag, **plot_params)
-            # ax = plot_line_advanced(ax, x_vals, z1=y_vals.real, z2=y_vals.imag, z3=y_vals.imag, **plot_params)
+            ax = plot_line_advanced(ax, temp_x_vals, z1=y_vals.real, z2=y_vals.imag, z3=y_vals.imag, **plot_params)
 
-            # 收集轴限（容纳填充）
+            # 保存原始数据（一维）
+            if save_raw_data:
+                raw_data_dict = {
+                    'x': temp_x_vals,
+                    'y_real': y_vals.real,
+                    'y_imag': y_vals.imag if np.iscomplexobj(y_vals) else np.zeros_like(y_vals.real)
+                }
+                param_items = [f"{k}-{safe_str(v)}" for k, v in sorted(fixed_params.items())]
+                param_items.append(f"curve-{i+1}")  # 区分多条曲线
+                filename = f"data_{'_'.join(param_items)}.csv"
+                if len(filename) > 200:
+                    filename = filename[:200] + ".csv"
+                file_path = os.path.join(data_dir, filename)
+                df = pd.DataFrame(raw_data_dict)
+                df.to_csv(file_path, index=False)
+                print(f"原始数据已保存为：{file_path}")
+
+            # 简化轴限计算
             if enable_line_fill:
-                # widths_norm = (np.abs(y_vals.imag) - np.min(np.abs(y_vals.imag))) / (np.max(np.abs(y_vals.imag)) - np.min(np.abs(y_vals.imag)) + 1e-8)
                 widths = np.abs(y_vals.imag)
-                y_upper = y_vals.real + plot_params.get('scale', 0.5) * widths
-                y_lower = y_vals.real - plot_params.get('scale', 0.5) * widths
-                y_mins.append(np.min(y_lower))
-                y_maxs.append(np.max(y_upper))
+                scale = plot_params.get('scale', 0.5)
+                y_mins.append(np.min(y_vals.real - scale * widths))
+                y_maxs.append(np.max(y_vals.real + scale * widths))
             else:
                 y_mins.append(np.min(y_vals.real))
                 y_maxs.append(np.max(y_vals.real))
 
         # 设置轴限、标签等
         ax.set_xlim(x_vals.min(), x_vals.max())
-        ax.set_ylim(np.nanmin(y_mins)*0.95, np.nanmax(y_maxs)*1.05)
+        ax.set_ylim(np.nanmin(y_mins)*0.98, np.nanmax(y_maxs)*1.02)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(zlabel)
         # ax.grid(True)
@@ -245,16 +116,17 @@ def plot_Z_2D(subs, x_vals, x_key, y_vals=None, y_key=None, plot_params=None, fi
         sub = subs[0]
         X, Y = np.meshgrid(x_vals, y_vals, indexing='ij')  # 注意顺序
         Z_plot = sub  # 转置匹配 shape
-        if log_scale:
-            Z_real_plot = np.log10(np.abs(Z_plot.real))
-            Z_imag_plot = np.log10(np.abs(Z_plot.imag))
-        else:
-            Z_real_plot = Z_plot.real
-            Z_imag_plot = Z_plot.imag
 
-        # surf1 = ax.pcolormesh(X, Y, Z_real_plot, cmap=cmap1_name, alpha=alpha_val)
+        Z_real_plot = Z_plot.real
+        Z_imag_plot = Z_plot.imag
+
+        # 绘制热图
         surf1 = ax.imshow(
-            Z_real_plot.T, cmap=cmap1_name, alpha=alpha_val, extent=[X.min(), X.max(), Y.min(), Y.max()], origin='lower', aspect='auto'
+            Z_real_plot.T,
+            extent=[X.min(), X.max(), Y.min(), Y.max()],
+            origin='lower', aspect=imshow_aspect,
+            cmap=cmap1_name, alpha=alpha_val,
+            interpolation='none'
         )
         if sub.dtype == np.complex128 and plot_imaginary:
             surf2 = ax.pcolormesh(X, Y, Z_imag_plot, cmap=cmap2_name, alpha=alpha_val)
@@ -262,6 +134,31 @@ def plot_Z_2D(subs, x_vals, x_key, y_vals=None, y_key=None, plot_params=None, fi
         # fig.colorbar(surf1, ax=ax, shrink=0.5, aspect=20, pad=0.0, label=zlabel)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel_title)
+
+        # 保存原始数据（二维，使用 .pkl 格式）
+        if save_raw_data:
+            # 构建字典
+            data_dict = {
+                'x_vals': x_vals,
+                'y_vals': y_vals,
+                'Z': Z_plot  # 直接保存二维数组
+            }
+            # 生成规范化文件名
+            param_items = [f"{k}-{safe_str(v)}" for k, v in sorted(fixed_params.items())]
+            param_items.append(f"x-{safe_str(x_key)}_y-{safe_str(y_key)}")
+            filename = f"data_heatmap_{'_'.join(param_items)}.pkl"
+            if len(filename) > 200:
+                filename = filename[:200] + ".pkl"
+            file_path = os.path.join(data_dir, filename)
+            # 保存为 .pkl
+            with open(file_path, 'wb') as f:
+                pickle.dump(data_dict, f)
+            print(f"原始数据已保存为：{file_path}")
+
+    if xlim:
+        ax.set_xlim(xlim)
+    if ylim:
+        ax.set_ylim(ylim)
     if title:
         ax.set_title(f"{xlabel}({x_key}) (and {ylabel_title}({y_key})) vs {zlabel} @ {fixed_params}" + (" (Multiple Datas)" if len(subs) > 1 else ""))
     if enable_legend:
@@ -269,8 +166,9 @@ def plot_Z_2D(subs, x_vals, x_key, y_vals=None, y_key=None, plot_params=None, fi
     if log_scale:
         ax.set_yscale('log')
     if add_colorbar:
-        fig.colorbar()
+        fig.colorbar(surf1, ax=ax, label=zlabel)
     return fig, ax
+
 
 # plot_Z_3D 函数（扩展，非重点；类似原）
 def plot_Z_3D(subs, x_vals, x_key, y_vals, y_key, plot_params=None, fixed_params=None):

@@ -162,7 +162,8 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, **kwargs):
 
     # 设置轴限（连续调用时，最后一次覆盖为当前范围；若需全局，函数外手动调整）
     ax.set_xlim(x_vals.min(), x_vals.max())
-    ax.set_ylim(np.min(y_lower) if enable_fill else z1.min(), np.max(y_upper) if enable_fill else z1.max())
+    ax.set_ylim(np.nanmin(y_lower) if enable_fill else z1.min(), np.nanmax(y_upper) if enable_fill else z1.max())
+    # print(z3.max())
 
     return ax
 
