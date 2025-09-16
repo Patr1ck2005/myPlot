@@ -2,7 +2,6 @@ from plot_3D.core.data_postprocess.data_filter import advanced_filter_eigensolut
 from plot_3D.core.data_postprocess.data_grouper import *
 from plot_3D.core.plot_3D_params_space_plt import *
 from plot_3D.core.plot_3D_params_space_pv import plot_Z_diff_pyvista
-from plot_3D.core.prepare_plot import prepare_plot_data
 from plot_3D.core.process_multi_dim_params_space import *
 
 import numpy as np
@@ -36,7 +35,10 @@ def group_eigensolution(grid_coords, Z, freq_index=1):
     return new_coords, Z_new
 
 if __name__ == '__main__':
-    data_path = 'data/3fold-TE-delta_spcae-SE-detialed.csv'
+    # data_path = 'data/SE/1fold-TM-loc_0.25w-SE.csv'
+    # data_path = 'data/SE/3fold-TE-loc_0-SE.csv'
+    # data_path = 'data/SE/3fold-TE-loc_BIC-SE.csv'
+    data_path = 'data/1fold_weak-TM-mid-SE.csv'
     df_sample = pd.read_csv(data_path, sep='\t', comment='%')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -51,7 +53,7 @@ if __name__ == '__main__':
     df_sample = df_sample[df_sample["m1"] < 0.3]
 
     # 指定用于构造网格的参数以及目标数据列
-    param_keys = ["m1", "m2", "loss_k", "频率 (Hz)", "w_delta_factor"]
+    param_keys = ["m1", "m2", "loss_k", "频率 (Hz)"]
     z_keys = ["emission_power (W/m)", "total_power (W/m)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
@@ -70,30 +72,22 @@ if __name__ == '__main__':
     new_coords, Z_filtered, min_lens = advanced_filter_eigensolution(
         grid_coords, Z,
         z_keys=z_keys,
-        # fixed_params={"m2": 0, "loss_k": 1e-3, "w_delta_factor": 0.2},  # 固定
-        fixed_params={"m1": 0, "m2": 0, "loss_k": 1e-3},  # 固定
+        fixed_params={"m2": 0, "loss_k": 1e-3},  # 固定
+        # fixed_params={"m1": 0, "m2": 0, "loss_k": 1e-3},  # 固定
         filter_conditions={
         }
     )
 
     # 创建一个新的数组，用于存储更新后的结果
     Z_new = np.empty_like(Z_filtered, dtype=object)
-    Z_new1 = np.empty_like(Z_filtered, dtype=object)
     # 使用直接的循环来更新 Z_new
     for i in range(Z_filtered.shape[0]):
         for j in range(Z_filtered.shape[1]):
             Z_new[i, j] = Z_filtered[i, j][0]  # 提取每个 lst_ij 的第 . 列
-            Z_new1[i, j] = Z_filtered[i, j][1]  # 提取每个 lst_ij 的第 . 列
 
     # 假设你已经得到了 grid_coords, Z
     new_coords, Z_target1 = group_eigensolution(
         new_coords, Z_new,
-        freq_index=0  # 第n个数据
-    )
-
-    # 假设你已经得到了 grid_coords, Z
-    new_coords, Z_target11 = group_eigensolution(
-        new_coords, Z_new1,
         freq_index=0  # 第n个数据
     )
 
@@ -104,13 +98,25 @@ if __name__ == '__main__':
     print("Z 形状：", Z_new.shape)
 
     # 假设已经得到 new_coords, Z_target
+    # 画一维曲线：params 对 target
 
-    # 集成保存
-    data_path = prepare_plot_data(
-        new_coords, [Z_target1, Z_target11], x_key="频率 (Hz)", y_key="w_delta_factor", fixed_params={},
-        save_dir='./rsl/delta_space',
-    )
-
-
-
+    plot_Z(new_coords,
+           [Z_target1],
+           x_key="m1",
+           y_key="频率 (Hz)",
+           # plot_params={
+           #     'figsize': (1, 1),
+           #     'xlabel': r"", 'ylabel': "", 'zlabel': "P",
+           #     'log_scale': False, 'colorbar': False, 'cmap': 'magma', 'title': False,
+           #     'advanced_process': 'y_mirror',
+           #     'xlim': [0, 0.015], 'ylim': [0.4464, 0.4483],
+           #     # 'imshow_aspect': 1
+           # },
+           plot_params={
+               'figsize': (3, 4),
+               'xlabel': r"$\delta$", 'ylabel': "f (c/P)", 'zlabel': "P",
+               'log_scale': False, 'add_colorbar': True, 'cmap': 'magma', 'title': False,
+               'advanced_process': 'y_mirror',
+           },
+           fixed_params={}, show=True)
 

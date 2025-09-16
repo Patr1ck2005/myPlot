@@ -32,8 +32,8 @@ if __name__ == '__main__':
 
         return grid_coords, Z_new
 
-    grid_coords1, Z_new1 = load_data('data/SE/2EP-lz-pos-mid-air_loss0.001.txt')
-    grid_coords2, Z_new2 = load_data('data/SE/2EP-lz-pos3.8-air_loss0.001.txt')
+    grid_coords1, Z_new1 = load_data('projects/SE/data/2EP-lz-pos-mid-air_loss0.001.txt')
+    grid_coords2, Z_new2 = load_data('projects/SE/data/2EP-lz-pos3.8-air_loss0.001.txt')
 
     grid_coords = grid_coords1
     Z_new = Z_new1 + Z_new2

@@ -58,6 +58,8 @@ def add_annotations(ax, plot_params):
     xlim = plot_params.get('xlim', None)
     ylim = plot_params.get('ylim', None)
     zlim = plot_params.get('zlim', None)
+    x_log_scale = plot_params.get('x_log_scale', False)
+    y_log_scale = plot_params.get('y_log_scale', False)
     show_legend = plot_params.get('show_legend', False)
     legend_loc = plot_params.get('legend_loc', 'best')
     add_grid = plot_params.get('add_grid', False)
@@ -84,6 +86,11 @@ def add_annotations(ax, plot_params):
     # 先设置轴范围，这会影响 ticks 的自动计算
     if xlim: ax.set_xlim(xlim)
     if ylim: ax.set_ylim(ylim)
+
+    if x_log_scale:
+        ax.set_xscale('log')
+    if y_log_scale:
+        ax.set_yscale('log')
 
     # 处理 X 轴 ticks
     if xtick_mode == 'auto':
@@ -155,7 +162,6 @@ def plot_2d_heatmap(ax, x_vals, y_vals, Z, plot_params):
     cmap1_name = plot_params.get('cmap', 'viridis')
     cmap2_name = plot_params.get('cmap2', 'plasma')
     alpha_val = plot_params.get('alpha', 1.0)
-    log_scale = plot_params.get('log_scale', False)
 
     imshow_aspect = plot_params.get('imshow_aspect', 'auto')
     plot_imaginary = plot_params.get('imag', False)
@@ -163,9 +169,6 @@ def plot_2d_heatmap(ax, x_vals, y_vals, Z, plot_params):
 
     Z_real_plot = Z.real
     Z_imag_plot = Z.imag
-    if log_scale:
-        Z_real_plot = np.log10(np.abs(Z_real_plot))
-        Z_imag_plot = np.log10(np.abs(Z_imag_plot))
 
     X, Y = np.meshgrid(x_vals, y_vals, indexing='ij')
     surf1 = ax.imshow(
@@ -193,18 +196,11 @@ def plot_2d_multiline(ax, x_vals, y_vals, Z, plot_params):
     import matplotlib.colors as colors
 
     cmap_name = plot_params.get('cmap', 'viridis')
-    y_space = plot_params.get('y_space', 1)
     default_color = plot_params.get('default_color', None)
     default_color_list = plot_params.get('default_color_list', None)
     alpha_val = plot_params.get('alpha', 1.0)
-    log_scale = plot_params.get('log_scale', False)
     plot_imaginary = plot_params.get('imag', False)
-    enable_legend = plot_params.get('legend', False)
-    title = plot_params.get('title', '')
 
-    # down-sampling y_vals
-    y_vals = y_vals[::y_space]
-    Z = Z[:, ::y_space]
 
     cmap = cm.get_cmap(cmap_name)
     norm = colors.Normalize(vmin=y_vals.min(), vmax=y_vals.max())
@@ -212,9 +208,6 @@ def plot_2d_multiline(ax, x_vals, y_vals, Z, plot_params):
 
     Z_real = Z.real
     Z_imag = Z.imag if np.iscomplexobj(Z) else np.zeros_like(Z.real)
-    if log_scale:
-        Z_real = np.log10(np.abs(Z_real))
-        Z_imag = np.log10(np.abs(Z_imag))
 
     y_mins, y_maxs = [], []
     for j in range(ny):
@@ -237,12 +230,6 @@ def plot_2d_multiline(ax, x_vals, y_vals, Z, plot_params):
 
     ax.set_xlim(x_vals.min(), x_vals.max())
     ax.set_ylim(np.nanmin(y_mins) * 0.98, np.nanmax(y_maxs) * 1.02)
-    if log_scale:
-        ax.set_yscale('log')
-    if title:
-        ax.set_title(title)
-    if enable_legend:
-        ax.legend()
 
     return ax.get_figure(), ax
 
@@ -329,8 +316,6 @@ def plot_Z_2D(subs, x_vals, x_key, y_vals=None, y_key=None, plot_params=None, fi
             else:
                 fig, ax = plot_2d_heatmap(ax, x_vals, y_vals, Z, plot_params)
                 break
-    if plot_params.get('tight_layout', False):
-        plt.tight_layout()
 
     return fig, ax
 
@@ -374,52 +359,14 @@ def plot_Z_3D(subs, x_vals, x_key, y_vals, y_key, plot_params=None, fixed_params
     return fig, ax
 
 
-def plot_Z(new_coords, Z_list, x_key, plot_params=None, y_key=None, fixed_params=None, show=False):
-    plot_params = plot_params or {}
-    fixed_params = fixed_params or {}
-    if not isinstance(Z_list, list):
-        Z_list = [Z_list]
+def generate_save_name(save_dir, full_params):
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    plot_dir = os.path.join(save_dir, f"{timestamp}")
+    os.makedirs(plot_dir, exist_ok=True)
 
-    keys = list(new_coords.keys())
-    assert x_key in keys, f"{x_key} 不在 new_coords 中"
-    if y_key:
-        assert y_key in keys and y_key != x_key, f"{y_key} 不在 new_coords 中或与 {x_key} 重复"
-    for k in fixed_params:
-        assert k in keys and k not in (x_key, y_key or x_key), f"固定参数 {k} 无效"
-
-    slicer = []
-    for k in keys:
-        if k == x_key or k == y_key:
-            slicer.append(slice(None))
-        else:
-            val = fixed_params.get(k)
-            assert val is not None, f"参数 {k} 未在 fixed_params 中指定"
-            idx = np.where(new_coords[k] == val)[0]
-            assert idx.size == 1, f"{k} 中未找到值 {val}"
-            slicer.append(idx[0])
-    slicer = tuple(slicer)
-
-    subs = [Z[slicer] for Z in Z_list]
-    x_vals = new_coords[x_key]
-    y_vals = new_coords.get(y_key, None) if y_key else None
-
-    if y_vals is None or plot_params.get('dim', 2) == 2:
-        fig, ax = plot_Z_2D(subs, x_vals, x_key, y_vals, y_key, plot_params, fixed_params, is_1d=(y_key is None))
-    else:
-        fig, ax = plot_Z_3D(subs, x_vals, x_key, y_vals, y_key, plot_params, fixed_params)
-
-    fig, ax = add_annotations(ax, plot_params)
-
-    save_dir = plot_params.get('save_dir', './rsl/2D/')
-    full_params = {**fixed_params, **plot_params}
     param_items = [f"{k}-{safe_str(v)}" for k, v in sorted(full_params.items())]
     filename = "plot_" + "_".join(param_items) + ".svg"
     if len(filename) > 200:
         filename = filename[:200] + ".svg"
-    os.makedirs(save_dir, exist_ok=True)
-    plt.savefig(save_dir + filename, dpi=300, bbox_inches="tight", transparent=True)
-    print(f"图像已保存为：{save_dir + filename}")
-
-    if show:
-        plt.show()
-    return fig, ax
+    image_path = os.path.join(plot_dir, filename)
+    return image_path
