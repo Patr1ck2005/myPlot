@@ -19,6 +19,7 @@ def main(data_path):
     fixed_params = {}
     show = True
 
+    x_vals_list = []
     y_vals_list = []
     for sub in subs:
         mask = np.isnan(sub)
@@ -29,8 +30,18 @@ def main(data_path):
         else:
             y_vals = sub
             temp_x_vals = x_vals
+        x_vals_list.append(temp_x_vals)
         y_vals_list.append(y_vals)
-    x_vals = temp_x_vals  # 更新x_vals
+
+    # # 另一种加载.csv数据的方法
+    # df = load_csv_data('./rsl/delta_space/20240320_172338.csv')
+    # df.columns = ['x_vals', 'y_vals']
+    # x_vals = df['x_vals'].values
+    # y_vals = df['y_vals'].values
+    #
+    # x_vals_list = [x_vals]
+    # y_vals_list = [y_vals]
+
 
     """
     阶段3: 从已加载数据集成绘制图像。
@@ -52,10 +63,30 @@ def main(data_path):
 
     fig, ax = plot_1d_lines(ax, x_vals, y_vals_list, plot_params)
 
+    default_color_list = plot_params.get('default_color_list', None)
+    enable_line_fill = plot_params.get('enable_line_fill', True)
+    scale = 1
+
+    y_mins, y_maxs = [], []
+    for i, (x_vals, y_vals) in enumerate(zip(x_vals_list, y_vals_list)):
+        if default_color_list is not None:
+            plot_params['default_color'] = default_color_list[i % len(default_color_list)]
+        ax = plot_line_advanced(ax, x_vals, z1=y_vals.real, z2=y_vals.imag, z3=y_vals.imag, **plot_params)
+
+        if enable_line_fill:
+            widths = np.abs(y_vals.imag)
+            y_mins.append(np.min(y_vals.real - scale * widths))
+            y_maxs.append(np.max(y_vals.real + scale * widths))
+        else:
+            y_mins.append(np.min(y_vals.real))
+            y_maxs.append(np.max(y_vals.real))
+
+    ax.set_xlim(x_vals.min(), x_vals.max())
+    ax.set_ylim(np.nanmin(y_mins) * 0.98, np.nanmax(y_maxs) * 1.02)
+
     # Step 2: 添加注解 (直接调用现有)
     annotations = {
-        'xlabel': r"k", 'ylabel': "f (c/P)",
-        'y_log_scale': True,
+        'xlabel': r"", 'ylabel': "f (c/P)",
         # 'xlim': (0.430, 0.440), 'ylim': (0, 1.15e11),
     }
 
