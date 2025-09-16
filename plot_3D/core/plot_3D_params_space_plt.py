@@ -53,12 +53,14 @@ def add_annotations(ax, plot_params):
     """
     title = plot_params.get('title', None)
     xlabel = plot_params.get('xlabel', 'X')
-    ylabel = plot_params.get('ylabel', "Δ")
+    ylabel = plot_params.get('ylabel', "Y")
+    zlabel = plot_params.get('zlabel', "Z")
     xlim = plot_params.get('xlim', None)
     ylim = plot_params.get('ylim', None)
-    show_legend = plot_params.get('show_legend', True)
+    zlim = plot_params.get('zlim', None)
+    show_legend = plot_params.get('show_legend', False)
     legend_loc = plot_params.get('legend_loc', 'best')
-    add_grid = plot_params.get('add_grid', True)
+    add_grid = plot_params.get('add_grid', False)
     grid_style = plot_params.get('grid_style', '--')
     grid_alpha = plot_params.get('grid_alpha', 0.3)
 
@@ -122,15 +124,9 @@ def add_annotations(ax, plot_params):
 # 一维多曲线
 def plot_1d_lines(ax, x_vals, y_vals_list, plot_params):
     default_color_list = plot_params.get('default_color_list', None)
-    xlabel = plot_params.get('xlabel', 'X')
-    zlabel = plot_params.get('zlabel', "Δ")
     enable_line_fill = plot_params.get('enable_line_fill', True)
     scale = plot_params.get('scale', 0.5)
     log_scale = plot_params.get('log_scale', False)
-    xlim = plot_params.get('xlim', None)
-    zlim = plot_params.get('zlim', None)
-    title = plot_params.get('title', '')
-    enable_legend = plot_params.get('legend', False)
 
     y_mins, y_maxs = [], []
     for i, y_vals in enumerate(y_vals_list):
@@ -148,18 +144,8 @@ def plot_1d_lines(ax, x_vals, y_vals_list, plot_params):
 
     ax.set_xlim(x_vals.min(), x_vals.max())
     ax.set_ylim(np.nanmin(y_mins) * 0.98, np.nanmax(y_maxs) * 1.02)
-    if xlim:
-        ax.set_xlim(xlim)
-    if zlim:
-        ax.set_ylim(zlim)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(zlabel)
     if log_scale:
         ax.set_yscale('log')
-    if title:
-        ax.set_title(title)
-    if enable_legend:
-        ax.legend()
 
     return ax.get_figure(), ax
 
@@ -170,16 +156,10 @@ def plot_2d_heatmap(ax, x_vals, y_vals, Z, plot_params):
     cmap2_name = plot_params.get('cmap2', 'plasma')
     alpha_val = plot_params.get('alpha', 1.0)
     log_scale = plot_params.get('log_scale', False)
-    xlabel = plot_params.get('xlabel', 'X')
-    ylabel = plot_params.get('ylabel', 'Y')
-    zlabel = plot_params.get('zlabel', "Δ")
+
     imshow_aspect = plot_params.get('imshow_aspect', 'auto')
     plot_imaginary = plot_params.get('imag', False)
     add_colorbar = plot_params.get('add_colorbar', False)
-    xlim = plot_params.get('xlim', None)
-    ylim = plot_params.get('ylim', None)
-    zlim = plot_params.get('zlim', None)
-    title = plot_params.get('title', '')
 
     Z_real_plot = Z.real
     Z_imag_plot = Z.imag
@@ -201,16 +181,8 @@ def plot_2d_heatmap(ax, x_vals, y_vals, Z, plot_params):
     if Z.dtype == np.complex128 and plot_imaginary:
         ax.pcolormesh(X, Y, Z_imag_plot, cmap=cmap2_name, alpha=alpha_val)
 
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    if xlim:
-        ax.set_xlim(xlim)
-    if ylim:
-        ax.set_ylim(ylim)
-    if title:
-        ax.set_title(title)
     if add_colorbar:
-        ax.get_figure().colorbar(surf1, ax=ax, label=zlabel)
+        ax.get_figure().colorbar(surf1, ax=ax)
 
     return ax.get_figure(), ax
 
@@ -226,11 +198,6 @@ def plot_2d_multiline(ax, x_vals, y_vals, Z, plot_params):
     default_color_list = plot_params.get('default_color_list', None)
     alpha_val = plot_params.get('alpha', 1.0)
     log_scale = plot_params.get('log_scale', False)
-    xlabel = plot_params.get('xlabel', 'X')
-    ylabel = plot_params.get('ylabel', 'Y')
-    zlabel = plot_params.get('zlabel', "Δ")
-    xlim = plot_params.get('xlim', None)
-    zlim = plot_params.get('zlim', None)
     plot_imaginary = plot_params.get('imag', False)
     enable_legend = plot_params.get('legend', False)
     title = plot_params.get('title', '')
@@ -268,53 +235,14 @@ def plot_2d_multiline(ax, x_vals, y_vals, Z, plot_params):
             y_mins.append(np.min(Z_imag[:, j]))
             y_maxs.append(np.max(Z_imag[:, j]))
 
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(zlabel)
     ax.set_xlim(x_vals.min(), x_vals.max())
-    if xlim:
-        ax.set_xlim(xlim)
-    if zlim:
-        ax.set_ylim(zlim)
-    else:
-        ax.set_ylim(np.nanmin(y_mins) * 0.98, np.nanmax(y_maxs) * 1.02)
+    ax.set_ylim(np.nanmin(y_mins) * 0.98, np.nanmax(y_maxs) * 1.02)
     if log_scale:
         ax.set_yscale('log')
     if title:
         ax.set_title(title)
     if enable_legend:
         ax.legend()
-
-    return ax.get_figure(), ax
-
-
-# 三维曲面
-def plot_3d_surface(ax, x_vals, y_vals, Z, plot_params):
-    cmap1_name = plot_params.get('cmap', 'viridis')
-    cmap2_name = plot_params.get('cmap2', 'plasma')
-    alpha_val = plot_params.get('alpha', 1.0)
-    log_scale = plot_params.get('log_scale', False)
-    xlabel = plot_params.get('xlabel', 'X')
-    ylabel = plot_params.get('ylabel', 'Y')
-    zlabel = plot_params.get('zlabel', "Δ")
-    title = plot_params.get('title', '')
-
-    Z_real_plot = Z.real
-    Z_imag_plot = Z.imag
-    if log_scale:
-        Z_real_plot = np.log10(np.abs(Z_real_plot))
-        Z_imag_plot = np.log10(np.abs(Z_imag_plot))
-
-    X, Y = np.meshgrid(x_vals, y_vals, indexing='ij')
-    surf1 = ax.plot_surface(X, Y, Z_real_plot, cmap=cmap1_name, alpha=alpha_val)
-
-    if Z.dtype == np.complex128 and plot_params.get('imag', False):
-        ax.plot_surface(X, Y, Z_imag_plot, cmap=cmap2_name, alpha=alpha_val)
-
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.set_zlabel(zlabel)
-    if title:
-        ax.set_title(title)
 
     return ax.get_figure(), ax
 
@@ -396,12 +324,6 @@ def plot_Z_2D(subs, x_vals, x_key, y_vals=None, y_key=None, plot_params=None, fi
 
             plot_type = plot_params.get('plot_type', 'heatmap')
             if plot_type == 'multiline':
-                if i == 0:
-                    plot_params['default_color'] = 'gray'
-                    plot_params['alpha'] = 0.5
-                else:
-                    plot_params['default_color'] = None
-                    plot_params['alpha'] = 1.0
                 fig, ax = plot_2d_multiline(ax, x_vals, y_vals, Z, plot_params)
                 ax.set_ylim(min(y_mins), max(y_maxs))
             else:
@@ -447,7 +369,7 @@ def plot_Z_3D(subs, x_vals, x_key, y_vals, y_key, plot_params=None, fixed_params
 
     fig = plt.figure(figsize=plot_params.get('figsize', (10, 8)))
     ax = fig.add_subplot(111, projection='3d')
-    fig, ax = plot_3d_surface(ax, x_vals, y_vals, Z, plot_params)
+    # fig, ax = plot_3d_surface(ax, x_vals, y_vals, Z, plot_params)  # 目前不开发3D绘图
 
     return fig, ax
 
