@@ -5,7 +5,7 @@ from matplotlib.path import Path
 from matplotlib.patches import PathPatch
 import matplotlib.cm as cm
 
-def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, **kwargs):
+def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, index=0, **kwargs):
     """
     高级复数绘图函数，支持五种样式：基础、动态颜色填充 (A)、纯色填充 (B)、动态颜色线条 (C)、渐变填充基于 imshow (D)。
 
@@ -15,6 +15,7 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, **kwargs):
     - z1: 数组，决定线的位置 (y 值，通常实部)。
     - z2: 数组或 None，决定填充宽度 (通常虚部绝对值)。
     - z3: 数组或 None，决定填充或线条颜色 (通常虚部原始值)。
+    - index: 绘制的当前曲线的次序. 为了自动标记颜色等
     - **kwargs: 绘图属性字典。
         - enable_fill: bool, 是否启用 z2 控制填充宽度 (默认 False)。
         - enable_dynamic_color: bool, 是否启用 z3 控制动态颜色 (默认 False)。
@@ -85,6 +86,9 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, **kwargs):
         ax.add_collection(lc)
     else:
         # 基础样式或填充模式的细线
+        if not kwargs.get('default_color', False):
+            # assign default color according to index
+            default_color = plt.cm.tab10(index % 10)
         ax.plot(x_vals, z1, color=default_color, linewidth=linewidth_base, alpha=alpha_line, label='Base Line')
 
     # 填充模式
