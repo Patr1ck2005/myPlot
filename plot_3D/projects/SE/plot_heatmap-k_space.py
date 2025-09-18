@@ -1,62 +1,24 @@
-import pickle
+# 脚本2示例：继承HeatmapPlotter
+from plot_3D.core.plot_workflow import HeatmapPlotter, PlotConfig
 
-from matplotlib import pyplot as plt
 
-from plot_3D.core.plot_3D_params_space_plt import *
+class MyScript2Plotter(HeatmapPlotter):
+    def prepare_data(self) -> None:  # 手动重写：简单Z1
+        self.Z1 = self.subs[0][:, :]  # 无NaN
+        print("脚本2准备：Z1直接取subs[0]")
 
-def main(data_path):
-
-    # 2. 手动读取处理（展开代码）
-    with open(data_path, 'rb') as f:
-        plot_data = pickle.load(f)
-    # ... 这里手动处理：打印、验证、修改 ...
-    x_vals = plot_data['x_vals']
-    y_vals = plot_data['y_vals'][:]
-    subs = plot_data['subs']
-    # ... 自定义逻辑 ...
-
-    x_key = plot_data['metadata']['x_key'],
-    y_key = plot_data['metadata']['y_key'],
-    figsize = (4, 5)
-    save_dir = './rsl'
-    fixed_params = {}
-    show = True
-
-    Z1 = subs[0][:, :]
-
-    """
-    阶段3: 从已加载数据集成绘制图像。
-    """
-
-    # Step 1: 调用现有绘图核心 (从历史plot_Z复制)
-    fig, ax = plt.subplots(figsize=figsize)
-
-    plot_params = {
-        'add_colorbar': True, 'cmap': 'magma',
-        'title': False,
-    }
-    fig, ax = plot_2d_heatmap(ax, x_vals, y_vals, Z1, plot_params)
-
-    # Step 2: 添加注解 (直接调用现有)
-    annotations = {
-        'xlabel': r"f (c/P)", 'ylabel': "P", 'zlabel': "$\delta",
-        'target_log_scale': False,
-        'ylim': (0.55, 0.65)
-    }
-
-    fig, ax = add_annotations(ax, annotations)
-
-    plt.tight_layout()
-
-    # Step 3: 保存图像 (从历史复制)
-    full_params = {**plot_params}
-    image_path = generate_save_name(save_dir, full_params)
-    plt.savefig(image_path, dpi=300, bbox_inches="tight", transparent=True)
-    print(f"图像已保存为：{image_path} 🎨")
-
-    if show:
-        plt.show()
+    def plot(self) -> None:  # 重写：调用骨架
+        self.plot_heatmap(self.Z1)
 
 
 if __name__ == '__main__':
-    main(r'D:\DELL\Documents\myPlots\plot_3D\projects\SE/rsl/k_space\20250916_173704\plot_data__x-m1_y-频率Hz.pkl')
+    config = PlotConfig(
+        plot_params={
+            'add_colorbar': True, 'cmap': 'magma',
+            'title': False,
+        },
+        annotations={'xlabel': r'f (c/P)', 'ylabel': 'P', 'ylim': (0.55, 0.65)}
+    )
+    plotter = MyScript2Plotter(config=config,
+                               data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE/rsl/k_space\20250916_173704\plot_data__x-m1_y-频率Hz.pkl')
+    plotter.run_full()  # 一键，或手动链

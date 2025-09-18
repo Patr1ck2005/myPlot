@@ -2,16 +2,17 @@ import pickle
 
 from matplotlib import pyplot as plt
 
+from plot_3D.advance_plot_styles.polar_plot import plot_polar_line
 from plot_3D.core.plot_3D_params_space_plt import *
 from plot_3D.core.utils import *
 
 
 def main():
     # 2. 手动读取处理（展开代码）
-    ref_data = load_lumerical_jsondata(r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\PL_Analysis_Ref.json')
-    target_data = load_lumerical_jsondata(r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\PL_Analysis.json')
+    ref_data = load_lumerical_jsondata(r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\sweep_NA\PL_Analysis_Ref.json')
+    target_data = load_lumerical_jsondata(r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\sweep_NA\PL_Analysis.json')
 
-    # data structure:
+    # NOTE: data structure:
     # {
     #   'key1': {
     #       '_complex': bool,
@@ -61,61 +62,67 @@ def main():
         ''
     }
 
-    # dataset_shape: (freq, k_list, NA_list)  note: NA_list could be 1 for some data
+    # dataset_shape: target_purcell_factors(freq, k_list, NA_list)  note: NA_list could be 1 for some data
+
+    # MODE0 直接绘制
+    fig, ax = plt.subplots(figsize=figsize)
+    plot_params = {
+        'add_colorbar': True, 'cmap': 'magma',
+    }
+    ax = plot_line_advanced(ax, freq.ravel(), z1=-target_farfield_power_from_trans[:, 0, 0], z2=None, z3=None, **plot_params)
+
+    # MODE1 绘制不同k的线图重叠
     for i, para in enumerate(paras_1):
-        # plot group1
+        # # plot group2
+        x_vals = np.linspace(freq.ravel()[0], freq.ravel()[-1], 1000)
+        y_vals = target_purcell_factors[:, i, 0].ravel()
+        x_vals_list.append(x_vals)
+        y_vals_list.append(y_vals)
+
+    fig, ax = plt.subplots(figsize=figsize)
+    for i, (x_vals, y_vals) in enumerate(zip(x_vals_list, y_vals_list)):
+        plot_params = {
+            'add_colorbar': True, 'cmap': 'magma',
+        }
+        ax = plot_line_advanced(ax, x_vals, z1=y_vals, z2=None, z3=None, **plot_params, index=i)
+
+
+    # MODE2 绘制不同频率的角分辨图
+    for i, para in enumerate(paras_3):
+        # # plot group3
+        x_vals = theta.ravel()
+        y_vals = target_E2_hyperdata[:, i, 0, 0].ravel()
+
+        x_vals_list.append(x_vals)
+        y_vals_list.append(y_vals)
+
+    fig, ax = plt.subplots(1, 1, figsize=figsize, subplot_kw={'projection': 'polar'})
+    for i, (x_vals, y_vals) in enumerate(zip(x_vals_list, y_vals_list)):
+        plot_params = {
+            'add_colorbar': True, 'cmap': 'magma',
+        }
+        ax = plot_polar_line(ax, x_vals, y_vals/y_vals.max(), **plot_params)
+        ax.set_theta_zero_location('N')  # 0度在上方
+        ax.set_theta_direction(-1)  # 顺时针
+        ax.set_thetalim(np.deg2rad(-60), np.deg2rad(60))  # 限制显示范围
+
+    # MODE3 绘制不同k的PL最大值线图
+    for i, para in enumerate(paras_1):
         x_vals = freq.ravel()
         y_vals = -2*target_farfield_power_from_trans[:, i, 0].ravel()
-        y_vals = target_integrate_PL_factor[:, i, 0].ravel()
-
-        # # plot group2
-        # x_vals = np.linspace(freq.ravel()[0], freq.ravel()[-1], 1000)
-        # y_vals = target_purcell_factors[:, i, 0].ravel()
-
+        x_vals_list.append(x_vals)
+        y_vals_list.append(y_vals)
         # 降维算法  (消去维度1, 最终绘制 paras vs y_max_val 的曲线图)
         y_max_val = np.max(y_vals)
         y_max_val_list.append(y_max_val)
 
-
-    # for i, para in enumerate(paras_3):
-    #     # # plot group3
-    #     x_vals = theta.ravel()
-    #     y_vals = target_E2_hyperdata[:, i, 0, 0].ravel()
-    #
-    #     global_plot_params = {
-    #         ''
-    #     }
-    #
-    #     # # plot group4
-    #     # x_vals = freq.ravel()
-    #
-        x_vals_list.append(x_vals)
-        y_vals_list.append(y_vals)
-
-    # x_vals_list = [freq.ravel()]
-    # y_vals_list = [-target_farfield_power_from_trans[:, 0, 0].ravel()]
-
-
-    """
-    阶段3: 从已加载数据集成绘制图像。
-    """
-
-    # Step 1: 调用现有绘图核心 (从历史plot_Z复制)
     fig, ax = plt.subplots(figsize=figsize)
-
-    # for i, (x_vals, y_vals) in enumerate(zip(x_vals_list, y_vals_list)):
-    #     plot_params = {
-    #         'add_colorbar': True, 'cmap': 'magma',
-    #     }
-    #     ax = plot_line_advanced(ax, x_vals, z1=y_vals, z2=None, z3=None, **plot_params, index=i)
     plot_params = {
-                'add_colorbar': True, 'cmap': 'magma',
-            }
-    # fig, ax = plot_2d_heatmap(ax, x_vals_list[0], paras_3, np.array(y_vals_list), plot_params)
-
-
+        'add_colorbar': True, 'cmap': 'magma',
+    }
     ax = plot_line_advanced(ax, np.array(paras_1), z1=np.array(y_max_val_list), z2=None, z3=None, **plot_params, index=i)
 
+    ########################################################
     # Step 2: 添加注解 (直接调用现有)
     annotations = {
         'xlabel': r"", 'ylabel': "",

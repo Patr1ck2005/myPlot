@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib import ticker
+from matplotlib.projections import PolarAxes
 from mpl_toolkits.mplot3d import Axes3D
 import re
 import os
@@ -14,47 +15,66 @@ from plot_3D.advance_plot_styles.line_plot import plot_line_advanced
 fs = 12
 plt.rcParams.update({'font.size': fs})
 
+
 def add_annotations(ax, plot_params):
     """
     可选标注函数：添加标题、标签、图例、轴控制和定制化 ticks。
+    默认隐藏所有轴标签 (xlabel, ylabel, title) 和 tick labels，只有手动启用时显示。
+    完善了对极坐标 (PolarAxes) 的支持，包括 theta/r 映射、ticks、labels 隐藏等。
 
     参数:
         ax (matplotlib.axes.Axes): 当前的Axes对象。
-        title (str, optional): 图表标题。
-        xlabel (str, optional): X轴标签。
-        ylabel (str, optional): Y轴标签。
-        xlim (tuple, optional): X轴显示范围 (min, max)。
-        ylim (tuple, optional): Y轴显示范围 (min, max)。
-        show_legend (bool): 是否显示图例。
-        legend_loc (str): 图例位置，例如 'best', 'upper left'。
-        add_grid (bool): 是否添加网格。
-        grid_style (str): 网格线样式，例如 '--'。
-        grid_alpha (float): 网格线透明度。
 
-        # X轴 ticks 定制化参数
-        xtick_mode (str): X轴 ticks 的模式。可选值：
-                          'auto' (默认): Matplotlib 自动确定。
-                          'approx_count': 尝试指定 ticks 的大致数量 (通过 xtick_count)。
-                          'manual': 完全手动指定 ticks 位置 (通过 xticks)。
-        xtick_count (int, optional): 当 xtick_mode='approx_count' 时，指定 X轴 ticks 的大致数量。
-        xticks (list or numpy.array, optional): 当 xtick_mode='manual' 时，X轴 ticks 的具体位置。
-        xtick_labels (list of str, optional): 当 xtick_mode='manual' 时，X轴 ticks 对应的标签。
+        # 通用标注参数
+        title (str, optional): 图表标题。只有 show_axis_labels=True 时显示。
+        xlabel (str, optional): X轴/theta轴标签。只有 show_axis_labels=True 时显示。默认 None。
+        ylabel (str, optional): Y轴/r轴标签。只有 show_axis_labels=True 时显示。默认 None。
+        zlabel (str, optional): Z轴标签（2D 未用）。默认 "Z"。
+        xlim (tuple, optional): X/theta轴显示范围 (min, max)。
+        ylim (tuple, optional): Y/r轴显示范围 (min, max)。
+        zlim (tuple, optional): Z轴显示范围 (min, max)。默认 None。
+        x_log_scale (bool, optional): X/theta轴对数尺度。默认 False（极坐标 theta 不常用）。
+        y_log_scale (bool, optional): Y/r轴对数尺度。默认 False。
+        show_legend (bool, optional): 是否显示图例。默认 False。
+        legend_loc (str, optional): 图例位置，例如 'best', 'upper left'。默认 'best'。
+        add_grid (bool, optional): 是否添加网格。默认 False。
+        grid_style (str, optional): 网格线样式，例如 '--'。默认 '--'。
+        grid_alpha (float, optional): 网格线透明度。默认 0.3。
 
-        # Y轴 ticks 定制化参数
-        ytick_mode (str): Y轴 ticks 的模式。可选值：
-                          'auto' (默认): Matplotlib 自动确定。
-                          'approx_count': 尝试指定 ticks 的大致数量 (通过 ytick_count)。
-                          'manual': 完全手动指定 ticks 位置 (通过 yticks)。
-        ytick_count (int, optional): 当 ytick_mode='approx_count' 时，指定 Y轴 ticks 的大致数量。
-        yticks (list or numpy.array, optional): 当 ytick_mode='manual' 时，Y轴 ticks 的具体位置。
-        ytick_labels (list of str, optional): 当 ytick_mode='manual' 时，Y轴 ticks 对应的标签。
+        # 显示控制参数（新添加）
+        show_axis_labels (bool, optional): 是否显示轴标签 (title, xlabel, ylabel)。默认 False（隐藏）。
+        show_tick_labels (bool, optional): 是否显示 tick labels（所有轴的刻度标签）。默认 False（隐藏）。
 
-    返回: 加工后的ax
+        # 极坐标专用参数（新添加/扩展）
+        rlabel_position (int or float, optional): r轴标签显示位置（度，-1 隐藏）。仅极坐标有效，默认 -1（隐藏）。
+
+        # X轴/theta轴 ticks 定制化参数
+        xtick_mode (str, optional): X/theta轴 ticks 的模式。可选值：
+                                   'auto' (默认): Matplotlib 自动确定。
+                                   'approx_count': 尝试指定 ticks 的大致数量 (通过 xtick_count)。
+                                   'manual': 完全手动指定 ticks 位置 (通过 xticks)。
+        xtick_count (int, optional): 当 xtick_mode='approx_count' 时，指定 X/theta轴 ticks 的大致数量。默认 None。
+        xticks (list or numpy.array, optional): 当 xtick_mode='manual' 时，X/theta轴 ticks 的具体位置。默认 None。
+        xtick_labels (list of str, optional): 当 xtick_mode='manual' 时，X/theta轴 ticks 对应的标签。默认 None。
+
+        # Y轴/r轴 ticks 定制化参数
+        ytick_mode (str, optional): Y/r轴 ticks 的模式。可选值：
+                                    'auto' (默认): Matplotlib 自动确定。
+                                    'approx_count': 尝试指定 ticks 的大致数量 (通过 ytick_count)。
+                                    'manual': 完全手动指定 ticks 位置 (通过 yticks)。
+        ytick_count (int, optional): 当 ytick_mode='approx_count' 时，指定 Y/r轴 ticks 的大致数量。默认 None。
+        yticks (list or numpy.array, optional): 当 ytick_mode='manual' 时，Y/r轴 ticks 的具体位置。默认 None。
+        ytick_labels (list of str, optional): 当 ytick_mode='manual' 时，Y/r轴 ticks 对应的标签（r轴暂不支持自定义标签）。默认 None。
+
+    返回: (fig, ax) - 加工后的 figure 和 ax。
     """
+    plt.savefig('temp_default_ticks.png', dpi=300, bbox_inches='tight')
+    print("Temp figure with default ticks saved as 'temp_default_ticks.png'.")
+    # 从 plot_params 获取参数，默认值调整为隐藏
     title = plot_params.get('title', None)
-    xlabel = plot_params.get('xlabel', 'X')
-    ylabel = plot_params.get('ylabel', "Y")
-    zlabel = plot_params.get('zlabel', "Z")
+    xlabel = plot_params.get('xlabel', None)  # 默认 None，不设置
+    ylabel = plot_params.get('ylabel', None)  # 默认 None，不设置
+    zlabel = plot_params.get('zlabel', None)  # 默认 None
     xlim = plot_params.get('xlim', None)
     ylim = plot_params.get('ylim', None)
     zlim = plot_params.get('zlim', None)
@@ -66,35 +86,76 @@ def add_annotations(ax, plot_params):
     grid_style = plot_params.get('grid_style', '--')
     grid_alpha = plot_params.get('grid_alpha', 0.3)
 
-    # X轴 ticks 定制化参数
+    # 新参数：显示控制
+    show_axis_labels = plot_params.get('show_axis_labels', False)
+    show_tick_labels = plot_params.get('show_tick_labels', False)
+
+    # 极坐标专用
+    rlabel_position = plot_params.get('rlabel_position', -1)  # -1 隐藏 r 标签
+
+    # Ticks 参数
     xtick_mode = plot_params.get('xtick_mode', 'auto')
     xtick_count = plot_params.get('xtick_count', None)
     xticks = plot_params.get('xticks', None)
     xtick_labels = plot_params.get('xtick_labels', None)
 
-    # Y轴 ticks 定制化参数
     ytick_mode = plot_params.get('ytick_mode', 'auto')
     ytick_count = plot_params.get('ytick_count', None)
     yticks = plot_params.get('yticks', None)
-    ytick_labels = plot_params.get('ytick_labels', None)
+    ytick_labels = plot_params.get('ytick_labels', None)  # r 轴暂不支持自定义标签
 
+    # 判断是否为极坐标
+    is_polar = isinstance(ax, PolarAxes)
 
-    if title: ax.set_title(title)
-    if xlabel: ax.set_xlabel(xlabel)
-    if ylabel: ax.set_ylabel(ylabel)
+    # 1. 设置标题（仅当 show_axis_labels=True 且 title 提供时）
+    if show_axis_labels and title:
+        ax.set_title(title)
 
-    # 先设置轴范围，这会影响 ticks 的自动计算
-    if xlim: ax.set_xlim(xlim)
-    if ylim: ax.set_ylim(ylim)
+    # 2. 设置轴标签（仅当 show_axis_labels=True 且 提供时）
+    if show_axis_labels:
+        if xlabel is not None:
+            ax.set_xlabel(xlabel)
+        if ylabel is not None:
+            ax.set_ylabel(ylabel)
+        if zlabel is not None and not is_polar:  # 2D 无 z
+            ax.set_zlabel(zlabel)
+    else:
+        # 默认隐藏：设置为空（视觉上隐藏）
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+        # if not is_polar:
+        #     ax.set_zlabel('')
 
-    if x_log_scale:
-        ax.set_xscale('log')
-    if y_log_scale:
-        ax.set_yscale('log')
+    # 3. 处理极坐标范围（修正为 set_thetalim/set_rlim）
+    if is_polar:
+        if xlim:
+            ax.set_thetalim(xlim[0], xlim[1])  # theta 范围（弧度）
+        if ylim:
+            ax.set_rlim(ylim[0], ylim[1])  # r 范围
+        # 极坐标 r 标签位置
+        ax.set_rlabel_position(rlabel_position)
+    else:
+        # 笛卡尔范围
+        if xlim:
+            ax.set_xlim(xlim)
+        if ylim:
+            ax.set_ylim(ylim)
+        if zlim:
+            ax.set_zlim(zlim)
 
-    # 处理 X 轴 ticks
+    # 4. 对数尺度
+    if not is_polar:
+        if x_log_scale:
+            ax.set_xscale('log')
+        if y_log_scale:
+            ax.set_yscale('log')
+    else:
+        # 极坐标：仅 r 支持 log（y_log -> r_log），theta 不常用
+        if y_log_scale:
+            ax.set_rscale('log')
+
+    # 5. 处理 X/theta 轴 ticks
     if xtick_mode == 'auto':
-        # Matplotlib 默认行为，无需额外设置
         pass
     elif xtick_mode == 'approx_count':
         if xtick_count is not None:
@@ -105,27 +166,57 @@ def add_annotations(ax, plot_params):
             if xtick_labels is not None:
                 ax.set_xticklabels(xtick_labels)
         else:
-            print("Warning: xtick_mode is 'manual' but xticks are not provided. X-axis ticks will be auto-set.")
+            print("Warning: xtick_mode is 'manual' but xticks are not provided. X/theta-axis ticks will be auto-set.")
 
-    # 处理 Y 轴 ticks
+    # 6. 处理 Y/r 轴 ticks（极坐标映射）
     if ytick_mode == 'auto':
-        # Matplotlib 默认行为，无需额外设置
         pass
     elif ytick_mode == 'approx_count':
         if ytick_count is not None:
             ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=ytick_count))
     elif ytick_mode == 'manual':
         if yticks is not None:
-            ax.set_yticks(yticks)
-            if ytick_labels is not None:
-                ax.set_yticklabels(ytick_labels)
+            if is_polar:
+                ax.set_rticks(yticks)  # r ticks
+                # 注意：r 轴无 set_rticklabels，标签自动从值生成；ytick_labels 暂忽略
+                if ytick_labels is not None:
+                    print(
+                        "Warning: ytick_labels for r-axis in polar not directly supported (use formatter for custom).")
+            else:
+                ax.set_yticks(yticks)
+                if ytick_labels is not None:
+                    ax.set_yticklabels(ytick_labels)
         else:
-            print("Warning: ytick_mode is 'manual' but yticks are not provided. Y-axis ticks will be auto-set.")
+            print("Warning: ytick_mode is 'manual' but yticks are not provided. Y/r-axis ticks will be auto-set.")
 
-    if show_legend: ax.legend(loc=legend_loc)
-    if add_grid: ax.grid(True, linestyle=grid_style, alpha=grid_alpha)
+    # 7. 默认隐藏 tick labels（除非 show_tick_labels=True）
+    if not show_tick_labels:
+        # 通用：清空标签
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+        # 极坐标额外：隐藏 r/theata 视觉标签
+        if is_polar:
+            ax.tick_params(axis='x', labelbottom=False)  # theta labels
+            ax.tick_params(axis='y', labelleft=False)  # r labels
+        else:
+            ax.tick_params(axis='x', labelbottom=False)
+            ax.tick_params(axis='y', labelleft=False)
+    # 如果 show_tick_labels=True，标签已通过 manual/approx 设置显示
 
-    return ax.get_figure(), ax
+    # 8. 极坐标网格扩展（如果提供 ticks，设置 theta/r grids）
+    if is_polar and add_grid:
+        if xticks:  # theta grids
+            ax.set_thetagrids(np.rad2deg(xticks))  # 转换为度
+        if yticks:  # r grids
+            ax.set_rgrids(yticks)
+
+    # 9. 图例和网格
+    if show_legend:
+        ax.legend(loc=legend_loc)
+    if add_grid:
+        ax.grid(True, linestyle=grid_style, alpha=grid_alpha)
+
+    return ax.figure, ax  # 返回 fig, ax（修正为 ax.figure）
 
 
 # 一维多曲线
@@ -180,9 +271,10 @@ def plot_2d_heatmap(ax, x_vals, y_vals, Z, plot_params):
         alpha=alpha_val,
         interpolation='none'
     )
-
-    if Z.dtype == np.complex128 and plot_imaginary:
-        ax.pcolormesh(X, Y, Z_imag_plot, cmap=cmap2_name, alpha=alpha_val)
+    # ax.plot(x_vals)
+    # print(2)
+    # plt.show()
+    # print(1)
 
     if add_colorbar:
         ax.get_figure().colorbar(surf1, ax=ax)

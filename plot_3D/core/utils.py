@@ -33,6 +33,9 @@ def structure_lumerical_jsondata(jsondata, key):
     if key not in jsondata.keys():
         return None
     dataset = jsondata[key]
+    if isinstance(dataset, float):
+        return np.array([dataset]).reshape(1, 1)
     if dataset['_type'] == 'matrix':
         _size = dataset['_size']
-        return np.array(dataset['_data']).reshape(_size)
+        # return np.array(dataset['_data']).reshape(_size)
+        return np.reshape(dataset['_data'], _size, order='F')
