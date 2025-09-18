@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 from plot_3D.core.plot_3D_params_space_plt import *  # 假设这些模块存在
 from plot_3D.advance_plot_styles.polar_plot import plot_polar_line
 from plot_3D.core.utils import *  # load_lumerical_jsondata 等
+from plot_3D.advance_plot_styles.scatter_plot import plot_scatter_advanced
 
 @dataclass
 class PlotConfig:
@@ -21,33 +22,30 @@ class PlotConfig:
 
 class BasePlotter(ABC):
     """
-    基类：提取所有脚本共性（加载→准备→绘图→注解→保存）
-    关键：prepare_data() 和 plot() 抽象，用户在脚本类中手动重写
-    使用：脚本中继承，链式调用 prepare_data() → plot_specific() → add_annotations() → save_and_show()
+    基类：提取所有脚本共性（加载→准备→计算数据→绘图→注解→保存）
+    关键：prepare_data抽象，用户手动重写；compute_xxx返回数据，便于main后处理
+    使用：main中 load → prepare → compute_xxx（返回数据） → 后处理 → plot_xxx（绘图） → add_annotations → save
+    支持重叠：re_initialized只重置data，不碰fig/ax
     """
     def __init__(self, config: Optional[Union[PlotConfig, Dict]] = None, data_path: Optional[str] = None):
         self.config = PlotConfig(**config) if isinstance(config, dict) else config or PlotConfig()
         self.data_path = data_path
-        # self.fig: Optional[plt.Figure] = None
-        # self.ax: Optional[plt.Axes] = None
-        self.data: Any = None
-        # 用户重写后填充这些
+        self.fig: Optional[plt.Figure] = None
+        self.ax: Optional[plt.Axes] = None
+        self.raw_dataset: Any = None
         self.x_vals: Optional[np.ndarray] = None
         self.y_vals: Optional[np.ndarray] = None
         self.subs: Optional[List[np.ndarray]] = None
 
-
-    def new_fig(self, projection: str = 'rectilinear') -> None:
-        """共性：创建fig/ax，支持polar（用户调用前指定）"""
-        if projection == 'polar':
-            self.fig, self.ax = plt.subplots(figsize=self.config.figsize, subplot_kw={'projection': 'polar'})
-        else:
-            self.fig, self.ax = plt.subplots(figsize=self.config.figsize)
-
-
     def re_initialized(self, config: Optional[Union[PlotConfig, Dict]] = None, data_path: Optional[str] = None) -> None:
-        """共性：重置，支持链式调用"""
-        self.__init__(config, data_path)
+        """优化：只重置config/data相关，不重置fig/ax，支持重叠绘图"""
+        self.config = PlotConfig(**config) if isinstance(config, dict) else config or self.config
+        self.data_path = data_path or self.data_path
+        self.raw_dataset = None
+        self.x_vals = None
+        self.y_vals = None
+        self.subs = None
+        print("Re-initialized data/config，fig/ax保留以支持重叠绘图 🔄")
         return self
 
     def load_data(self) -> None:
@@ -64,43 +62,45 @@ class BasePlotter(ABC):
 
     def _load_json(self) -> None:
         """JSON加载骨架（脚本1专用，用户重写扩展多文件）"""
-        # 示例：加载target，ref需手动
-        self.data = load_lumerical_jsondata(self.data_path)
+        self.raw_dataset = load_lumerical_jsondata(self.data_path)
 
     def _load_pickle(self) -> None:
         """Pickle加载骨架（脚本2/3/4，用户重写后处理）"""
         with open(self.data_path, 'rb') as f:
-            self.data = pickle.load(f)
-        # 基础提取，用户在prepare_data重写扩展
-        self.x_vals = self.data.get('x_vals', np.array([]))
-        self.y_vals = self.data.get('y_vals', np.array([]))
-        self.subs = self.data.get('subs', [])
+            self.raw_dataset = pickle.load(f)
+        self.x_vals = self.raw_dataset.get('x_vals', np.array([]))
+        self.y_vals = self.raw_dataset.get('y_vals', np.array([]))
+        self.subs = self.raw_dataset.get('subs', [])
         print(f"Pickle基础提取: x_shape={self.x_vals.shape}, subs_len={len(self.subs)} 🔍")
 
     @abstractmethod
     def prepare_data(self) -> None:
-        """抽象：最灵活部分！用户手动重写：提取键、过滤NaN、计算衍生（e.g., PL_factor, 采样[::4]）"""
+        """抽象：最灵活部分！用户手动重写：提取键、过滤NaN、计算衍生"""
         pass
 
     @abstractmethod
     def plot(self) -> None:
-        """抽象：用户手动重写绘图逻辑（e.g., 调用plot_line_advanced循环，或plot_2d_heatmap）"""
+        """抽象：留空，用户在main手动调用绘图方法（如plot_line）"""
         pass
 
+    def new_fig(self, projection: str = 'rectilinear') -> None:
+        """共性：创建新fig/ax，支持polar。手动调用以控制新图"""
+        kwargs = {'figsize': self.config.figsize}
+        if projection == 'polar':
+            kwargs['subplot_kw'] = {'projection': 'polar'}
+        self.fig, self.ax = plt.subplots(**kwargs)
 
     def add_annotations(self) -> None:
         """共性：添加标签/限（用户可重写加自定义scale）"""
-        if self.config.annotations:
-            # 警示用户未设置
-            print("Warning: 未设置标签")
+        if self.config.annotations is None:
+            print("Warning: 未设置annotations ⚠️")
         self.fig, self.ax = add_annotations(self.ax, self.config.annotations)
         plt.tight_layout()
 
     def add_twin_annotations(self) -> None:
-        """共性：添加标签/限（用户可重写加自定义scale）"""
-        if self.config.annotations:
-            # 警示用户未设置
-            print("Warning: 未设置标签")
+        """共性：添加双轴标签"""
+        if self.config.annotations is None:
+            print("Warning: 未设置annotations ⚠️")
         self.fig, self.twiny_ax = add_annotations(self.twiny_ax, self.config.annotations)
         plt.tight_layout()
 
@@ -119,7 +119,7 @@ class BasePlotter(ABC):
             plt.show()
 
     def run_full(self) -> None:
-        """可选完整链：load→prepare→new_fig→plot→add→save（用户若想一键）"""
+        """可选完整链：但不推荐，用手动链代替"""
         self.load_data()
         self.prepare_data()
         self.new_fig()
@@ -128,40 +128,52 @@ class BasePlotter(ABC):
         self.save_and_show()
         print("全流程完成！🚀")
 
-# 分类子类1: LinePlotter（针对1D线类：脚本1的A/B/D + 脚本3的填充多线）
+# 分类子类0: ScatterPlotter（0D点类）
+class ScatterPlotter(BasePlotter):
+    """0D点类骨架：提供plot_scatter绘图"""
+    def plot_scatter(self, x: np.ndarray, z1: np.ndarray, **kwargs) -> None:
+        """辅助：通用plot_scatter_advanced"""
+        params = {**self.config.plot_params, **kwargs}
+        self.ax = plot_scatter_advanced(self.ax, x, z1=z1, z3=z1, **params)
+
+
+# 分类子类1: LinePlotter（1D线类）
 class LinePlotter(BasePlotter):
-    """1D线类骨架：提供plot_line通用方法，用户重写prepare_data/plot调用它"""
-    def plot_line(self, x: np.ndarray, z1: np.ndarray, twin=False, **kwargs) -> None:
-        """辅助：通用plot_line_advanced（用户在plot中调用）"""
+    """1D线类骨架：提供plot_line绘图，用户在main调用"""
+    def plot_line(self, x: np.ndarray, z1: np.ndarray, twin: bool = False, **kwargs) -> None:
+        """辅助：通用plot_line_advanced，支持twin轴"""
         params = {**self.config.plot_params, **kwargs}
         if twin:
-            self.twiny_ax = self.ax.twiny()  # 共享 Y 轴
+            if not hasattr(self, 'twiny_ax'):
+                self.twiny_ax = self.ax.twiny()
             self.twiny_ax = plot_line_advanced(self.twiny_ax, x, z1=z1, **params)
         else:
             self.ax = plot_line_advanced(self.ax, x, z1=z1, **params)
 
-    # 用户在脚本重写prepare_data/plot，注入到此骨架
-
-# 分类子类2: PolarPlotter（针对脚本1的C：极坐标）
+# 分类子类2: PolarPlotter（极坐标）
 class PolarPlotter(BasePlotter):
-    """极坐标骨架：默认new_fig('polar')，提供plot_polar通用"""
+    """极坐标骨架：提供plot_polar绘图"""
     def plot_polar(self, theta: np.ndarray, radial: np.ndarray, **kwargs) -> None:
         """辅助：通用plot_polar_line"""
         params = {**self.config.plot_params, **kwargs}
         self.ax = plot_polar_line(self.ax, theta, radial, **params)
         self.ax.set_theta_zero_location('N')
         self.ax.set_theta_direction(-1)
-        self.ax.set_thetalim(np.deg2rad(-60), np.deg2rad(60))  # 默认限，用户重写调整
+        self.ax.set_thetalim(np.deg2rad(-60), np.deg2rad(60))
 
-# 分类子类3: HeatmapPlotter（针对脚本2的2D热图 + 脚本4的2D多线）
+# 分类子类3: HeatmapPlotter（2D类）
 class HeatmapPlotter(BasePlotter):
-    """2D类骨架：提供plot_heatmap/plot_multiline，用户重写Z准备"""
-    def plot_heatmap(self, Z: np.ndarray, **kwargs) -> None:
+    """2D类骨架：提供plot_heatmap/multiline绘图"""
+    def plot_heatmap(self, Z: np.ndarray, x_vals=None, y_vals=None, **kwargs) -> None:
         """辅助：plot_2d_heatmap"""
         params = {**self.config.plot_params, **kwargs}
-        self.fig, self.ax = plot_2d_heatmap(self.ax, self.x_vals, self.y_vals, Z, params)
+        if x_vals is None:
+            x_vals = np.arange(Z.shape[0])
+        if y_vals is None:
+            y_vals = np.arange(Z.shape[1])
+        self.fig, self.ax = plot_2d_heatmap(self.ax, x_vals, y_vals, Z, params)
 
     def plot_multiline_2d(self, Z: np.ndarray, **kwargs) -> None:
-        """辅助：plot_2d_multiline（支持alpha叠加）"""
+        """辅助：plot_2d_multiline"""
         params = {**self.config.plot_params, **kwargs}
         self.fig, self.ax = plot_2d_multiline(self.ax, self.x_vals, self.y_vals, Z, params)

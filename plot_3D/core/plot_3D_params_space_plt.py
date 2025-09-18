@@ -10,6 +10,7 @@ import re
 import os
 from .utils import safe_str
 from plot_3D.advance_plot_styles.line_plot import plot_line_advanced
+from plot_3D.advance_plot_styles.scatter_plot import plot_scatter_advanced
 
 # fontsize
 fs = 12
@@ -83,7 +84,7 @@ def add_annotations(ax, plot_params):
     show_legend = plot_params.get('show_legend', False)
     legend_loc = plot_params.get('legend_loc', 'best')
     add_grid = plot_params.get('add_grid', False)
-    grid_style = plot_params.get('grid_style', '--')
+    grid_style = plot_params.get('grid_style', '-')
     grid_alpha = plot_params.get('grid_alpha', 0.3)
 
     # 新参数：显示控制
@@ -271,10 +272,6 @@ def plot_2d_heatmap(ax, x_vals, y_vals, Z, plot_params):
         alpha=alpha_val,
         interpolation='none'
     )
-    # ax.plot(x_vals)
-    # print(2)
-    # plt.show()
-    # print(1)
 
     if add_colorbar:
         ax.get_figure().colorbar(surf1, ax=ax)

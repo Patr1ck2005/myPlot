@@ -22,9 +22,9 @@ class MyScript3Plotter(LinePlotter):
             self.y_vals_list.append(y_vals)
 
     def plot(self) -> None:  # 重写：整体+循环填充
-        self.new_fig()
-        params = {'enable_fill': True, 'gradient_fill': True, 'cmap': 'magma', 'add_colorbar': False, 'global_color_vmin': 0, 'global_color_vmax': 5e-3, 'default_color': 'gray', 'alpha_fill': 1}
-        self.fig, self.ax = plot_1d_lines(self.ax, self.x_vals, self.y_vals_list, params)
+        params = {
+            'enable_fill': True, 'gradient_fill': True, 'cmap': 'magma', 'add_colorbar': False, 'global_color_vmin': 0, 'global_color_vmax': 5e-3, 'default_color': 'gray', 'alpha_fill': 1, 'edge_color': 'none'
+        }
         y_mins, y_maxs = [], []
         for i, (x, y) in enumerate(zip(self.x_vals_list, self.y_vals_list)):
             self.plot_line(x, z1=y.real, z2=y.imag, z3=y.imag, **params)  # 填充
@@ -35,6 +35,10 @@ class MyScript3Plotter(LinePlotter):
         self.ax.set_ylim(np.nanmin(y_mins) * 0.98, np.nanmax(y_maxs) * 1.02)
 
 if __name__ == '__main__':
-    config = PlotConfig(annotations={'ylabel': 'f (c/P)'})
-    plotter = MyScript3Plotter(config=config, data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE/rsl/delta_space\20250916_170739\plot_data__x-频率Hz_y-w_delta_factor.pkl')
+    config = PlotConfig(
+        plot_params={},
+        annotations={'ylabel': 'f (c/P)'},
+    )
+    config.figsize = (3, 4)
+    plotter = MyScript3Plotter(config=config, data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE/rsl/eigensolution\20250918_182624\plot_data__x-m1_1d.pkl')
     plotter.run_full()

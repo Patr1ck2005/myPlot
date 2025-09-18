@@ -26,6 +26,7 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, index=0, **kwargs):
         - alpha_fill: float, 填充透明度 (默认 0.3)。
         - cmap: str 或 Colormap, 自定义颜色表 (默认 'RdBu' for 动态颜色, 'Blues' for 纯色/渐变)。
         - default_color: str, 默认颜色 (默认 'blue')。
+        - default_linestyle: str, 默认 (默认 '-')。
         - add_colorbar: bool, 是否添加颜色条 (默认 False)。
         - linewidth_base: float, 基础线宽 (默认 1)。
         - global_color_vmax: float, ...
@@ -45,6 +46,7 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, index=0, **kwargs):
     if isinstance(cmap, str):
         cmap = cm.get_cmap(cmap)
     default_color = kwargs.get('default_color', 'blue')
+    default_linestyle = kwargs.get('default_linestyle', '-')
     edge_color = kwargs.get('edge_color', 'gray')
     add_colorbar = kwargs.get('add_colorbar', False)
     linewidth_base = kwargs.get('linewidth_base', 1)
@@ -89,7 +91,7 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, index=0, **kwargs):
         if not kwargs.get('default_color', False):
             # assign default color according to index
             default_color = plt.cm.tab10(index % 10)
-        ax.plot(x_vals, z1, color=default_color, linewidth=linewidth_base, alpha=alpha_line, label='Base Line')
+        ax.plot(x_vals, z1, color=default_color, linewidth=linewidth_base, alpha=alpha_line, label='Base Line', linestyle=default_linestyle)
 
     # 填充模式
     if enable_fill:
@@ -172,6 +174,7 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, index=0, **kwargs):
     return ax
 
 
+
 if __name__ == '__main__':
     # 示例数据
     x_vals = np.linspace(0, 10, 100)
@@ -208,6 +211,3 @@ if __name__ == '__main__':
     # all_ymin = min(np.sin(x_vals).min() - 0.5, (2*np.sin(x_vals)).min() - 0.5)
     # all_ymax = max(np.sin(x_vals).max() + 0.5, (2*np.sin(x_vals)).max() + 0.5)
     # ax.set_ylim(all_ymin, all_ymax)
-
-    plt.show()
-

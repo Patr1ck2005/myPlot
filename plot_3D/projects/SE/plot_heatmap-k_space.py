@@ -8,7 +8,7 @@ class MyScript2Plotter(HeatmapPlotter):
         print("脚本2准备：Z1直接取subs[0]")
 
     def plot(self) -> None:  # 重写：调用骨架
-        self.plot_heatmap(self.Z1)
+        self.plot_heatmap(self.Z1, self.x_vals, self.y_vals,)
 
 
 if __name__ == '__main__':
