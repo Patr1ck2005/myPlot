@@ -37,8 +37,7 @@ def group_eigensolution(grid_coords, Z, freq_index=1):
     return new_coords, Z_diff
 
 if __name__ == '__main__':
-    # data_path = './data/3EP-test.csv'
-    data_path = 'data/3EPinGrating/3EP-2geo_dim_params_space.csv'
+    data_path = 'data/3EP-kEP-h_buffer_space1.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -47,7 +46,7 @@ if __name__ == '__main__':
     df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex)
 
     # 指定用于构造网格的参数以及目标数据列
-    param_keys = ["buffer (nm)", "h_grating (nm)"]
+    param_keys = ["h_grating (nm)", "buffer (nm)"]
     z_key = ["特征频率 (THz)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
@@ -62,15 +61,6 @@ if __name__ == '__main__':
     # result = query_data_grid(grid_coords, Z, query)
     # print("\n查询结果（保留列表）：", result)
 
-    # 创建一个新的数组，用于存储更新后的结果
-    Z_new = np.empty_like(Z, dtype=object)
-    # 使用直接的循环来更新 Z_new
-    for i in range(Z.shape[0]):
-        for j in range(Z.shape[1]):
-            mutil_lst_ij = Z[i, j]  # 获取每个 mutil_lst_ij
-
-            Z_new[i, j] = Z[i, j][0]  # 提取每个 lst_ij 的第 0 行
-
     deltas3 = (1.0e-3, 1.0)  # n个维度的网格间距
     # 当沿维度 d 生长时，值差权重矩阵（n×n）
     # 例如：value_weights[d, j] = 在 grow_dir=d 时，对维度 j 的值差权重
@@ -84,7 +74,15 @@ if __name__ == '__main__':
         [0, 0],
         [0, 0],
     ])
-    Z_new = group_surfaces_one_sided_hungarian(
+
+    # 创建一个新的数组，用于存储更新后的结果
+    Z_new = np.empty_like(Z, dtype=object)
+    # 使用直接的循环来更新 Z_new
+    for i in range(Z.shape[0]):
+        for j in range(Z.shape[1]):
+            Z_new[i, j] = Z[i, j][0]  # 提取每个 lst_ij 的第 b 列
+
+    Z = group_surfaces_one_sided_hungarian(
         Z_new, deltas3,
         value_weights=value_weights,
         deriv_weights=deriv_weights,
@@ -92,18 +90,18 @@ if __name__ == '__main__':
 
     # 假设你已经得到了 grid_coords, Z
     new_coords, Z_target1 = group_eigensolution(
-        grid_coords, Z_new,
+        grid_coords, Z,
         freq_index=0  # 第n个频率
         # freq_index=2  # 第n个频率
     )
     new_coords, Z_target2 = group_eigensolution(
-        grid_coords, Z_new,
+        grid_coords, Z,
         freq_index=1  # 第n个频率
         # freq_index=2  # 第n个频率
     )
     new_coords, Z_target3 = group_eigensolution(
-        grid_coords, Z_new,
-        freq_index=3  # 第n个频率
+        grid_coords, Z,
+        freq_index=2  # 第n个频率
         # freq_index=2  # 第n个频率
     )
 
@@ -117,18 +115,18 @@ if __name__ == '__main__':
     # print("\n差值查询结果（保留列表）：", result)
 
     # 假设已经得到 new_coords, Z_target
-    # # 画一维曲线：params 对 target
-    # plot_Z_diff_plt(
-    #     new_coords, Z_target1,
-    #     x_key="a",
-    #     fixed_params={
-    #         "b": 0.0000
-    #     },
-    #     plot_params={
-    #         'zlabel': 'freq',
-    #         'imag': False,
-    #     }
-    # )
+    # 画一维曲线：params 对 target
+    plot_Z(
+        new_coords, Z_target1,
+        x_key="h_grating (nm)",
+        fixed_params={
+            "buffer (nm)": 563
+        },
+        plot_params={
+            'zlabel': 'freq',
+            'imag': False,
+        }
+    )
     # 画二维曲面：a vs w1 对 Δ频率
     plot_params = {
         'zlabel': 'RIU',
@@ -136,21 +134,21 @@ if __name__ == '__main__':
         'cmap2': 'Reds',
         'log_scale': False,
         'alpha': 1,
-        'data_scale': [100, 1e-1, 200],
-        # 'data_scale': [10000, 1, 1],
+        # 'data_scale': [1000, 1.2e-1, 100],
+        'data_scale': [1000, 1e-1, 100],
         # 'vmax_real': 95,
         # 'vmax_imag': 1,
-        'render_real': True,
-        'render_imag': False,
+        'render_real': False,
+        'render_imag': True,
         'apply_abs': True
     }
     plot_Z_diff_pyvista(
         new_coords, [Z_target1, Z_target2, Z_target3],
         # new_coords, [Z_target2],
-        x_key="buffer (nm)",
-        y_key="h_grating (nm)",
+        x_key="h_grating (nm)",
+        y_key="buffer (nm)",
         fixed_params={
         },
         plot_params=plot_params,
-        show_live=True
+        show_live=False
     )

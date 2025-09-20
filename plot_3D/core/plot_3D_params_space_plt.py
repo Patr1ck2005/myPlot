@@ -110,7 +110,7 @@ def add_annotations(ax, plot_params):
 
     # 1. 设置标题（仅当 show_axis_labels=True 且 title 提供时）
     if show_axis_labels and title:
-        ax.set_title(title)
+        ax.set_title(title, fontsize=fs//1.2)
 
     # 2. 设置轴标签（仅当 show_axis_labels=True 且 提供时）
     if show_axis_labels:
@@ -216,7 +216,6 @@ def add_annotations(ax, plot_params):
         ax.legend(loc=legend_loc)
     if add_grid:
         ax.grid(True, linestyle=grid_style, alpha=grid_alpha)
-
     return ax.figure, ax  # 返回 fig, ax（修正为 ax.figure）
 
 
@@ -259,10 +258,16 @@ def plot_2d_heatmap(ax, x_vals, y_vals, Z, plot_params):
     plot_imaginary = plot_params.get('imag', False)
     add_colorbar = plot_params.get('add_colorbar', False)
 
+    global_color_vmax = plot_params.get('global_color_vmax', None)
+    global_color_vmin = plot_params.get('global_color_vmin', None)
+
     Z_real_plot = Z.real
     Z_imag_plot = Z.imag
 
+
+
     X, Y = np.meshgrid(x_vals, y_vals, indexing='ij')
+    # if global_color_vmax is not None and global_color_vmin is not None:
     surf1 = ax.imshow(
         Z_real_plot.T,
         extent=[X.min(), X.max(), Y.min(), Y.max()],
@@ -270,7 +275,9 @@ def plot_2d_heatmap(ax, x_vals, y_vals, Z, plot_params):
         aspect=imshow_aspect,
         cmap=cmap1_name,
         alpha=alpha_val,
-        interpolation='none'
+        interpolation='none',
+        vmin=global_color_vmin,
+        vmax=global_color_vmax
     )
 
     if add_colorbar:
@@ -289,10 +296,18 @@ def plot_2d_multiline(ax, x_vals, y_vals, Z, plot_params):
     default_color_list = plot_params.get('default_color_list', None)
     alpha_val = plot_params.get('alpha', 1.0)
     plot_imaginary = plot_params.get('imag', False)
+    add_colorbar = plot_params.get('add_colorbar', False)
+    global_color_vmin = plot_params.get('global_color_vmin', None)
+    global_color_vmax = plot_params.get('global_color_vmax', None)
 
 
     cmap = cm.get_cmap(cmap_name)
-    norm = colors.Normalize(vmin=y_vals.min(), vmax=y_vals.max())
+    if global_color_vmin is None:
+        global_color_vmin = y_vals.min()
+    if global_color_vmax is None:
+        global_color_vmax = y_vals.max()
+    # norm = colors.Normalize(vmin=y_vals.min(), vmax=y_vals.max())
+    norm = colors.Normalize(vmin=global_color_vmin, vmax=global_color_vmax)
     ny = len(y_vals)
 
     Z_real = Z.real
@@ -319,6 +334,12 @@ def plot_2d_multiline(ax, x_vals, y_vals, Z, plot_params):
 
     ax.set_xlim(x_vals.min(), x_vals.max())
     ax.set_ylim(np.nanmin(y_mins) * 0.98, np.nanmax(y_maxs) * 1.02)
+
+    if add_colorbar and default_color is None and default_color_list is None:
+        # 添加颜色条
+        sm = cm.ScalarMappable(cmap=cmap, norm=norm)
+        sm.set_array(y_vals)  # 设置颜色条的数据
+        cbar = ax.get_figure().colorbar(sm, ax=ax)
 
     return ax.get_figure(), ax
 

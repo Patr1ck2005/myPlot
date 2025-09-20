@@ -104,17 +104,20 @@ class BasePlotter(ABC):
         self.fig, self.twiny_ax = add_annotations(self.twiny_ax, self.config.annotations)
         plt.tight_layout()
 
-    def save_and_show(self, custom_name: Optional[str] = None) -> None:
+    def save_and_show(self, save=True, save_type='svg', custom_name: Optional[str] = None, custom_abs_path: Optional[str] = None) -> None:
         """共性：保存/show（支持自定义名）"""
-        full_params = self.config.plot_params or {}
-        if custom_name:
-            image_path = os.path.join(self.config.save_dir, custom_name)
-        else:
-            image_path = generate_save_name(self.config.save_dir, full_params)
-        plt.savefig(image_path, dpi=self.config.dpi, bbox_inches="tight", transparent=True)
-        print(f"图像已保存为：{image_path} 🎨")
-        plt.savefig('temp_output.svg', dpi=self.config.dpi, bbox_inches="tight", transparent=True)
-        print("Temp figure saved as 'temp_output.svg'.")
+        if save:
+            full_params = self.config.plot_params or {}
+            if custom_abs_path:
+                image_path = custom_abs_path
+            elif custom_name:
+                image_path = os.path.join(self.config.save_dir, custom_name)
+            else:
+                image_path = generate_save_name(self.config.save_dir, full_params)
+            plt.savefig(image_path+f'.{save_type}', dpi=self.config.dpi, bbox_inches="tight", transparent=True)
+            print(f"图像已保存为：{image_path} 🎨")
+            plt.savefig('temp_output.svg', dpi=self.config.dpi, bbox_inches="tight", transparent=True)
+            print("Temp figure saved as 'temp_output.svg'.")
         if self.config.show:
             plt.show()
 
@@ -173,7 +176,11 @@ class HeatmapPlotter(BasePlotter):
             y_vals = np.arange(Z.shape[1])
         self.fig, self.ax = plot_2d_heatmap(self.ax, x_vals, y_vals, Z, params)
 
-    def plot_multiline_2d(self, Z: np.ndarray, **kwargs) -> None:
+    def plot_multiline_2d(self, Z: np.ndarray, x_vals=None, y_vals=None, **kwargs) -> None:
         """辅助：plot_2d_multiline"""
         params = {**self.config.plot_params, **kwargs}
-        self.fig, self.ax = plot_2d_multiline(self.ax, self.x_vals, self.y_vals, Z, params)
+        if x_vals is None:
+            x_vals = np.arange(Z.shape[0])
+        if y_vals is None:
+            y_vals = np.arange(Z.shape[1])
+        self.fig, self.ax = plot_2d_multiline(self.ax, x_vals, y_vals, Z, params)

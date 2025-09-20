@@ -37,7 +37,8 @@ def group_eigensolution(grid_coords, Z, freq_index=1):
     return new_coords, Z_diff
 
 if __name__ == '__main__':
-    data_path = 'data/3EPinGrating/3EP-kEP-h_buffer_space1.csv'
+    # data_path = './data/3EP-test.csv'
+    data_path = 'data/3EP-topological_band.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -46,8 +47,8 @@ if __name__ == '__main__':
     df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex)
 
     # 指定用于构造网格的参数以及目标数据列
-    param_keys = ["h_grating (nm)", "buffer (nm)"]
-    z_key = ["特征频率 (THz)"]
+    param_keys = ["a", "b"]
+    z_key = "特征频率 (THz)"
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
     grid_coords, Z = create_data_grid(df_sample, param_keys, z_key)
@@ -74,16 +75,8 @@ if __name__ == '__main__':
         [0, 0],
         [0, 0],
     ])
-
-    # 创建一个新的数组，用于存储更新后的结果
-    Z_new = np.empty_like(Z, dtype=object)
-    # 使用直接的循环来更新 Z_new
-    for i in range(Z.shape[0]):
-        for j in range(Z.shape[1]):
-            Z_new[i, j] = Z[i, j][0]  # 提取每个 lst_ij 的第 b 列
-
     Z = group_surfaces_one_sided_hungarian(
-        Z_new, deltas3,
+        Z, deltas3,
         value_weights=value_weights,
         deriv_weights=deriv_weights,
     )
@@ -118,9 +111,9 @@ if __name__ == '__main__':
     # 画一维曲线：params 对 target
     plot_Z(
         new_coords, Z_target1,
-        x_key="h_grating (nm)",
+        x_key="a",
         fixed_params={
-            "buffer (nm)": 563
+            "b": 0.0000
         },
         plot_params={
             'zlabel': 'freq',
@@ -134,21 +127,21 @@ if __name__ == '__main__':
         'cmap2': 'Reds',
         'log_scale': False,
         'alpha': 1,
-        # 'data_scale': [1000, 1.2e-1, 100],
-        'data_scale': [1000, 1e-1, 100],
+        'data_scale': [20000, 2e-3, 100],
+        # 'data_scale': [10000, 1, 1],
         # 'vmax_real': 95,
         # 'vmax_imag': 1,
-        'render_real': False,
-        'render_imag': True,
+        'render_real': True,
+        'render_imag': False,
         'apply_abs': True
     }
     plot_Z_diff_pyvista(
         new_coords, [Z_target1, Z_target2, Z_target3],
         # new_coords, [Z_target2],
-        x_key="h_grating (nm)",
-        y_key="buffer (nm)",
+        x_key="a",
+        y_key="b",
         fixed_params={
         },
         plot_params=plot_params,
-        show_live=False
+        show_live=True
     )

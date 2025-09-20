@@ -34,6 +34,15 @@ class MyScript3Plotter(LinePlotter):
         self.ax.set_xlim(self.x_vals.min(), self.x_vals.max())
         self.ax.set_ylim(np.nanmin(y_mins) * 0.98, np.nanmax(y_maxs) * 1.02)
 
+def main(data_path):
+    config = PlotConfig(
+        plot_params={},
+        annotations={'ylabel': 'f (c/P)'},
+    )
+    config.figsize = (3, 4)
+    plotter = MyScript3Plotter(config=config, data_path=data_path)
+    plotter.run_full()
+
 if __name__ == '__main__':
     config = PlotConfig(
         plot_params={},
