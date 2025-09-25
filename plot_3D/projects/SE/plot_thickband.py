@@ -36,18 +36,12 @@ class MyScript3Plotter(LinePlotter):
 
 def main(data_path):
     config = PlotConfig(
-        plot_params={},
-        annotations={'ylabel': 'f (c/P)'},
+        plot_params={'scale': 1},
+        annotations={'ylabel': 'f (c/P)', 'show_axis_labels': True, 'show_tick_labels': True},
     )
     config.figsize = (3, 4)
     plotter = MyScript3Plotter(config=config, data_path=data_path)
     plotter.run_full()
 
 if __name__ == '__main__':
-    config = PlotConfig(
-        plot_params={},
-        annotations={'ylabel': 'f (c/P)'},
-    )
-    config.figsize = (3, 4)
-    plotter = MyScript3Plotter(config=config, data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE/rsl/eigensolution\20250918_182624\plot_data__x-m1_1d.pkl')
-    plotter.run_full()
+    main(r'D:\DELL\Documents\myPlots\plot_3D\projects\SE/rsl/eigensolution\20250918_182624\plot_data__x-m1_1d.pkl')

@@ -40,8 +40,9 @@ if __name__ == '__main__':
     # data_path = 'data/SE/3fold-TE-delta0.1-k_loss0-eigen.csv'
     # data_path = 'data/SE/3fold-TE-delta0.2-eigen.csv'
     # data_path = 'data/3fold-TE-delta_spcae-eigen.csv
-    data_path = './data/1fold-TM-k_loss0-eigen.csv'
+    # data_path = './data/1fold-TM-k_loss0-eigen.csv'
     # data_path = 'data/SE/1fold_weak-TM-eigen.csv'
+    data_path = './data/1fold-TM-eigen.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -80,7 +81,7 @@ if __name__ == '__main__':
         fixed_params={"m2": 0, "loss_k": 0},  # 固定
         # fixed_params={"m1": 0, "m2": 0, "loss_k": 1e-3*0},  # 固定
         filter_conditions={
-            "fake_factor (1)": {"<": 1000.0},  # 筛选
+            "fake_factor (1)": {"<": 100.0},  # 筛选
             # "m1": {"<": .1},  # 筛选
             "频率 (Hz)": {">": 0.3, "<": 1.0},  # 筛选
         }
@@ -106,17 +107,21 @@ if __name__ == '__main__':
         [Z_new], deltas3,
         value_weights=value_weights,
         deriv_weights=deriv_weights,
-        max_m=14
+        max_m=10
     )
 
     # 假设你已经得到了 grid_coords, Z
     new_coords, Z_target1 = group_eigensolution(
         new_coords, Z_grouped,
-        freq_index=5  # 第n个频率
+        freq_index=3  # 第n个频率
     )
     new_coords, Z_target2 = group_eigensolution(
         new_coords, Z_grouped,
-        freq_index=7  # 第n个频率
+        freq_index=4  # 第n个频率
+    )
+    new_coords, Z_target3 = group_eigensolution(
+        new_coords, Z_grouped,
+        freq_index=5  # 第n个频率
     )
 
     print("去掉 bg_n 后的参数：")
@@ -136,7 +141,7 @@ if __name__ == '__main__':
     # )
 
     data_path = prepare_plot_data(
-        new_coords, [Z_target2], x_key="m1", fixed_params={},
+        new_coords, [Z_target1, Z_target2], x_key="m1", fixed_params={},
         save_dir='./rsl/eigensolution',
     )
 
