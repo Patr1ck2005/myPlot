@@ -167,3 +167,31 @@ def compress_data_axis(coords, data, axis_key, aggregator=np.max, selection_rang
     new_coords = {k: v for k, v in coords.items() if k != axis_key}
 
     return new_coords, new_data
+
+
+
+def group_solution(grid_coords, Z, freq_index=1):
+
+    # 2. 构造新的 coords
+    new_coords = grid_coords
+
+    # 3. 新数组的 shape
+    new_shape = list(Z.shape)
+    Z_new = np.zeros(shape=new_shape, dtype=complex)
+
+    # 4. 遍历所有索引，计算差值
+    #    我们需要对原始 Z 的所有索引 i1,...,iN（含 bg_n_dim）取两次值
+    it = np.ndindex(*new_shape)
+    for idx in it:
+        idx_full_A = list(idx)
+
+        # 取出对应的列表
+        list_A = Z[tuple(idx_full_A)]
+
+        # 检查长度
+        if len(list_A) <= freq_index:
+            raise IndexError(f"在索引 {idx} 处，列表长度不足以取到第 {freq_index + 1} 个元素")
+
+        Z_new[idx] = list_A[freq_index]
+
+    return new_coords, Z_new

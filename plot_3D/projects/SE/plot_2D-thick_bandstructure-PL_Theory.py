@@ -38,11 +38,11 @@ def group_eigensolution(grid_coords, Z, freq_index=1):
 if __name__ == '__main__':
     # data_path = 'data/SE/2fold-TE-k_loss0-eigen.csv'
     # data_path = 'data/SE/3fold-TE-delta0.1-k_loss0-eigen.csv'
-    # data_path = 'data/SE/3fold-TE-delta0.2-eigen.csv'
+    data_path = './data/3fold-TE-delta0.2-eigen.csv'
     # data_path = 'data/3fold-TE-delta_spcae-eigen.csv
     # data_path = './data/1fold-TM-k_loss0-eigen.csv'
-    # data_path = 'data/SE/1fold_weak-TM-eigen.csv'
-    data_path = './data/1fold-TM-eigen.csv'
+    # data_path = 'data/1fold_weak-TM-eigen.csv'
+    # data_path = './data/1fold-TM-eigen.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -55,7 +55,7 @@ if __name__ == '__main__':
     df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=1e3*1e-9)
 
     # 筛选m1<0.1的成分
-    df_sample = df_sample[df_sample["m1"] < 0.3]
+    df_sample = df_sample[df_sample["m1"] < 0.28]
 
     # 指定用于构造网格的参数以及目标数据列
     # param_keys = ["m1", "m2", "loss_k", "w_delta_factor"]
@@ -107,17 +107,17 @@ if __name__ == '__main__':
         [Z_new], deltas3,
         value_weights=value_weights,
         deriv_weights=deriv_weights,
-        max_m=10
+        max_m=14
     )
 
     # 假设你已经得到了 grid_coords, Z
     new_coords, Z_target1 = group_eigensolution(
         new_coords, Z_grouped,
-        freq_index=3  # 第n个频率
+        freq_index=2  # 第n个频率
     )
     new_coords, Z_target2 = group_eigensolution(
         new_coords, Z_grouped,
-        freq_index=4  # 第n个频率
+        freq_index=3  # 第n个频率
     )
     new_coords, Z_target3 = group_eigensolution(
         new_coords, Z_grouped,

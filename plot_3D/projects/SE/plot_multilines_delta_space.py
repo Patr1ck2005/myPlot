@@ -32,5 +32,5 @@ if __name__ == '__main__':
         },
         annotations={'xlim': (0.430, 0.440), 'ylim': (0, 1.15e11)}
     )
-    plotter = MyScript4Plotter(config=config, data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE/rsl/delta_space\20250916_170739\plot_data__x-频率Hz_y-w_delta_factor.pkl')
+    plotter = MyScript4Plotter(config=config, data_path=r"D:\DELL\Documents\myPlots\plot_3D\projects\SE\rsl\manual_datas\PL\3fold_PL_QGM-tot_rad-delta_space.pkl")
     plotter.run_full()

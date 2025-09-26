@@ -32,6 +32,7 @@ except Exception:
 class SystemParams:
     """系统参数（模型固定量）"""
     omega0: float = 0.0
+    dispersion_v: float = 1
     delta:  float = 0.0
     gamma0: float = 1e-3     # 材料吸收损耗（对角 GammaAbs 的一半）
     d1:     float = 1.0      # 偶极子 x 分量
@@ -67,8 +68,8 @@ class NonHermitianTwoLevel:
         注：Heff 不显含 omega（在本模型设定下）。
         """
         sp = self.sp
-        H0 = np.array([[sp.omega0 + sp.delta, k],
-                       [k,                     sp.omega0 - sp.delta]], dtype=complex)
+        H0 = np.array([[sp.omega0 + sp.delta, sp.dispersion_v*k],
+                       [sp.dispersion_v*k,                     sp.omega0 - sp.delta]], dtype=complex)
         GammaAbs = np.array([[2*sp.gamma0, 0],
                              [0,           2*sp.gamma0]], dtype=complex)
         KKT = np.array([[0,               0],
@@ -193,6 +194,117 @@ class NonHermitianTwoLevel:
             y = np.array([power_fn(om, kk, gamma_rad) for kk in k_grid], dtype=float)
             results.append(np.trapz(y, k_grid))
         return np.asarray(results, dtype=float)
+
+    # ---------- Ultra-fast vectorized grid power (no Python loops) ----------
+
+    def _ad_params(self, omega_array: np.ndarray, gamma_rad: float):
+        """
+        生成广播友好的 a(omega), d(omega), 以及常量：
+        A = [[a, -v*k], [-v*k, d]], 其中
+        a = (omega - (omega0+delta)) + i*gamma0
+        d = (omega - (omega0-delta)) + i*(gamma0 + gamma_rad)
+        """
+        sp = self.sp
+        omega = np.asarray(omega_array, dtype=float)  # shape: (n_omega,)
+        a = (omega - (sp.omega0 + sp.delta)) + 1j * sp.gamma0
+        d = (omega - (sp.omega0 - sp.delta)) + 1j * (sp.gamma0 + gamma_rad)
+        return a, d
+
+    def _solve_u_grid(self, omega_grid: np.ndarray, k_grid: np.ndarray, gamma_rad: float):
+        """
+        求解 u = G d 向量的网格（使用 2x2 显式逆公式），返回 (u1, u2) 复数组，形状皆为 (n_omega, n_k)
+        注：u 是 G(omega,k) 作用在偶极向量 d=[d1,d2]^T 上的结果。
+        """
+        sp = self.sp
+        d1, d2 = complex(sp.d1), complex(sp.d2)
+        v = float(sp.dispersion_v)
+
+        # a(omega), d(omega) 先计算出来，然后与 k 广播
+        a_om, d_om = self._ad_params(omega_grid, gamma_rad)  # (n_omega,)
+        k = np.asarray(k_grid, dtype=float)                   # (n_k,)
+
+        # 广播到 (n_omega, n_k)
+        a = a_om[:, None]                 # (n_omega, 1)
+        d = d_om[:, None]                 # (n_omega, 1)
+        vk = v * k[None, :]               # (1, n_k)
+
+        # A = [[a, -vk], [-vk, d]],  A^{-1} = (1/Δ) [[d, vk], [vk, a]], Δ = a*d - (vk)^2
+        Delta = a * d - (vk ** 2)        # (n_omega, n_k)
+
+        # 防止极点处溢出 -> 在非常小的 |Δ| 处做一个极小正则
+        eps = 1e-18
+        mask = (np.abs(Delta) < eps)
+        if np.any(mask):
+            Delta = Delta + eps * mask
+
+        u1 = (d * d1 + vk * d2) / Delta  # (n_omega, n_k)
+        u2 = (vk * d1 + a * d2) / Delta  # (n_omega, n_k)
+        return u1, u2
+
+    def power_on_grid_fast(self,
+                           mode: str,
+                           gamma_rad: float,
+                           k_vals: np.ndarray,
+                           omega_vals: np.ndarray) -> np.ndarray:
+        """
+        向量化计算 Z(omega,k)，shape=(n_omega, n_k)
+        - mode='Prad'：M = KKT = diag(0, 2*gamma_rad)
+        - mode='Ptot'：M = GammaAbs + KKT = diag(2*gamma0, 2*gamma0 + 2*gamma_rad)
+        公式：P = u^† M u = m1*|u1|^2 + m2*|u2|^2
+        """
+        m = mode.strip().lower()
+        u1, u2 = self._solve_u_grid(np.asarray(omega_vals, float),
+                                    np.asarray(k_vals, float),
+                                    float(gamma_rad))
+        if m == "prad":
+            m1 = 0.0
+            m2 = 2.0 * float(gamma_rad)
+        elif m == "ptot":
+            m1 = 2.0 * float(self.sp.gamma0)
+            m2 = 2.0 * (float(self.sp.gamma0) + float(gamma_rad))
+        else:
+            raise ValueError(f"Unknown mode: {mode!r}. Use 'Ptot' or 'Prad'.")
+
+        Z = (m1 * (u1.real**2 + u1.imag**2) +
+             m2 * (u2.real**2 + u2.imag**2))  # 等价于 m1*|u1|^2 + m2*|u2|^2
+        return Z.astype(float)
+
+    def power_on_grid(self,
+                      power_fn: Callable[[float, float, float], float],
+                      gamma_rad: float,
+                      k_min: float, k_max: float, k_samples: int,
+                      omega_min: float, omega_max: float, omega_samples: int
+                      ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        兼容旧接口：如果 power_fn 来自 get_power_function(model, mode)，
+        则自动走 vectorized 快路径；否则回退到逐点循环。
+        """
+        k_grid = np.linspace(k_min, k_max, int(k_samples))
+        omega_grid = np.linspace(omega_min, omega_max, int(omega_samples))
+
+        # 检查是否是标准模式函数
+        fast_mode = None
+        try:
+            # 通过函数名粗略判断（也可在 get_power_function 中打标签）
+            fn_name = getattr(power_fn, "__name__", "").lower()
+            if "prad" in fn_name:
+                fast_mode = "Prad"
+            elif "ptot" in fn_name:
+                fast_mode = "Ptot"
+        except Exception:
+            pass
+
+        if fast_mode is not None:
+            Z = self.power_on_grid_fast(fast_mode, gamma_rad, k_grid, omega_grid)
+            return k_grid, omega_grid, Z
+
+        # 回退：保留你原来的逐点法
+        Z = np.zeros((omega_grid.size, k_grid.size), dtype=float)
+        for i, om in enumerate(omega_grid):
+            for j, kk in enumerate(k_grid):
+                Z[i, j] = power_fn(om, kk, gamma_rad)
+        return k_grid, omega_grid, Z
+
 
 
 # ===================== Factory for callable modes =====================
