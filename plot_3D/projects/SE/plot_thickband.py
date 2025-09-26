@@ -23,7 +23,13 @@ class MyScript3Plotter(LinePlotter):
 
     def plot(self) -> None:  # 重写：整体+循环填充
         params = {
-            'enable_fill': True, 'gradient_fill': True, 'cmap': 'magma', 'add_colorbar': False, 'global_color_vmin': 0, 'global_color_vmax': 5e-3, 'default_color': 'gray', 'alpha_fill': 1, 'edge_color': 'none'
+            'enable_fill': True,
+            'gradient_fill': True,
+            'cmap': 'magma',
+            'add_colorbar': False,
+            'global_color_vmin': 0, 'global_color_vmax': 5e-3,
+            'default_color': 'gray', 'alpha_fill': 1,
+            'edge_color': 'none'
         }
         y_mins, y_maxs = [], []
         for i, (x, y) in enumerate(zip(self.x_vals_list, self.y_vals_list)):
