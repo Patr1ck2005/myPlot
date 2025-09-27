@@ -32,22 +32,31 @@ class MyScript3Plotter(LinePlotter):
             'edge_color': 'none'
         }
         y_mins, y_maxs = [], []
+        color_list = ['red', 'blue']
         for i, (x, y) in enumerate(zip(self.x_vals_list, self.y_vals_list)):
-            self.plot_line(x, z1=y.real, z2=y.imag, z3=y.imag, **params)  # 填充
-            widths = np.abs(y.imag)
-            y_mins.append(np.min(y.real - widths))
-            y_maxs.append(np.max(y.real + widths))
-        self.ax.set_xlim(self.x_vals.min(), self.x_vals.max())
-        self.ax.set_ylim(np.nanmin(y_mins) * 0.98, np.nanmax(y_maxs) * 1.02)
+            params['default_color'] = color_list[i]
+            # y = 10**y 恢复为指数数据
+            y = np.power(10, y)
+            # 将数据关于y轴镜像对称
+            x_mirror = np.concatenate([-x[::-1], x])
+            y_mirror = np.concatenate([y[::-1], y])
+            self.plot_line(x_mirror, z1=y_mirror, **params)  # 填充
 
 def main(data_path):
     config = PlotConfig(
-        plot_params={'scale': 1},
-        annotations={'ylabel': 'f (c/P)', 'show_axis_labels': True, 'show_tick_labels': True},
+        plot_params={
+            'scale': 1,
+        },
+        annotations={
+            'ylabel': 'f (c/P)', 'show_axis_labels': False, 'show_tick_labels': False,
+            'xlim': (-0.1, 0.1), 'ylim': (1e1, 1e10),
+            'y_log_scale': True,
+        },
     )
-    config.figsize = (3, 4)
+    config.figsize = (6, 1.5)
     plotter = MyScript3Plotter(config=config, data_path=data_path)
     plotter.run_full()
 
 if __name__ == '__main__':
-    main(r"D:\DELL\Documents\myPlots\plot_3D\projects\SE\rsl\manual_datas\eigens\2fold-kloss0-k_space.pkl")
+    main(r"D:\DELL\Documents\myPlots\plot_3D\projects\SE\rsl\manual_datas\eigens\2fold-kloss0-k_space-Qfactor.pkl")
+    # main(r"D:\DELL\Documents\myPlots\plot_3D\projects\SE\rsl\manual_datas\eigens\3fold-kloss0-k_space-Qfactor.pkl")

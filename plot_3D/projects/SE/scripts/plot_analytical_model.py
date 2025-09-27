@@ -27,13 +27,15 @@ from plot_3D.advance_plot_styles.line_plot import plot_line_advanced
 fs = 12
 plt.rcParams.update({'font.size': fs})
 
+
 @dataclass
 class SystemParams:
     omega0: float = 0.0
-    delta: float  = 0.0
+    delta: float = 0.0
     gamma0: float = 1e-3
-    d1: float     = 1.0
-    d2: float     = 0.0
+    d1: float = 1.0
+    d2: float = 0.0
+
 
 @dataclass
 class PlotParams:
@@ -42,19 +44,21 @@ class PlotParams:
     k_right_max: float = 1.0
     k_right_samples: int = 128
 
-    omega_min: float = -0.5   # 相对 omega0 偏移已在主程设置
-    omega_max: float =  0.5
+    omega_min: float = -0.5  # 相对 omega0 偏移已在主程设置
+    omega_max: float = 0.5
     omega_samples: int = 512
 
     # 图2：k 积分范围与 ω 取样
-    k_int_range: Tuple[float, float] = (-10.0, 10.0)
+    # k_int_range: Tuple[float, float] = (-10.0, 10.0)
+    k_int_range: Tuple[float, float] = (-.5, .5)
     omega_int_min: float = -0.1
-    omega_int_max: float =  0.1
+    omega_int_max: float = 0.1
     omega_int_samples: int = 129
 
     # 颜色与风格
     cmap_density: str = "magma"
     cmap_lines: str = "viridis"
+
 
 # 模式：'Ptot' or 'Prad'
 MODE_PTOT = "Ptot"
@@ -131,10 +135,11 @@ def band_eigenvalues_H0(k_vals: np.ndarray, sp: SystemParams) -> Tuple[np.ndarra
     """返回 H0 的两条能带本征值 ω(k)。"""
     # H0 的解析本征值：omega0 ± sqrt(delta^2 + k^2)
     omega0, delta = sp.omega0, sp.delta
-    gap = np.sqrt(delta**2 + k_vals**2)
-    band_plus  = omega0 + gap
+    gap = np.sqrt(delta ** 2 + k_vals ** 2)
+    band_plus = omega0 + gap
     band_minus = omega0 - gap
     return band_plus, band_minus
+
 
 # === 新增：用 Heff 的本征值（取实部）作为能带 ===
 def band_eigenvalues_Heff(k_vals: np.ndarray, current_gamma: float, sp: SystemParams):
@@ -157,7 +162,6 @@ def band_eigenvalues_Heff(k_vals: np.ndarray, current_gamma: float, sp: SystemPa
         band_minus.append(vals_sorted[0])
         band_plus.append(vals_sorted[1])
     return np.array(band_plus), np.array(band_minus)
-
 
 
 # ===================== 4) 网格与积分 =====================
@@ -193,9 +197,8 @@ def plot_figure_1(mode: str,
                   sp: SystemParams,
                   pp: PlotParams,
                   gamma_for_density: float = 1.0,
-                  gamma_for_bands: float = None,   # <== 新增：能带使用的 γ，可与右半不同
+                  gamma_for_bands: float = None,  # <== 新增：能带使用的 γ，可与右半不同
                   show: bool = True):
-
     power_fn = get_power_func(mode)
 
     # 右半密度
@@ -215,10 +218,10 @@ def plot_figure_1(mode: str,
                    origin='lower', cmap=pp.cmap_density, aspect='auto')
     cbar = fig.colorbar(im, ax=ax)
 
-    ax.plot(k_left, original_band_plus,  label=r'Band + (Re eig Heff)', color='gray', alpha=0.5)
+    ax.plot(k_left, original_band_plus, label=r'Band + (Re eig Heff)', color='gray', alpha=0.5)
     ax.plot(k_left, original_band_minus, label=r'Band - (Re eig Heff)', color='gray', alpha=0.5)
 
-    ax.plot(k_left, band_plus,  label=r'Band + (Re eig Heff)', color='red')
+    ax.plot(k_left, band_plus, label=r'Band + (Re eig Heff)', color='red')
     ax.plot(k_left, band_minus, label=r'Band - (Re eig Heff)', color='blue')
 
     ax.set_xlim([-0.5, 0.5])
@@ -238,13 +241,13 @@ def plot_figure_1(mode: str,
         plt.show()
     return fig, ax
 
-def plot_band(mode: str,
-                  sp: SystemParams,
-                  pp: PlotParams,
-                  gamma_for_density: float = 1.0,
-                  gamma_for_bands: float = None,   # <== 新增：能带使用的 γ，可与右半不同
-                  show: bool = True):
 
+def plot_band(mode: str,
+              sp: SystemParams,
+              pp: PlotParams,
+              gamma_for_density: float = 1.0,
+              gamma_for_bands: float = None,  # <== 新增：能带使用的 γ，可与右半不同
+              show: bool = True):
     power_fn = get_power_func(mode)
 
     # 右半密度
@@ -275,11 +278,12 @@ def plot_band(mode: str,
         'global_color_vmin': 0,
         'global_color_vmax': 0.5,
     }
-    plot_line_advanced(ax, k_space, z1=band_plus.real, z2=-band_plus.imag, z3=-band_plus.imag, default_color='red', **plot_params)
-    plot_line_advanced(ax, k_space, z1=band_minus.real, z2=-band_minus.imag, z3=-band_minus.imag, default_color='blue', **plot_params)
+    plot_line_advanced(ax, k_space, z1=band_plus.real, z2=-band_plus.imag, z3=-band_plus.imag, default_color='red',
+                       **plot_params)
+    plot_line_advanced(ax, k_space, z1=band_minus.real, z2=-band_minus.imag, z3=-band_minus.imag, default_color='blue',
+                       **plot_params)
 
-
-    ax.plot(k_space, original_band_plus,  label=r'Band + (Re eig Heff)', color='gray', alpha=1)
+    ax.plot(k_space, original_band_plus, label=r'Band + (Re eig Heff)', color='gray', alpha=1)
     ax.plot(k_space, original_band_minus, label=r'Band - (Re eig Heff)', color='gray', alpha=1)
 
     ax.set_xlim([-1, 1])
@@ -295,11 +299,36 @@ def plot_band(mode: str,
     return fig, ax
 
 
+def plot_spectrum(mode: str,
+                  sp: SystemParams,
+                  pp: PlotParams,
+                  gamma_for_density: float = 1.0,
+                  gamma_for_bands: float = None,  # <== 新增：能带使用的 γ，可与右半不同
+                  show: bool = True):
+    power_fn = get_power_func(mode)
+
+    # 右半密度
+    k_right, omega_grid, Z = compute_density_grid(power_fn, gamma_for_density, sp, pp)
+
+    # 绘图（其余保持你现有版本即可）
+    fig, ax = plt.subplots(figsize=(6, 3))
+    im = ax.imshow(Z, extent=[pp.k_right_min, pp.k_right_max, sp.omega0 + pp.omega_min, sp.omega0 + pp.omega_max],
+                   origin='lower', cmap=pp.cmap_density, aspect='auto')
+    cbar = fig.colorbar(im, ax=ax)
+
+    ax.set_xlim([-1, 1])
+    ax.set_ylim([-0.5, 0.5])
+
+    if show:
+        plt.savefig('temp1.svg', transparent=True, bbox_inches='tight')
+        plt.show()
+    return fig, ax
+
 
 def plot_figure_2(mode: str,
                   sp: SystemParams,
                   pp: PlotParams,
-                  gamma_values = (0.01, 0.1, 0.5, 1.0, 2.0),
+                  gamma_values=(0.01, 0.1, 0.5, 1.0, 2.0),
                   show: bool = True):
     """
     图2：对 k∈[-1,1] 积分后的功率随 ω 的曲线（多条曲线用同一色图采样的颜色）。
@@ -339,53 +368,96 @@ def plot_figure_2(mode: str,
     return fig, ax
 
 
+def plot_figure_3(mode: str,
+                  sp: SystemParams,
+                  pp: PlotParams,
+                  omega_values,
+                  gamma_value=0.1,  # <== 这里固定一个 gamma
+                  show: bool = True):
+    power_fn = get_power_func(mode)
+
+    # # 用色图为多条曲线赋色
+    # cmap = plt.cm.get_cmap(pp.cmap_lines, len(gamma_values))
+
+    # # 根据曲线的gamma_value为其赋色
+    cmap = plt.get_cmap(pp.cmap_lines)
+    norm = plt.Normalize(-max(omega_values)*2, max(omega_values))
+    cmap = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+
+    fig, ax = plt.subplots(figsize=(2, 3))
+    k_range_values = np.linspace(0, 1, 101)
+
+    for omega in omega_values:
+        y_list = []
+        for idx, k_range in enumerate(k_range_values):
+            pp.k_int_range = (-k_range, k_range)
+            y = integrate_over_k(power_fn, gamma_value, sp, pp, [omega])
+            y_list.append(y[0]/k_range/2)  # 平均到k_range
+        ax.plot(k_range_values, y_list, '-', label=rf'$\omega$ = {omega}', color=cmap.to_rgba(omega))
+
+    if show:
+        # plt.legend()
+        plt.savefig('temp3.svg', transparent=True, bbox_inches='tight')
+        plt.show()
+    return fig, ax
+
+
 # ===================== 6) 主程序（可直接运行） =====================
 
 if __name__ == "__main__":
     # --- 固定系统参数 ---
     sp = SystemParams(
-        omega0 = 0.0,
-        delta  = 0.0,
-        gamma0 = 1e-3,
-        d1     = 1.0,
-        d2     = 0.0
+        omega0=0.0,
+        delta=0.0,
+        gamma0=5e-3,
+        d1=1.0,
+        d2=0.0
     )
 
     # --- 绘图控制参数 ---
     pp = PlotParams(
         # 图1右半密度图范围（相对 omega0 的 ±0.5 ）
-        omega_min = -0.5,
-        omega_max =  0.5,
-        omega_samples = 512,
-        k_right_samples = 128,
+        omega_min=-0.5,
+        omega_max=0.5,
+        omega_samples=512 + 1,
+        k_right_samples=128 + 1,
 
         # 图2的 ω 扫描范围（相对 omega0 的 ±0.1）
         # omega_int_min = 0.17,
         # omega_int_max =  0.23,
         # omega_int_min = -0.5,
         # omega_int_max = 0.5,
-        omega_int_min = -0.10,
-        omega_int_max = 0.10,
-        omega_int_samples = 129*3,
+        omega_int_min=-0.50,
+        omega_int_max=0.50,
+        omega_int_samples=129 * 3,
 
         # 色图
-        cmap_density = "magma",
+        cmap_density="magma",
         # cmap_lines   = "viridis",
-        cmap_lines   = "Reds",
-        # cmap_lines   = "Blues",
+        # cmap_lines="Reds",
+        cmap_lines   = "Blues",
     )
 
     # 选择模式：MODE_PTOT 或 MODE_PRAD
-    mode = MODE_PTOT  # 改成 MODE_PRAD 即可切换
-    # mode = MODE_PRAD  # 改成 MODE_PRAD 即可切换
+    # mode = MODE_PTOT  # 改成 MODE_PRAD 即可切换
+    mode = MODE_PRAD  # 改成 MODE_PRAD 即可切换
 
     # 图1：右半密度所用 gamma
-    gamma_for_density = 0.5
+    # gamma_for_density = 0.5
+    gamma_for_density = 0.1
 
     # 图2：多条曲线的 gamma 列表
     gamma_values = [0.01, 0.1, 0.5, 1.0, 2.0]
 
+    # 图3：多条曲线的 k 列表
+    k_range_values = [0.01, 0.1, 0.5, 1.0, 2.0]
+
+    # 图3：多条曲线的 omega 列表
+    omega_values = [-0.4, -0.2, 0.4]
+
     # --- 绘制图 ---
     # plot_band(mode, sp, pp, gamma_for_density, show=True)
-    # plot_figure_1(mode, sp, pp, gamma_for_density, show=True)
-    plot_figure_2(mode, sp, pp, gamma_values, show=True)
+    # plot_spectrum(mode, sp, pp, gamma_for_density, show=True)
+    plot_figure_1(mode, sp, pp, gamma_for_density, show=True)
+    # plot_figure_2(mode, sp, pp, gamma_values, show=True)
+    # plot_figure_3(mode, sp, pp, omega_values, show=True)

@@ -465,12 +465,87 @@ if __name__ == '__main__':
     # plotter.add_annotations()  # 注解
     # plotter.save_and_show()  # 保存
 
+    config = PlotConfig(
+        plot_params={
+            'add_colorbar': False, 'cmap': 'magma', 'default_color': 'black',
+        },
+        annotations={
+            'xlim': (0.50, 0.61), 'ylim': (0, 40),
+        }
+    )
+    config.figsize = (2, 3)
+    plotter = MyScript1Plotter(config=config,
+                               data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\BIC\PL_Analysis.json')
+    plotter.load_data()
+    plotter.prepare_data()
+    plotter.new_fig()
+    plot_dataset_1 = plotter.compute_multi_k_lines(mode=1)  # 手动选场景
+    plotter.config.plot_params = {
+        # 'add_colorbar': True, 'cmap': 'magma_r',
+        'add_colorbar': False, 'cmap': 'viridis_r', 'default_color': 'gray',
+        'title': False, 'alpha': 0.5,
+    }
+    plotter.plot_multiline_2d(
+        x_vals=np.array(plot_dataset_1['x']),
+        y_vals=np.array(plot_dataset_1['k_list']),
+        Z=np.array(plot_dataset_1['y_list']).T,
+
+    )
+    plot_dataset_1 = plotter.compute_multi_k_lines(mode=2)  # 手动选场景
+    plotter.config.plot_params = {
+        'add_colorbar': False, 'cmap': 'Reds_r',
+        'title': False,
+        'global_color_vmin': 1, 'global_color_vmax': 5,
+    }
+    plotter.plot_multiline_2d(
+        x_vals=np.array(plot_dataset_1['x']),
+        y_vals=np.array(plot_dataset_1['k_list']),
+        Z=np.array(plot_dataset_1['y_list']).T,
+
+    )
+    plotter.add_annotations()  # 注解
+    plotter.save_and_show()  # 保存
+
+
     # config = PlotConfig(
     #     plot_params={
     #         'add_colorbar': False, 'cmap': 'magma', 'default_color': 'black',
     #     },
     #     annotations={
-    #         'xlim': (0, 400), 'ylim': (0, 10),
+    #         'ylim': (0, 40),
+    #     }
+    # )
+    # config.figsize = (2, 3)
+    # plotter = MyScript1Plotter(config=config,
+    #                            data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\BIC\PL_Analysis.json')
+    # plotter.load_data()
+    # plotter.prepare_data()
+    # plotter.new_fig()
+    # plot_dataset_1 = plotter.compute_k_max_line()  # 手动选场景
+    # plotter.config.plot_params = {
+    #     # 'add_colorbar': True, 'cmap': 'magma_r',
+    #     'add_colorbar': False, 'cmap': 'viridis_r', 'default_color': 'gray',
+    #     'title': False, 'alpha': 0.5,
+    # }
+    # plotter.plot_line(plot_dataset_1['k_array'][::-1], plot_dataset_1['y_max'], default_color='k', default_linestyle='-')
+    # plotter.plot_scatter(plot_dataset_1['k_array'][::-1], z1=plot_dataset_1['y_max'], default_color='black', marker='o',zorder=100, alpha=1)
+    # plotter.plot_line(plot_dataset_1['k_array'][::-1], plot_dataset_1['purcell_max'], default_color='gray', default_linestyle='-')
+    # plotter.plot_scatter(plot_dataset_1['k_array'][::-1], z1=plot_dataset_1['purcell_max'], default_color='gray', marker='o',zorder=100, alpha=1)
+    # raito = plot_dataset_1['purcell_max']/plot_dataset_1['y_max']
+    # plotter.add_annotations()  # 注解
+    # plotter.plot_line(plot_dataset_1['k_array'][::-1], raito, default_color='red', default_linestyle='--', twinx=True)
+    # plotter.plot_scatter(plot_dataset_1['k_array'][::-1], z1=raito, default_color='red', marker='o',zorder=100, alpha=1, twinx=True)
+    # config.annotations['ylim'] = (0, 3)
+    # plotter.add_twinx_annotations()  # 注解
+    # plotter.save_and_show()  # 保存
+
+
+    # config = PlotConfig(
+    #     plot_params={
+    #         'add_colorbar': False, 'cmap': 'magma', 'default_color': 'black',
+    #     },
+    #     annotations={
+    #         'xlim': (0, 400), 'ylim': (0, 50),
     #         'y_log_scale': False,
     #     }
     # )
@@ -490,29 +565,16 @@ if __name__ == '__main__':
     # plot_dataset_2 = plotter.compute_k_max_line()  # 预处理最大值
     # plotter.plot_line(plot_dataset_2['k_array'], plot_dataset_2['purcell_max'], default_color='k', default_linestyle='-')
     # plotter.plot_scatter(x=plot_dataset_2['k_array'], z1=plot_dataset_2['purcell_max'], default_color='blue', marker='o',zorder=100, alpha=1)
-    # plotter.add_annotations()  # 注解
-    # plotter.save_and_show()  # 保存
-
-    # config = PlotConfig(
-    #     plot_params={
-    #         'add_colorbar': False, 'cmap': 'magma', 'default_color': 'black',
-    #     },
-    #     annotations={
-    #         'xlim': (0, 200), 'ylim': (0, 50),
-    #         'y_log_scale': False,
-    #     }
-    # )
-    # config.figsize = (2, 4)
-    # plotter = SimpleScriptPlotter(config=config,
+    # plotter.re_initialized(config=config,
     #                            data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\lowQ-BIC\sweep_nx\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
-    # plotter.new_fig()
     # plot_dataset_1 = plotter.compute_k_max_line()  # 预处理最大值
     # plotter.plot_line(plot_dataset_1['k_array'], plot_dataset_1['purcell_max'], default_color='k', default_linestyle='-')
     # plotter.plot_scatter(x=plot_dataset_1['k_array'], z1=plot_dataset_1['purcell_max'], default_color='k', marker='o',zorder=100, alpha=1)
     # plotter.add_annotations()  # 注解
     # plotter.save_and_show()  # 保存
+
 
     # config = PlotConfig(
     #     plot_params={
@@ -550,29 +612,29 @@ if __name__ == '__main__':
     # plotter.add_annotations()  # 注解
     # plotter.save_and_show()  # 保存
 
-    config = PlotConfig(
-        plot_params={
-            'add_colorbar': False, 'cmap': 'magma', 'default_color': 'black',
-        },
-        annotations={
-            'ylim': (0, 50),
-            'y_log_scale': False,
-        }
-    )
-    config.figsize = (3, 1.5)
-    plotter = SimpleScriptPlotter(config=config,
-                               data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\lowQ-BIC\sweep_nx\PL_Analysis.json')
-    plotter.load_data()
-    plotter.prepare_data()
-    plotter.new_fig()
-    plot_dataset_1 = plotter.compute_multi_k_lines(mode=1)  # 手动选场景
-    # 选择一条来绘制
-    plotter.plot_line(
-        x=np.array(plot_dataset_1['x']),
-        z1=np.array(plot_dataset_1['y_list'])[0],  # 选择
-        default_color='k', default_linestyle='-'
-    )
-    plotter.add_annotations()  # 注解
-    plotter.save_and_show()  # 保存
+    # config = PlotConfig(
+    #     plot_params={
+    #         'add_colorbar': False, 'cmap': 'magma', 'default_color': 'black',
+    #     },
+    #     annotations={
+    #         'ylim': (0, 50),
+    #         'y_log_scale': False,
+    #     }
+    # )
+    # config.figsize = (3, 1.5)
+    # plotter = SimpleScriptPlotter(config=config,
+    #                            data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\lowQ-BIC\sweep_nx\PL_Analysis.json')
+    # plotter.load_data()
+    # plotter.prepare_data()
+    # plotter.new_fig()
+    # plot_dataset_1 = plotter.compute_multi_k_lines(mode=1)  # 手动选场景
+    # # 选择一条来绘制
+    # plotter.plot_line(
+    #     x=np.array(plot_dataset_1['x']),
+    #     z1=np.array(plot_dataset_1['y_list'])[0],  # 选择
+    #     default_color='k', default_linestyle='-'
+    # )
+    # plotter.add_annotations()  # 注解
+    # plotter.save_and_show()  # 保存
 
 
