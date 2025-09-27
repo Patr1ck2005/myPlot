@@ -45,6 +45,7 @@ def add_annotations(ax, plot_params):
         # 显示控制参数（新添加）
         show_axis_labels (bool, optional): 是否显示轴标签 (title, xlabel, ylabel)。默认 False（隐藏）。
         show_tick_labels (bool, optional): 是否显示 tick labels（所有轴的刻度标签）。默认 False（隐藏）。
+        show_ticks (bool, optional): 是否显示 ticks（所有轴的刻度）。默认 True（显示）。
 
         # 极坐标专用参数（新添加/扩展）
         rlabel_position (int or float, optional): r轴标签显示位置（度，-1 隐藏）。仅极坐标有效，默认 -1（隐藏）。
@@ -90,6 +91,7 @@ def add_annotations(ax, plot_params):
     # 新参数：显示控制
     show_axis_labels = plot_params.get('show_axis_labels', False)
     show_tick_labels = plot_params.get('show_tick_labels', False)
+    show_ticks = plot_params.get('show_ticks', True)
 
     # 极坐标专用
     rlabel_position = plot_params.get('rlabel_position', -1)  # -1 隐藏 r 标签
@@ -203,6 +205,10 @@ def add_annotations(ax, plot_params):
             ax.tick_params(axis='x', labelbottom=False)
             ax.tick_params(axis='y', labelleft=False)
     # 如果 show_tick_labels=True，标签已通过 manual/approx 设置显示
+    # 额外：控制 ticks 显示与隐藏
+    if not show_ticks:
+        ax.set_xticks([])
+        ax.set_yticks([])
 
     # 8. 极坐标网格扩展（如果提供 ticks，设置 theta/r grids）
     if is_polar and add_grid:
