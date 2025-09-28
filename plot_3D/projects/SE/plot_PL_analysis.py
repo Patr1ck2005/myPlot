@@ -644,11 +644,11 @@ if __name__ == '__main__':
             'add_colorbar': True, 'cmap': 'magma'
         },
         annotations={
-            'xlim': fit_range, 'ylim': (0, 40),
-            # 'xlim': (0.46, 0.4645), 'ylim': (0, 40),
+            # 'xlim': fit_range, 'ylim': (0, 40),
+            'xlim': (0.46, 0.4645), 'ylim': (0, 40),
         }
     )
-    config.figsize = (4, 2)
+    config.figsize = (2, 2)
     plotter = MyScript1Plotter(config=config,
                                data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\lowQ-BIC\sweep_NAs\PL_Analysis.json')
     plotter.load_data()
@@ -747,11 +747,11 @@ if __name__ == '__main__':
         annotations={
             # 'xlim': fit_range, 'ylim': (0, 10),
             'xlim': (0.50-0.0025+0.01-0.0005, 0.52+0.0025-0.01-0.0005), 'ylim': (0, 10),
-            'show_ticks': False,
+            'show_ticks': True,
         }
     )
     # config.figsize = (2, 2)
-    config.figsize = (1, 1.5)
+    config.figsize = (2, 2)
     plotter = MyScript1Plotter(config=config,
                                data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\highQ-BIC\sweep_NAs\PL_Analysis.json')
     plotter.load_data()
