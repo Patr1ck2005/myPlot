@@ -1,13 +1,12 @@
 # 使用示例：每个脚本一个自定义类（继承分类子类，重写prepare_data/plot）
 # 脚本1示例：MyScript1Plotter（继承LinePlotter/PolarPlotter混合，用组合或多实例）
-from typing import Dict, Any
-
-import numpy as np
+from typing import Any
 
 from plot_3D.core.advanced_data_analysis.fit_curve import fit_both_and_compare
+from plot_3D.core.advanced_data_analysis.interactive_preview import interactive_preview
 from plot_3D.core.plot_workflow import PlotConfig, LinePlotter, PolarPlotter, HeatmapPlotter, ScatterPlotter
 from plot_3D.core.utils import load_lumerical_jsondata, structure_lumerical_jsondata
-from plot_3D.projects.SE.scripts.fit_advanced import *
+from plot_3D.core.advanced_data_analysis.spectrum_fit_core import *
 
 c_const = 299292458
 
@@ -131,6 +130,7 @@ class MyScript1Plotter(ScatterPlotter, LinePlotter, PolarPlotter, HeatmapPlotter
         na_list = np.array(self.NA_list)
         print(f"计算NA_max_line: na_len={len(na_list)} 📊")
         return {'na_list': na_list, 'y_max': np.array(y_max)}
+
 
 class SimpleScriptPlotter(ScatterPlotter, LinePlotter, PolarPlotter, HeatmapPlotter):
     """脚本1自定义：prepare_data手动重写；compute_xxx返回数据，便于main后处理/输出"""
@@ -350,7 +350,6 @@ if __name__ == '__main__':
     # plotter.add_annotations()  # 注解
     # plotter.save_and_show()  # 保存
 
-
     # config = PlotConfig(
     #     plot_params={
     #         'add_colorbar': True, 'cmap': 'magma'
@@ -392,7 +391,6 @@ if __name__ == '__main__':
     # plotter.add_twiny_annotations()  # 注解
     # plotter.save_and_show()  # 保存
 
-
     # config = PlotConfig(
     #     plot_params={
     #         'add_colorbar': False, 'cmap': 'magma', 'default_color': 'black',
@@ -422,7 +420,6 @@ if __name__ == '__main__':
     # )
     # plotter.add_annotations()  # 注解
     # plotter.save_and_show()  # 保存
-
 
     # config = PlotConfig(
     #     plot_params={
@@ -471,7 +468,6 @@ if __name__ == '__main__':
     # plotter.add_annotations()  # 注解
     # plotter.save_and_show()  # 保存
 
-
     # config = PlotConfig(
     #     plot_params={
     #         'add_colorbar': False, 'cmap': 'magma', 'default_color': 'black',
@@ -513,7 +509,6 @@ if __name__ == '__main__':
     # plotter.add_annotations()  # 注解
     # plotter.save_and_show()  # 保存
 
-
     # config = PlotConfig(
     #     plot_params={
     #         'add_colorbar': False, 'cmap': 'magma', 'default_color': 'black',
@@ -545,7 +540,6 @@ if __name__ == '__main__':
     # config.annotations['ylim'] = (0, 3)
     # plotter.add_twinx_annotations()  # 注解
     # plotter.save_and_show()  # 保存
-
 
     # config = PlotConfig(
     #     plot_params={
@@ -581,7 +575,6 @@ if __name__ == '__main__':
     # plotter.plot_scatter(x=plot_dataset_1['k_array'], z1=plot_dataset_1['purcell_max'], default_color='k', marker='o',zorder=100, alpha=1)
     # plotter.add_annotations()  # 注解
     # plotter.save_and_show()  # 保存
-
 
     # config = PlotConfig(
     #     plot_params={
@@ -645,120 +638,298 @@ if __name__ == '__main__':
     # plotter.save_and_show()  # 保存
 
 
+    fit_range = (0.45, 0.475)
     config = PlotConfig(
         plot_params={
             'add_colorbar': True, 'cmap': 'magma'
         },
         annotations={
-            'xlim': (0.45, 0.475), 'ylim': (0, 40),
+            'xlim': fit_range, 'ylim': (0, 40),
+            # 'xlim': (0.46, 0.4645), 'ylim': (0, 40),
         }
     )
-    config.figsize = (1, 1.5)
-    plotter = MyScript1Plotter(config=config, data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\lowQ-BIC\sweep_NAs\PL_Analysis.json')
+    config.figsize = (4, 2)
+    plotter = MyScript1Plotter(config=config,
+                               data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\lowQ-BIC\sweep_NAs\PL_Analysis.json')
     plotter.load_data()
     plotter.prepare_data()
     plotter.new_fig()
     plot_dataset_1 = plotter.compute_single_line_purcell()  # 手动选场景
-    # plot_dataset_1 = plotter.compute_single_line_PL_factor()  # 手动选场景
-    plotter.plot_line(
-        x=plot_dataset_1['x'], z1=plot_dataset_1['y'], default_color='k', default_linestyle='-'
+    # plotter.plot_line(
+    #     x=plot_dataset_1['x'], z1=plot_dataset_1['y'], default_color='k', default_linestyle='-'
+    # )
+    plotter.plot_scatter(
+        x=plot_dataset_1['x'], z1=plot_dataset_1['y'], default_color='k', markersize=1, marker='+'
     )
     # 同时拟合两种模型并比较
     res_l, res_f, best = fit_both_and_compare(
-        plot_dataset_1['x'], plot_dataset_1['y'], criterion="aic", fit_range=(0.45, 0.475)
+        plot_dataset_1['x'], plot_dataset_1['y'], criterion="aic", fit_range=fit_range,
+        output_samples=1024,
     )
     plotter.plot_line(
-        x=res_l.x_fit, z1=res_l.y_fit, default_color='red', default_linestyle='--'
+        x=res_l.x_fit, z1=res_l.y_fit, default_color='red', default_linestyle='-'
     )
     plotter.plot_line(
-        x=res_f.x_fit, z1=res_f.y_fit, default_color='blue', default_linestyle='--'
+        x=res_f.x_fit, z1=res_f.y_fit, default_color='blue', default_linestyle='-'
     )
     # 你的“最佳附近”初值与边界
-    p0 = {"omega0": 0.463, "delta": 0.0, "gamma_rad": 0.1, "gamma0": 1e-4}
-    bounds = {"gamma_rad": (1e-4, 1.0), "gamma0": (1e-6, 1e-3)}
+    p0 = {"omega0": 0.463, "delta": 0.0, "gamma_rad": 0.1, "gamma0": 1e-4, 'dispersion_v': 0.2}
+    bounds = {
+        'omega0': (0.45, 0.475), "delta": (-0.02, 0.02),
+        "gamma_rad": (1e-4, 1.0), "gamma0": (1e-8, 1e-3),
+        "dispersion_v": (0, 1)
+    }
 
     # 模板参数（非拟合项取这里的值；代码内部会强制 d2=0 以只激发第一个模式）
-    sp_template = SystemParams(omega0=0.0, delta=0.0, gamma0=1e-4, d1=1.0, d2=0.0)
-
+    sp_template = SystemParams(omega0=0.0, delta=0.0, gamma0=1e-4, d1=1.0, d2=0.0, dispersion_v=0.9)
+    # interactive_preview(
+    #     x=plot_dataset_1['x'], y=plot_dataset_1['y'],
+    #     sp_template=sp_template,
+    #     z_range=(-2.0, 2.0),
+    #     mode="Ptot",
+    #     param_names=["omega0", "delta", "gamma_rad", "gamma0", "dispersion_v"],
+    #     p0=p0,
+    #     bounds=bounds,
+    #     fixed=None,
+    #     fast=True,
+    #     z_samples=1025,
+    #     method="trapz",
+    #     normalize_by_max=True,
+    #     fit_range=fit_range,
+    #     output_samples=1024,
+    # )
     res = fit_curve_physics_core(
         x=plot_dataset_1['x'],  # 你的频率数组（中性：自变量 x）
         y=plot_dataset_1['y'],  # 实验数据
         sp_template=sp_template,
         z_range=(-2.0, 2.0),  # 原先的 k 范围（中性：z 范围）
-        mode="Prad",  # 或 "Ptot"
-        param_names=["omega0", "delta", "gamma_rad", "gamma0"],
+        mode="Ptot",  # 或 "Ptot"
+        param_names=["omega0", "delta", "gamma_rad", "gamma0", "dispersion_v"],
         p0=p0,
         bounds=bounds,
         fixed=None,  # 若某项不拟合，可放到 fixed 并从 param_names/p0 移除
-        fit_range=(0.45, 0.475),  # 可选
+        fit_range=fit_range,  # 可选
         normalize_by_max=True,  # 数据与模型各自按 max 归一化
         fast=True,  # 矢量化 + trapz 提速
         z_samples=1025,  # 可调：513/1025/2049
+
+        output_samples=1024,
     )
+    print(res.params)
+    y_BIC_fit_rsl = compute_curve_physics_core(
+        res.x_fit, res.params,
+        sp_template=sp_template,
+        z_range=(-2.0, 2.0),
+        mode="Ptot",
+        fast=True,
+        z_samples=1025,
+        method="trapz",
+        d1=1,
+        d2=0
+    )
+    max_y_BIC_fit_rsl = np.max(y_BIC_fit_rsl)
+    y_BIC_fit_rsl /= max_y_BIC_fit_rsl
+    scaling_factor = np.max(plot_dataset_1['y']) / max_y_BIC_fit_rsl
+    print(f"scaling_factor: {scaling_factor}")
     plotter.plot_line(
-        x=res.x_fit, z1=res.y_fit*np.max(plot_dataset_1['y']), default_color='gray', default_linestyle='--'
+        x=res.x_fit, z1=res.y_fit*np.max(plot_dataset_1['y']), default_color='green', default_linestyle='-'
     )
     plotter.add_annotations()  # 注解
     plotter.save_and_show()  # 保存
 
 
-    # config = PlotConfig(
-    #     plot_params={
-    #         'add_colorbar': True, 'cmap': 'magma'
-    #     },
-    #     annotations={
-    #         'xlim': (0.50-0.0025, 0.52+0.0025), 'ylim': (0, 10)
-    #     }
-    # )
-    # config.figsize = (4, 2)
-    # plotter = MyScript1Plotter(config=config, data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\highQ-BIC\sweep_NAs\PL_Analysis.json')
-    # plotter.load_data()
-    # plotter.prepare_data()
-    # plotter.new_fig()
-    # plot_dataset_1 = plotter.compute_single_line_purcell()  # 手动选场景
-    # # plot_dataset_1 = plotter.compute_single_line_PL_factor()  # 手动选场景
+
+    fit_range = (0.50-0.0025, 0.52+0.0025)
+    config = PlotConfig(
+        plot_params={
+            'add_colorbar': True, 'cmap': 'magma'
+        },
+        annotations={
+            # 'xlim': fit_range, 'ylim': (0, 10),
+            'xlim': (0.50-0.0025+0.01-0.0005, 0.52+0.0025-0.01-0.0005), 'ylim': (0, 10),
+            'show_ticks': False,
+        }
+    )
+    # config.figsize = (2, 2)
+    config.figsize = (1, 1.5)
+    plotter = MyScript1Plotter(config=config,
+                               data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\highQ-BIC\sweep_NAs\PL_Analysis.json')
+    plotter.load_data()
+    plotter.prepare_data()
+    plotter.new_fig()
+    plot_dataset_1 = plotter.compute_single_line_purcell()  # 手动选场景
     # plotter.plot_line(
     #     x=plot_dataset_1['x'], z1=plot_dataset_1['y'], default_color='k', default_linestyle='-'
     # )
-    # # 同时拟合两种模型并比较
-    # res_l, res_f, best = fit_both_and_compare(
-    #     plot_dataset_1['x'], plot_dataset_1['y'], criterion="aic", fit_range=(0.50-0.0025, 0.52+0.0025)
+    plotter.plot_scatter(
+        x=plot_dataset_1['x'], z1=plot_dataset_1['y'], default_color='k', markersize=1, marker='+'
+    )
+    # 同时拟合两种模型并比较
+    res_l, res_f, best = fit_both_and_compare(
+        plot_dataset_1['x'], plot_dataset_1['y'], criterion="aic", fit_range=fit_range,
+        output_samples=1024,
+    )
+    plotter.plot_line(
+        x=res_l.x_fit, z1=res_l.y_fit, default_color='red', default_linestyle='-'
+    )
+    plotter.plot_line(
+        x=res_f.x_fit, z1=res_f.y_fit, default_color='blue', default_linestyle='-'
+    )
+    # 你的“最佳附近”初值与边界
+    p0 = {"omega0": 0.51, "delta": 0.0, "gamma_rad": 0.1, "gamma0": 1e-4, 'dispersion_v': 0.24}
+    bounds = {
+        'omega0': (0.49, 0.53), "delta": (-0.02, 0.02),
+        "gamma_rad": (1e-4, 1.0), "gamma0": (1e-8, 1e-3),
+        "dispersion_v": (0.23, 0.25)
+    }
+
+    # 模板参数（非拟合项取这里的值；代码内部会强制 d2=0 以只激发第一个模式）
+    sp_template = SystemParams(omega0=0.0, delta=0.0, gamma0=1e-4, d1=1.0, d2=0.0, dispersion_v=0.9)
+    # interactive_preview(
+    #     x=plot_dataset_1['x'], y=plot_dataset_1['y'],
+    #     sp_template=sp_template,
+    #     z_range=(-2.0, 2.0),
+    #     mode="Ptot",
+    #     param_names=["omega0", "delta", "gamma_rad", "gamma0", "dispersion_v"],
+    #     p0=p0,
+    #     bounds=bounds,
+    #     fixed=None,
+    #     fast=True,
+    #     z_samples=1025,
+    #     method="trapz",
+    #     normalize_by_max=True,
+    #     fit_range=fit_range,
+    #     output_samples=1024,
     # )
+    res = fit_curve_physics_core(
+        x=plot_dataset_1['x'],  # 你的频率数组（中性：自变量 x）
+        y=plot_dataset_1['y'],  # 实验数据
+        sp_template=sp_template,
+        z_range=(-2.0, 2.0),  # 原先的 k 范围（中性：z 范围）
+        mode="Ptot",  # 或 "Ptot"
+        param_names=["omega0", "delta", "gamma_rad", "gamma0", "dispersion_v"],
+        p0=p0,
+        bounds=bounds,
+        fixed=None,  # 若某项不拟合，可放到 fixed 并从 param_names/p0 移除
+        fit_range=fit_range,  # 可选
+        normalize_by_max=True,  # 数据与模型各自按 max 归一化
+        fast=True,  # 矢量化 + trapz 提速
+        z_samples=1025,  # 可调：513/1025/2049
+
+        output_samples=1024,
+    )
+    print(res.params)
+    y_BIC_fit_rsl = compute_curve_physics_core(
+        res.x_fit, res.params,
+        sp_template=sp_template,
+        z_range=(-2.0, 2.0),
+        mode="Ptot",
+        fast=True,
+        z_samples=1025,
+        method="trapz",
+        d1=1,
+        d2=0
+    )
+    max_y_BIC_fit_rsl = np.max(y_BIC_fit_rsl)
+    y_BIC_fit_rsl /= max_y_BIC_fit_rsl
+    scaling_factor = np.max(plot_dataset_1['y']) / max_y_BIC_fit_rsl
+    print(f"scaling_factor: {scaling_factor}")
+    plotter.plot_line(
+        x=res.x_fit, z1=res.y_fit * np.max(plot_dataset_1['y']), default_color='green', default_linestyle='-'
+    )
+    plotter.re_initialized(config=config,
+                               data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\highQ-QGM\sweep_NAs\PL_Analysis.json')
+    plotter.load_data()
+    plotter.prepare_data()
+    plot_dataset_1 = plotter.compute_single_line_purcell()  # 手动选场景
     # plotter.plot_line(
-    #     x=res_l.x_fit, z1=res_l.y_fit, default_color='red', default_linestyle='--'
+    #     x=plot_dataset_1['x'], z1=plot_dataset_1['y'], default_color='k', default_linestyle='-'
     # )
-    # plotter.plot_line(
-    #     x=res_f.x_fit, z1=res_f.y_fit, default_color='blue', default_linestyle='--'
-    # )
-    # plotter.add_annotations()  # 注解
-    # plotter.save_and_show()  # 保存
+    plotter.plot_scatter(
+        x=plot_dataset_1['x'], z1=plot_dataset_1['y'], default_color='k', markersize=1, marker='+'
+    )
+    y_QGM_fit_rsl = compute_curve_physics_core(
+        res.x_fit, res.params,
+        sp_template=sp_template,
+        z_range=(-2.0, 2.0),
+        mode="Ptot",
+        fast=True,
+        z_samples=1025,
+        method="trapz",
+        d1=0,
+        d2=1
+    )
+    plotter.plot_line(
+        x=res.x_fit, z1=y_QGM_fit_rsl * scaling_factor, default_color='green', default_linestyle='-'
+    )
+    plotter.add_annotations()  # 注解
+    plotter.save_and_show()  # 保存
 
 
+    # fit_range = (0.45, 0.475)
     # config = PlotConfig(
     #     plot_params={
     #         'add_colorbar': True, 'cmap': 'magma'
     #     },
     #     annotations={
-    #         'xlim': (0.45, 0.475), 'ylim': (0, 40), 'show_ticks': False,
+    #         # 'xlim': fit_range, 'ylim': (0, 40),
+    #         'xlim': (0.46, 0.4645), 'ylim': (0, 40), 'show_ticks': False,
     #     }
     # )
     # config.figsize = (1, 1.5)
-    # plotter = MyScript1Plotter(config=config, data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\lowQ-BIC\sweep_NAs\PL_Analysis.json')
+    # plotter = MyScript1Plotter(config=config,
+    #                            data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\lowQ-BIC\sweep_NAs\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
     # plotter.new_fig()
     # plot_dataset_1 = plotter.compute_single_line_purcell()  # 手动选场景
-    # # plot_dataset_1 = plotter.compute_single_line_PL_factor()  # 手动选场景
-    # plotter.plot_line(
-    #     x=plot_dataset_1['x'], z1=plot_dataset_1['y'], default_color='k', default_linestyle='-'
+    # # plotter.plot_line(
+    # #     x=plot_dataset_1['x'], z1=plot_dataset_1['y'], default_color='k', default_linestyle='-'
+    # # )
+    # plotter.plot_scatter(
+    #     x=plot_dataset_1['x'], z1=plot_dataset_1['y'], default_color='k', markersize=1, marker='+'
     # )
     # # 同时拟合两种模型并比较
     # res_l, res_f, best = fit_both_and_compare(
-    #     plot_dataset_1['x'], plot_dataset_1['y'], criterion="aic", fit_range=(0.45, 0.475)
+    #     plot_dataset_1['x'], plot_dataset_1['y'], criterion="aic", fit_range=fit_range,
+    #     output_samples=1024,
     # )
     # plotter.plot_line(
-    #     x=res_f.x_fit, z1=res_f.y_fit, default_color='gray', default_linestyle='--'
+    #     x=res_l.x_fit, z1=res_l.y_fit, default_color='red', default_linestyle='-'
+    # )
+    # plotter.plot_line(
+    #     x=res_f.x_fit, z1=res_f.y_fit, default_color='blue', default_linestyle='-'
+    # )
+    # # 你的“最佳附近”初值与边界
+    # p0 = {"omega0": 0.463, "delta": 0.0, "gamma_rad": 0.1, "gamma0": 1e-4, 'dispersion_v': 0.2}
+    # bounds = {
+    #     'omega0': (0.45, 0.475), "delta": (-0.02, 0.02),
+    #     "gamma_rad": (1e-4, 1.0), "gamma0": (1e-8, 1e-3),
+    #     "dispersion_v": (0, 1)
+    # }
+    #
+    # # 模板参数（非拟合项取这里的值；代码内部会强制 d2=0 以只激发第一个模式）
+    # sp_template = SystemParams(omega0=0.0, delta=0.0, gamma0=1e-4, d1=1.0, d2=0.0, dispersion_v=0.9)
+    # res = fit_curve_physics_core(
+    #     x=plot_dataset_1['x'],  # 你的频率数组（中性：自变量 x）
+    #     y=plot_dataset_1['y'],  # 实验数据
+    #     sp_template=sp_template,
+    #     z_range=(-2.0, 2.0),  # 原先的 k 范围（中性：z 范围）
+    #     mode="Ptot",  # 或 "Ptot"
+    #     param_names=["omega0", "delta", "gamma_rad", "gamma0", "dispersion_v"],
+    #     p0=p0,
+    #     bounds=bounds,
+    #     fixed=None,  # 若某项不拟合，可放到 fixed 并从 param_names/p0 移除
+    #     fit_range=fit_range,  # 可选
+    #     normalize_by_max=True,  # 数据与模型各自按 max 归一化
+    #     fast=True,  # 矢量化 + trapz 提速
+    #     z_samples=1025,  # 可调：513/1025/2049
+    #
+    #     output_samples=1024,
+    # )
+    # print(res.params)
+    # plotter.plot_line(
+    #     x=res.x_fit, z1=res.y_fit * np.max(plot_dataset_1['y']), default_color='green', default_linestyle='-'
     # )
     # plotter.add_annotations()  # 注解
     # plotter.save_and_show()  # 保存
-

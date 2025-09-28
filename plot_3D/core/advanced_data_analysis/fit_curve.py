@@ -80,23 +80,39 @@ def _robust_initial_guess(x: np.ndarray, y: np.ndarray, model: str):
     return x_sorted, y_sorted, p0, bounds, names
 
 
-def _finalize_result(model: str, names, popt, pcov, x_sorted, y_sorted, fun) -> FitResult:
-    y_fit = fun(x_sorted, *popt)
-    resid = y_sorted - y_fit
+def _finalize_result(
+    model: str,
+    names,
+    popt,
+    pcov,
+    x_fit_resid,    # 用于计算残差/信息准则的 x（通常为拟合时的排序样本）
+    y_fit_resid,    # 与 x_fit_resid 对应的 y
+    fun,
+    x_out=None      # 用于输出的平滑网格；若为 None 则沿用 x_fit_resid
+) -> FitResult:
+    # 用拟合区的样本计算残差与信息准则（不受平滑网格影响）
+    y_model_resid = fun(x_fit_resid, *popt)
+    resid = y_fit_resid - y_model_resid
     rss = float(np.sum(resid ** 2))
-    n = len(y_sorted)
+    n = len(y_fit_resid)
     k = len(popt)
-    # 信息准则（高斯残差假设）
     rss_safe = rss if rss > 0 else 1e-24
     aic = n * np.log(rss_safe / n) + 2 * k
     bic = n * np.log(rss_safe / n) + k * np.log(n)
+
+    # 输出曲线：若提供 x_out，用它生成更平滑的曲线；否则沿用拟合样本
+    if x_out is None:
+        x_out = x_fit_resid
+    y_out = fun(x_out, *popt)
+
     perr_vals = np.sqrt(np.maximum(np.diag(pcov), 0.0)) if pcov is not None else np.full(k, np.nan)
     params = {k_: float(v) for k_, v in zip(names, popt)}
     perr = {k_: float(e) for k_, e in zip(names, perr_vals)}
+
     return FitResult(
         model=model,
-        x_fit=x_sorted,
-        y_fit=y_fit,
+        x_fit=x_out,
+        y_fit=y_out,
         params=params,
         perr=perr,
         pcov=pcov,
@@ -104,6 +120,7 @@ def _finalize_result(model: str, names, popt, pcov, x_sorted, y_sorted, fun) -> 
         aic=float(aic),
         bic=float(bic),
     )
+
 
 
 # =========================
@@ -116,15 +133,20 @@ def fit_lineshape(
     sigma: Optional[np.ndarray] = None,
     absolute_sigma: bool = False,
     maxfev: int = 100000,
-    fit_range: Optional[Tuple[float, float]] = None,   # <--- 新增
+    fit_range: Optional[Tuple[float, float]] = None,
+    # ---- 新增：控制输出平滑度 ----
+    output_samples: Optional[int] = None,
+    output_range: Optional[Tuple[float, float]] = None,
 ) -> FitResult:
     """
     对给定 (x, y) 进行 Lorentzian 或 Fano 拟合。
+    参数
+    ----
     fit_range : (xmin, xmax)，仅在该区间内取点进行拟合。
+    output_samples : 若提供，则在指定范围内用等距网格输出更平滑的曲线。
+    output_range   : 与 output_samples 搭配。未提供时，若有 fit_range 则用它，否则用 (min(x), max(x)).
     """
-    # -------------------------
-    # 筛选拟合范围
-    # -------------------------
+    # 1) 选择拟合数据
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
     if fit_range is not None:
@@ -132,18 +154,19 @@ def fit_lineshape(
         mask = (x >= xmin) & (x <= xmax)
         if not np.any(mask):
             raise ValueError("No data points found within fit_range")
-        x, y = x[mask], y[mask]
+        x_used, y_used = x[mask], y[mask]
         if sigma is not None:
             sigma = np.asarray(sigma).ravel()[mask]
+    else:
+        x_used, y_used = x, y
 
-    # -------------------------
-    # 原有拟合流程
-    # -------------------------
+    # 2) 准备模型与初值
     model = model.lower()
     assert model in {"lorentzian", "fano"}
-    x_sorted, y_sorted, p0, bounds, names = _robust_initial_guess(x, y, model)
+    x_sorted, y_sorted, p0, bounds, names = _robust_initial_guess(x_used, y_used, model)
     fun = lorentzian if model == "lorentzian" else fano
 
+    # 3) 拟合
     popt, pcov = curve_fit(
         fun,
         x_sorted,
@@ -154,18 +177,42 @@ def fit_lineshape(
         absolute_sigma=absolute_sigma,
         maxfev=maxfev,
     )
-    return _finalize_result(model, names, popt, pcov, x_sorted, y_sorted, fun)
+
+    # 4) 生成输出网格（平滑）
+    x_out = None
+    if output_samples is not None:
+        if output_range is None:
+            # 采纳你的建议：优先用 fit_range，否则用 (min(x), max(x))
+            xmin_out, xmax_out = fit_range if fit_range is not None else (float(np.min(x)), float(np.max(x)))
+        else:
+            xmin_out, xmax_out = float(output_range[0]), float(output_range[1])
+            if xmin_out > xmax_out:
+                xmin_out, xmax_out = xmax_out, xmin_out
+        x_out = np.linspace(xmin_out, xmax_out, int(output_samples))
+
+    # 5) 打包结果（RSS/AIC/BIC 基于拟合样本；输出曲线基于 x_out）
+    return _finalize_result(model, names, popt, pcov, x_sorted, y_sorted, fun, x_out=x_out)
+
 
 
 def fit_both_and_compare(
     x: np.ndarray,
     y: np.ndarray,
     criterion: Literal["rss", "aic", "bic"] = "aic",
-    fit_range: Optional[Tuple[float, float]] = None,   # <--- 新增
+    fit_range: Optional[Tuple[float, float]] = None,
+    # ---- 新增：平滑输出参数，传给子函数 ----
+    output_samples: Optional[int] = None,
+    output_range: Optional[Tuple[float, float]] = None,
 ) -> Tuple[FitResult, FitResult, FitResult]:
     """同时拟合 Lorentzian 与 Fano，在 fit_range 内比较两者。"""
-    res_l = fit_lineshape(x, y, model="lorentzian", fit_range=fit_range)
-    res_f = fit_lineshape(x, y, model="fano", fit_range=fit_range)
+    res_l = fit_lineshape(
+        x, y, model="lorentzian", fit_range=fit_range,
+        output_samples=output_samples, output_range=output_range
+    )
+    res_f = fit_lineshape(
+        x, y, model="fano", fit_range=fit_range,
+        output_samples=output_samples, output_range=output_range
+    )
 
     def score(res: FitResult):
         if criterion == "rss":
@@ -177,6 +224,7 @@ def fit_both_and_compare(
 
     best = res_l if score(res_l) <= score(res_f) else res_f
     return res_l, res_f, best
+
 
 
 # =========================

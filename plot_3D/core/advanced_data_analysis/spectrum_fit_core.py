@@ -12,7 +12,7 @@ except Exception:
     _HAS_SCIPY = False
 
 # 复用你的 physics_core 计算核
-from .physics_core import SystemParams, NonHermitianTwoLevel
+from plot_3D.projects.SE.scripts.physics_core import SystemParams, NonHermitianTwoLevel
 
 # ---------------------------
 # 工具
@@ -46,7 +46,9 @@ def compute_curve_physics_core(
     fast: bool = True,
     z_samples: int = 1025,
     method: Literal["trapz", "quad"] = "trapz",
-    enforce_d2_zero: bool = True,
+    # enforce_d2_zero: bool = True,
+    d1: float = 1.0,
+    d2: float = 0.0,
 ) -> np.ndarray:
     """
     使用 physics_core 计算 y(x)=∫ P(x,z) dz，其中：
@@ -60,8 +62,8 @@ def compute_curve_physics_core(
         dispersion_v=float(params.get("dispersion_v", sp_template.dispersion_v)),
         delta=float(params.get("delta", sp_template.delta)),
         gamma0=float(params.get("gamma0", sp_template.gamma0)),
-        d1=float(sp_template.d1),
-        d2=float(0.0 if enforce_d2_zero else sp_template.d2),
+        d1=d1,
+        d2=d2,
     )
     gamma_rad = float(params.get("gamma_rad", 0.5))
 
@@ -93,9 +95,6 @@ class FitResult:
     params: Dict[str, float]   # 最终参数（包含 fixed）
     pcov: np.ndarray           # 协方差矩阵（需要 SciPy）
 
-# ---------------------------
-# 主拟合函数（中性框架）
-# ---------------------------
 def fit_curve_physics_core(
     x: np.ndarray,
     y: np.ndarray,
@@ -116,19 +115,19 @@ def fit_curve_physics_core(
     fast: bool = True,
     z_samples: int = 1025,
     method: Literal["trapz", "quad"] = "trapz",
-    enforce_d2_zero: bool = True,
     maxfev: int = 200000,
+
+    # —— 新增：控制输出曲线的平滑程度 ——
+    output_samples: Optional[int] = None,                    # 例如 2001
+    output_range: Optional[Tuple[float, float]] = None,      # 例如 (x.min(), x.max())
 ) -> FitResult:
     """
     用 y(x) = ∫_z P(x,z; params) dz 去拟合 (x, y)。
-    - param_names: 要拟合的参数名顺序（与 p0/bounds 的键一致）
-    - p0: 初始猜测（如 {"omega0":0.463,"delta":0.0,"gamma_rad":0.3,"gamma0":1e-4}）
-    - bounds: 可选的边界（字典形式；未提供的参数默认无界）
-    - fixed: 需要固定的参数（不参与拟合，但会传入计算）
-    - fit_range: 仅在此区间内拟合
-    - normalize_by_max: 对目标与模型各自按最大值归一化
-    - fast/z_samples: 通过 power_on_grid_fast + trapz 加速
-    - 不做任何绘图；只返回曲线与参数
+
+    新增:
+      - output_samples: 若提供，则在指定范围内生成新的等距 x 网格用于输出 y_fit；
+                        否则在输入 x 上输出 y_fit（保持原行为）。
+      - output_range:   与 output_samples 搭配使用；未提供则取 (x.min(), x.max())。
     """
     if not _HAS_SCIPY:
         raise RuntimeError("SciPy is required for curve fitting (scipy.optimize.curve_fit).")
@@ -136,7 +135,7 @@ def fit_curve_physics_core(
     x = np.asarray(x, float).ravel()
     y = np.asarray(y, float).ravel()
 
-    # 筛选拟合区间
+    # ---------- 选择拟合区间 ----------
     if fit_range is not None:
         xmin, xmax = float(fit_range[0]), float(fit_range[1])
         m = (x >= xmin) & (x <= xmax)
@@ -148,11 +147,11 @@ def fit_curve_physics_core(
         x_fit = x
         y_target = y
 
-    # 归一化目标
+    # ---------- 归一化目标（仅用于拟合） ----------
     if normalize_by_max:
-        y_target, y_norm = _normalize_by_max(y_target)
+        y_target, _ = _normalize_by_max(y_target)
 
-    # 初值与边界向量化
+    # ---------- 初值与边界 ----------
     theta0 = np.array([float(p0[name]) for name in param_names], dtype=float)
     if bounds:
         lb = np.array([float(bounds.get(n, (-np.inf, np.inf))[0]) for n in param_names], float)
@@ -161,7 +160,7 @@ def fit_curve_physics_core(
         lb = np.full_like(theta0, -np.inf)
         ub = np.full_like(theta0,  np.inf)
 
-    # 残差模型（每次把 theta 写回 params，再调用 compute_curve_physics_core）
+    # ---------- 残差模型 ----------
     def model_eval(x_eval: np.ndarray, *theta_vec):
         params = _pack_theta(param_names, np.asarray(theta_vec, float), fixed)
         y_model = compute_curve_physics_core(
@@ -172,13 +171,12 @@ def fit_curve_physics_core(
             fast=fast,
             z_samples=z_samples,
             method=method,
-            enforce_d2_zero=enforce_d2_zero,
         )
         if normalize_by_max:
             y_model, _ = _normalize_by_max(y_model)
         return y_model
 
-    # 拟合
+    # ---------- 拟合 ----------
     popt, pcov = curve_fit(
         f=model_eval,
         xdata=x_fit,
@@ -188,24 +186,35 @@ def fit_curve_physics_core(
         maxfev=maxfev,
     )
 
-    # 在全 x 上生成拟合曲线
+    # ---------- 生成输出网格并计算最终曲线 ----------
+    if output_samples is not None:
+        if output_range is None:
+            xmin_out, xmax_out = fit_range if fit_range is not None else (float(np.min(x)), float(np.max(x)))
+        else:
+            xmin_out, xmax_out = float(output_range[0]), float(output_range[1])
+            if xmin_out > xmax_out:
+                xmin_out, xmax_out = xmax_out, xmin_out
+        x_out = np.linspace(xmin_out, xmax_out, int(output_samples))
+    else:
+        x_out = x  # 保持与输入一致
+
     best_params = _pack_theta(param_names, popt, fixed)
     y_fit = compute_curve_physics_core(
-        x, best_params,
+        x_out, best_params,
         sp_template=sp_template,
         z_range=z_range,
         mode=mode,
         fast=fast,
         z_samples=z_samples,
         method=method,
-        enforce_d2_zero=enforce_d2_zero,
     )
     if normalize_by_max:
         y_fit, _ = _normalize_by_max(y_fit)
 
     return FitResult(
-        x_fit=x,
+        x_fit=x_out,
         y_fit=y_fit,
         params=best_params,
         pcov=pcov,
     )
+
