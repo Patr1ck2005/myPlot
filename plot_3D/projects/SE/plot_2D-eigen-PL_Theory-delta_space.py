@@ -46,7 +46,7 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         # fixed_params={"m2": 0, "loss_k": 0},  # 固定
-        fixed_params={"m1": 0, "m2": 0, "loss_k": 1e-3*0},  # 固定
+        fixed_params={"m1": 0, "m2": 0, "loss_k": 1e-3*1},  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 100.0},  # 筛选
             # "m1": {"<": .1},  # 筛选
@@ -82,13 +82,18 @@ if __name__ == '__main__':
         new_coords, Z_grouped,
         freq_index=1  # 第n个频率
     )
+    # 假设你已经得到了 grid_coords, Z
+    new_coords, Z_target2 = group_solution(
+        new_coords, Z_grouped,
+        freq_index=2  # 第n个频率
+    )
     print("去掉 bg_n 后的参数：")
     for k, v in new_coords.items():
         print(f"  {k}: {v}")
     print("Z 形状：", Z_target1.shape)
 
     data_path = prepare_plot_data(
-        new_coords, [Z_target1], x_key="w_delta_factor", fixed_params={},
+        new_coords, [Z_target1, Z_target2], x_key="w_delta_factor", fixed_params={},
         save_dir='./rsl/eigensolution',
     )
 

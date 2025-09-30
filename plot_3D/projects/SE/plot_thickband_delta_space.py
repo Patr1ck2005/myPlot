@@ -45,7 +45,7 @@ def main(data_path):
         plot_params={'scale': 1},
         annotations={'ylabel': 'f (c/P)', 'show_axis_labels': True, 'show_tick_labels': True},
     )
-    config.figsize = (3, 2)
+    config.figsize = (2, 2)
     plotter = MyScript3Plotter(config=config, data_path=data_path)
     plotter.run_full()
 

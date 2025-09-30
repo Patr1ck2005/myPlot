@@ -110,21 +110,18 @@ class BasePlotter(ABC):
         if self.config.annotations is None:
             print("Warning: 未设置annotations ⚠️")
         self.fig, self.ax = add_annotations(self.ax, self.config.annotations)
-        plt.tight_layout()
 
     def add_twinx_annotations(self) -> None:
         """共性：添加双轴标签"""
         if self.config.annotations is None:
             print("Warning: 未设置annotations ⚠️")
         self.fig, self.twinx_ax = add_annotations(self.twinx_ax, self.config.annotations)
-        plt.tight_layout()
 
     def add_twiny_annotations(self) -> None:
         """共性：添加双轴标签"""
         if self.config.annotations is None:
             print("Warning: 未设置annotations ⚠️")
         self.fig, self.twiny_ax = add_annotations(self.twiny_ax, self.config.annotations)
-        plt.tight_layout()
 
     def save_and_show(self, save=True, save_type='svg', custom_name: Optional[str] = None,
                       custom_abs_path: Optional[str] = None) -> None:

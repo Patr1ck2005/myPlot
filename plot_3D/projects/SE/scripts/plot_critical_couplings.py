@@ -1,4 +1,4 @@
-# plot_k0_groups_svg.py
+# plot_critical_couplings.py
 # -*- coding: utf-8 -*-
 
 import os
@@ -60,7 +60,7 @@ for i, x in enumerate(x_vals):
 K_FIXED = 0.0                      # k = 0
 SAVE_SVG = "k0_groups_Prad_Ptot.svg"
 FIGSIZE = (5, 3)
-fs = 12  # 字体大小
+fs = 14  # 字体大小
 plt.rcParams.update({'font.size': fs})
 
 
@@ -102,7 +102,7 @@ def compute_curves_for_group(label: str,
     return prad_curve, ptot_curve
 
 
-def main():
+def figure_1():
     # 频率网格
     wmin, wmax, n = OMEGA_RANGE["min"], OMEGA_RANGE["max"], int(OMEGA_RANGE["num"])
     omega_grid = np.linspace(wmin, wmax, n, dtype=float)
@@ -125,6 +125,48 @@ def main():
     print(f"Saved: {os.path.abspath(SAVE_SVG)}")
     plt.close()
 
+def figure_2():
+    sp_BIC = SystemParams(
+        omega0=0,
+        delta=0,
+        gamma0=0.1,
+        d1=1,
+        d2=0,
+        dispersion_v=1,
+    )
+    sp_QGM = SystemParams(
+        omega0=0,
+        delta=0,
+        gamma0=0.1,
+        d1=0,
+        d2=1,
+        dispersion_v=1,
+    )
+    model_BIC = NonHermitianTwoLevel(sp_BIC)
+    model_QGM = NonHermitianTwoLevel(sp_QGM)
+    intergrated_Prad_BIC_lst = []
+    intergrated_Prad_QGM_lst = []
+    Prad_QGM_lst = []
+    gamma_rad_array = np.linspace(0, 1, 64)
+    for gamma_rad in gamma_rad_array:
+        # omega = 0, k = 0
+        intergrated_Prad_BIC_lst.append(model_BIC.integrate_over_k(model_BIC.prad, gamma_rad=gamma_rad, k_range=(-10, 10), omega_array=[0]))
+        # intergrated_Prad_QGM_lst.append(model_QGM.integrate_over_k(model_QGM.prad, gamma_rad=gamma_rad, k_range=(-5, 5), omega_array=[0]))
+        intergrated_Prad_QGM_lst.append(model_QGM.integrate_over_k(model_QGM.prad, gamma_rad=gamma_rad, k_range=(-10, 10), omega_array=[0]))
+        Prad_QGM_lst.append(model_QGM.prad(omega=0, k=0, gamma_rad=gamma_rad))
+    fig, ax = plt.subplots(figsize=(4.5, 2))
+    ax.plot(gamma_rad_array, intergrated_Prad_BIC_lst, '-', label=f"Integrated Prad of BIC", color='red')
+    ax.plot(gamma_rad_array, intergrated_Prad_QGM_lst, '-', label=f"Integrated Prad of QGM", color='blue')
+    # ax.set_ylabel("Integrated $P_{rad}$")
+    # ax.set_xlabel("$\gamma$")
+    ax_twin = ax.twinx()
+    ax_twin.plot(gamma_rad_array, Prad_QGM_lst, '--',  label=f"Prad of QGM", color='gray')
+    # ax_twin.set_ylabel("$P_{rad}$")
+    plt.savefig("integrated_Prad_vs_gamma_rad.svg", format="svg", bbox_inches="tight", transparent=True, dpi=300)
+    plt.show()
+
+
 
 if __name__ == "__main__":
-    main()
+    # figure_1()
+    figure_2()

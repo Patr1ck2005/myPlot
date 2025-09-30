@@ -30,7 +30,6 @@ def interactive_preview(
     fast: bool = True,
     z_samples: int = 1025,
     method: Literal["trapz", "quad"] = "trapz",
-    enforce_d2_zero: bool = True,
     normalize_by_max: bool = True,
     fit_range: Optional[Tuple[float, float]] = None,
 
@@ -90,7 +89,6 @@ def interactive_preview(
         fast=fast,
         z_samples=z_samples,
         method=method,
-        enforce_d2_zero=enforce_d2_zero,
     )
 
     # 准备数据/模型（按需归一化）
@@ -208,7 +206,6 @@ def interactive_preview(
             fast=fast,
             z_samples=z_samples,
             method=method,
-            enforce_d2_zero=enforce_d2_zero,
         )
 
         # 2) 归一化与曲线更新
@@ -273,7 +270,6 @@ def interactive_preview(
             fast=fast,
             z_samples=z_samples,
             method=method,
-            enforce_d2_zero=enforce_d2_zero,
             # —— 把平滑设置传给拟合输出（这样 res.x_fit/res.y_fit 也是平滑网格）——
             output_samples=output_samples,
             output_range=output_range,

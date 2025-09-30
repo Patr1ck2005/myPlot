@@ -68,6 +68,9 @@ def add_annotations(ax, plot_params):
         yticks (list or numpy.array, optional): 当 ytick_mode='manual' 时，Y/r轴 ticks 的具体位置。默认 None。
         ytick_labels (list of str, optional): 当 ytick_mode='manual' 时，Y/r轴 ticks 对应的标签（r轴暂不支持自定义标签）。默认 None。
 
+        # 布局参数
+        enable_tight_layout (bool, optional): 是否启用紧凑布局。默认 False。
+
     返回: (fig, ax) - 加工后的 figure 和 ax。
     """
     plt.savefig('temp_default_ticks.png', dpi=300, bbox_inches='tight')
@@ -106,6 +109,8 @@ def add_annotations(ax, plot_params):
     ytick_count = plot_params.get('ytick_count', None)
     yticks = plot_params.get('yticks', None)
     ytick_labels = plot_params.get('ytick_labels', None)  # r 轴暂不支持自定义标签
+
+    enable_tight_layout = plot_params.get('enable_tight_layout', False)
 
     # 判断是否为极坐标
     is_polar = isinstance(ax, PolarAxes)
@@ -222,6 +227,10 @@ def add_annotations(ax, plot_params):
         ax.legend(loc=legend_loc)
     if add_grid:
         ax.grid(True, linestyle=grid_style, alpha=grid_alpha)
+
+    # 10. 紧凑布局
+    if enable_tight_layout:
+        plt.tight_layout()
     return ax.figure, ax  # 返回 fig, ax（修正为 ax.figure）
 
 

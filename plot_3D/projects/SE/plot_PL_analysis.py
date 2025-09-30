@@ -220,23 +220,23 @@ if __name__ == '__main__':
     #     annotations={
     #         # 'ylim': (0, 0.020)
     #         # 'ylim': (0, 0.005)
-    #         'ylim': (0, 1)
+    #         # 'ylim': (0, 1)
     #     }
     # )
     # config.figsize = (2, 2)
     # plotter = MyScript1Plotter(config=config, data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\lowQ-BIC\sweep_NAs\PL_Analysis.json')
     # # plotter = MyScript1Plotter(config=config, data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\highQ-BIC\sweep_NAs\PL_Analysis.json')
     # plotter.load_data()
-    # plotter.prepare_data() 
+    # plotter.prepare_data()
     # plot_dataset = plotter.compute_polar_lines(k_index=0)  # 手动选场景
     # theta = np.array(plot_dataset['theta_list'])
     # radial = np.array(plot_dataset['radial_list'])
     # plotter.new_fig('polar')
-    # plotter.plot_polar(theta=theta[0]*10, radial=radial[187]/np.max(radial[187]), default_color='k')  # for lowQ-BIC
+    # plotter.plot_polar(theta=theta[0]*10, radial=radial[366]/np.max(radial[366]), default_color='k')  # for lowQ-BIC
     # # plotter.plot_polar(theta=theta[0]*10, radial=radial[332]/np.max(radial[332]), default_color='red')  # for highQ-BIC
     # # plotter.re_initialized(config=config, data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\highQ-QGM\sweep_NAs\PL_Analysis.json')
     # # plotter.load_data()
-    # # plotter.prepare_data() 
+    # # plotter.prepare_data()
     # # plot_dataset = plotter.compute_polar_lines(k_index=0)  # 手动选场景
     # # theta = np.array(plot_dataset['theta_list'])
     # # radial = np.array(plot_dataset['radial_list'])
@@ -257,6 +257,7 @@ if __name__ == '__main__':
     # plotter.add_annotations()  # 注解
     # plotter.save_and_show()  # 保存
 
+
     # config = PlotConfig(
     #     plot_params={
     #         'add_colorbar': False, 'cmap': 'magma', 'default_color': 'black',
@@ -270,7 +271,7 @@ if __name__ == '__main__':
     # plotter = MyScript1Plotter(config=config,
     #                            data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\lowQ-BIC\sweep_ks\PL_Analysis.json')
     # plotter.load_data()
-    # plotter.prepare_data() 
+    # plotter.prepare_data()
     # plotter.new_fig()
     # plot_dataset_1 = plotter.compute_k_max_line()  # 手动选场景
     # plotter.plot_line(plot_dataset_1['k_array'], plot_dataset_1['y_max'], default_color='k', default_linestyle='-')
@@ -288,7 +289,7 @@ if __name__ == '__main__':
     # plotter.re_initialized(config=config,
     #                        data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\highQ-BIC\sweep_ks\PL_Analysis.json')
     # plotter.load_data()
-    # plotter.prepare_data() 
+    # plotter.prepare_data()
     # plot_dataset_2 = plotter.compute_k_max_line()  # 手动选场景
     # plotter.plot_line(plot_dataset_2['k_array'], plot_dataset_2['y_max'], default_color='blue', default_linestyle='-')
     # plotter.plot_scatter(
@@ -304,6 +305,7 @@ if __name__ == '__main__':
     # plotter.add_annotations()  # 注解
     # plotter.save_and_show()  # 保存
 
+
     # config = PlotConfig(
     #     plot_params={
     #         'add_colorbar': False, 'cmap': 'magma',
@@ -312,7 +314,8 @@ if __name__ == '__main__':
     #         'xlim': (-0.1, 1.1), 'ylim': (0, 2e2), 'add_grid': True,
     #     }
     # )
-    # config.figsize = (4, 3)
+    # # config.figsize = (4, 3)
+    # config.figsize = (6.5, 3)
     # plotter = MyScript1Plotter(config=config, data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\lowQ-BIC\sweep_NAs\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
@@ -333,7 +336,7 @@ if __name__ == '__main__':
     # plotter.plot_line(np.array(plot_dataset_2['na_list']), np.array(plot_dataset_2['y_max']), default_color='k')
     # plotter.plot_scatter(
     #     np.array(plot_dataset_2['na_list']), np.array(plot_dataset_2['y_max']),
-    #     default_color='orange', enable_dynamic_color=False, alpha=1, global_color_vmin=0, global_color_vmax=2e2,
+    #     default_color='red', enable_dynamic_color=False, alpha=1, global_color_vmin=0, global_color_vmax=2e2,
     #     marker='D', zorder=999
     # )
     # plotter.re_initialized(config=config,
@@ -350,6 +353,7 @@ if __name__ == '__main__':
     # plotter.add_annotations()  # 注解
     # plotter.save_and_show()  # 保存
 
+
     # config = PlotConfig(
     #     plot_params={
     #         'add_colorbar': True, 'cmap': 'magma'
@@ -358,13 +362,14 @@ if __name__ == '__main__':
     #         'ylim': (0, 40)
     #     }
     # )
-    # config.figsize = (2, 4)
+    # config.figsize = (4.3, 2.6)
+    # # config.figsize = (2, 4)
     # plotter = MyScript1Plotter(config=config, data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\lowQ-BIC\sweep_NAs\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
     # plotter.new_fig()
-    # # plot_dataset_1 = plotter.compute_single_line_purcell()  # 手动选场景
-    # plot_dataset_1 = plotter.compute_single_line_PL_factor()  # 手动选场景
+    # plot_dataset_1 = plotter.compute_single_line_purcell()  # 手动选场景
+    # # plot_dataset_1 = plotter.compute_single_line_PL_factor()  # 手动选场景
     # plotter.plot_line(
     #     x=plot_dataset_1['x'], z1=plot_dataset_1['y'], default_color='k', default_linestyle='-'
     # )
@@ -372,8 +377,8 @@ if __name__ == '__main__':
     # plotter.re_initialized(config=config, data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\highQ-BIC\sweep_NAs\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
-    # # plot_dataset_2 = plotter.compute_single_line_purcell()  # 手动选场景
-    # plot_dataset_2 = plotter.compute_single_line_PL_factor()  # 手动选场景
+    # plot_dataset_2 = plotter.compute_single_line_purcell()  # 手动选场景
+    # # plot_dataset_2 = plotter.compute_single_line_PL_factor()  # 手动选场景
     # plotter.plot_line(
     #     x=plot_dataset_2['x'], z1=plot_dataset_2['y'],
     #     twiny=True,
@@ -382,14 +387,15 @@ if __name__ == '__main__':
     # plotter.re_initialized(config=config, data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\highQ-QGM\sweep_NAs\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
-    # # plot_dataset_3 = plotter.compute_single_line_purcell()  # 手动选场景
-    # plot_dataset_3 = plotter.compute_single_line_PL_factor()  # 手动选场景
+    # plot_dataset_3 = plotter.compute_single_line_purcell()  # 手动选场景
+    # # plot_dataset_3 = plotter.compute_single_line_PL_factor()  # 手动选场景
     # plotter.plot_line(
     #     x=plot_dataset_3['x'], z1=plot_dataset_3['y'],
     #     default_color='blue', default_linestyle='-'
     # )
     # plotter.add_twiny_annotations()  # 注解
     # plotter.save_and_show()  # 保存
+
 
     # config = PlotConfig(
     #     plot_params={
@@ -406,7 +412,7 @@ if __name__ == '__main__':
     # plotter = MyScript1Plotter(config=config,
     #                            data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\lowQ-BIC\sweep_ks\PL_Analysis.json')
     # plotter.load_data()
-    # plotter.prepare_data() 
+    # plotter.prepare_data()
     # plotter.new_fig()
     # plot_dataset_1 = plotter.compute_multi_k_lines()  # 手动选场景
     # plotter.config.plot_params = {
@@ -421,6 +427,7 @@ if __name__ == '__main__':
     # plotter.add_annotations()  # 注解
     # plotter.save_and_show()  # 保存
 
+
     # config = PlotConfig(
     #     plot_params={
     #         'add_colorbar': False, 'cmap': 'magma', 'default_color': 'black',
@@ -432,10 +439,11 @@ if __name__ == '__main__':
     #         'y_log_scale': True,
     #     }
     # )
-    # config.figsize = (2, 3)
+    # # config.figsize = (2, 3)
+    # config.figsize = (2, 2)
     # plotter = MyScript1Plotter(config=config,
-    #                            # data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\QGM\PL_Analysis.json')
-    #                            data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\BIC\PL_Analysis.json')
+    #                            data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\QGM\PL_Analysis.json')
+    #                            # data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\BIC\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
     # plotter.new_fig()
@@ -454,8 +462,8 @@ if __name__ == '__main__':
     # plot_dataset_1 = plotter.compute_multi_k_lines(mode=2)  # 手动选场景
     # plotter.config.plot_params = {
     #     # 'add_colorbar': True, 'cmap': 'magma_r',
-    #     # 'add_colorbar': False, 'cmap': 'Blues_r',
-    #     'add_colorbar': False, 'cmap': 'Reds_r',
+    #     'add_colorbar': False, 'cmap': 'Blues_r',
+    #     # 'add_colorbar': False, 'cmap': 'Reds_r',
     #     'title': False,
     #     'global_color_vmin': 1, 'global_color_vmax': 5,
     # }
@@ -467,6 +475,7 @@ if __name__ == '__main__':
     # )
     # plotter.add_annotations()  # 注解
     # plotter.save_and_show()  # 保存
+
 
     # config = PlotConfig(
     #     plot_params={
@@ -509,6 +518,7 @@ if __name__ == '__main__':
     # plotter.add_annotations()  # 注解
     # plotter.save_and_show()  # 保存
 
+
     # config = PlotConfig(
     #     plot_params={
     #         'add_colorbar': False, 'cmap': 'magma', 'default_color': 'black',
@@ -517,7 +527,8 @@ if __name__ == '__main__':
     #         'ylim': (0, 40),
     #     }
     # )
-    # config.figsize = (2, 3)
+    # # config.figsize = (2, 3)
+    # config.figsize = (2, 2)
     # plotter = MyScript1Plotter(config=config,
     #                            data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\BIC\PL_Analysis.json')
     # plotter.load_data()
@@ -540,6 +551,7 @@ if __name__ == '__main__':
     # config.annotations['ylim'] = (0, 3)
     # plotter.add_twinx_annotations()  # 注解
     # plotter.save_and_show()  # 保存
+
 
     # config = PlotConfig(
     #     plot_params={
@@ -575,6 +587,7 @@ if __name__ == '__main__':
     # plotter.plot_scatter(x=plot_dataset_1['k_array'], z1=plot_dataset_1['purcell_max'], default_color='k', marker='o',zorder=100, alpha=1)
     # plotter.add_annotations()  # 注解
     # plotter.save_and_show()  # 保存
+
 
     # config = PlotConfig(
     #     plot_params={
@@ -637,18 +650,20 @@ if __name__ == '__main__':
     # plotter.add_annotations()  # 注解
     # plotter.save_and_show()  # 保存
 
-
-    fit_range = (0.45, 0.475)
+    fit_range = (0.583, 0.608)
     config = PlotConfig(
         plot_params={
             'add_colorbar': True, 'cmap': 'magma'
         },
         annotations={
             # 'xlim': fit_range, 'ylim': (0, 40),
-            'xlim': (0.46, 0.4645), 'ylim': (0, 40),
+            'xlim': (0.583+0.01+0.0004, 0.608-0.01+0.0004), 'ylim': (0, 40),
         }
     )
+    print('xlim:', config.annotations['xlim'])
+    print('xlim range:', config.annotations['xlim'][1]-config.annotations['xlim'][0])
     config.figsize = (2, 2)
+    # config.figsize = (4, 2)
     plotter = MyScript1Plotter(config=config,
                                data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\lowQ-BIC\sweep_NAs\PL_Analysis.json')
     plotter.load_data()
@@ -673,13 +688,12 @@ if __name__ == '__main__':
         x=res_f.x_fit, z1=res_f.y_fit, default_color='blue', default_linestyle='-'
     )
     # 你的“最佳附近”初值与边界
-    p0 = {"omega0": 0.463, "delta": 0.0, "gamma_rad": 0.1, "gamma0": 1e-4, 'dispersion_v': 0.2}
+    p0 = {"omega0": 0.5958, "delta": 0.0, "gamma_rad": 0.1, "gamma0": 1e-4, 'dispersion_v': 0.2}
     bounds = {
-        'omega0': (0.45, 0.475), "delta": (-0.02, 0.02),
+        'omega0': (0.57, 0.61), "delta": (-0.02, 0.02),
         "gamma_rad": (1e-4, 1.0), "gamma0": (1e-8, 1e-3),
         "dispersion_v": (0, 1)
     }
-
     # 模板参数（非拟合项取这里的值；代码内部会强制 d2=0 以只激发第一个模式）
     sp_template = SystemParams(omega0=0.0, delta=0.0, gamma0=1e-4, d1=1.0, d2=0.0, dispersion_v=0.9)
     # interactive_preview(
@@ -745,13 +759,13 @@ if __name__ == '__main__':
             'add_colorbar': True, 'cmap': 'magma'
         },
         annotations={
-            # 'xlim': fit_range, 'ylim': (0, 10),
-            'xlim': (0.50-0.0025+0.01-0.0005, 0.52+0.0025-0.01-0.0005), 'ylim': (0, 10),
+            'xlim': fit_range, 'ylim': (0, 10),
+            # 'xlim': (0.50-0.0025+0.01-0.0005, 0.52+0.0025-0.01-0.0005), 'ylim': (0, 10),
             'show_ticks': True,
         }
     )
+    config.figsize = (4, 2)
     # config.figsize = (2, 2)
-    config.figsize = (2, 2)
     plotter = MyScript1Plotter(config=config,
                                data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\highQ-BIC\sweep_NAs\PL_Analysis.json')
     plotter.load_data()
