@@ -10,14 +10,7 @@ import numpy as np
 c_const = 299792458
 
 if __name__ == '__main__':
-    # data_path = 'data/2fold-TE-eigen.csv'
-    # data_path = 'data/SE/2fold-TE-k_loss0-eigen.csv'
-    # data_path = 'data/SE/3fold-TE-delta0.1-k_loss0-eigen.csv'
-    data_path = './data/3fold-TE-delta0.2-eigen.csv'
-    # data_path = 'data/3fold-TE-delta_spcae-eigen.csv
-    # data_path = './data/1fold-TM-k_loss0-eigen.csv'
-    # data_path = 'data/1fold_weak-TM-eigen.csv'
-    # data_path = './data/1fold-TM-eigen.csv'
+    data_path = './data/eigen-Hex_annular-off_x20nm_y20nm-a400nm_r0.25_r_w80nm_t180nm-0.3kr.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -26,16 +19,17 @@ if __name__ == '__main__':
     def norm_freq(freq, period):
         return freq/(c_const/period)
     # period = 1000 nm
-    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq, period=1e3*1e-9*1e12)
-    df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=1e3*1e-9)
+    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq, period=400*1e-9*1e12)
+    df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=400*1e-9)
+    df_sample["k"] = df_sample["m1"]-df_sample["m2"]
 
-    # 筛选m1<0.1的成分
-    df_sample = df_sample[df_sample["m1"] < 0.3]
+    # # 筛选m1<0.1的成分
+    # df_sample = df_sample[df_sample["m1"] < 0.3]
 
     # 指定用于构造网格的参数以及目标数据列
-    # param_keys = ["m1", "m2", "loss_k", "w_delta_factor"]
-    param_keys = ["m1", "m2", "loss_k"]
-    z_keys = ["特征频率 (THz)", "品质因子 (1)", "tanchi (1)", "phi (rad)", "fake_factor (1)", "频率 (Hz)"]
+    # param_keys = ["k_r", "k_azimu"]
+    param_keys = ["k"]
+    z_keys = ["特征频率 (THz)", "品质因子 (1)", "tanchi (1)", "phi (rad)", "S_air_prop (1)", "频率 (Hz)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
     grid_coords, Z = create_data_grid(df_sample, param_keys, z_keys, deduplication=False)
@@ -44,21 +38,16 @@ if __name__ == '__main__':
         print(f"  {key}: {arr}")
     print("数据网格 Z 的形状：", Z.shape)
 
-    # 示例查询某个参数组合对应的数据
-    query = {"m1": 0.00, "m2": 0.00}
-    result = query_data_grid(grid_coords, Z, query)
-    print("\n查询结果（保留列表）：", result)
-
     # 假设已得到grid_coords, Z
     new_coords, Z_filtered, min_lens = advanced_filter_eigensolution(
         grid_coords, Z,
         z_keys=z_keys,
-        fixed_params={"m2": 0, "loss_k": 0},  # 固定
+        fixed_params={},  # 固定
         # fixed_params={"m1": 0, "m2": 0, "loss_k": 1e-3*0},  # 固定
         filter_conditions={
-            "fake_factor (1)": {"<": 100.0},  # 筛选
+            "S_air_prop (1)": {"<": 100.0},  # 筛选
             # "m1": {"<": .1},  # 筛选
-            "频率 (Hz)": {">": 0.0, "<": 1.0},  # 筛选
+            # "频率 (Hz)": {">": 0.0, "<": 1.0},  # 筛选
         }
     )
 
@@ -76,24 +65,31 @@ if __name__ == '__main__':
     Z_new = np.empty_like(Z_filtered, dtype=object)
     # 使用直接的循环来更新 Z_new
     for i in range(Z_filtered.shape[0]):
-        Z_new[i] = Z_filtered[i][1]  # 提取每个 lst_ij 的第 b 列
-        Z_new[i] = np.log10(Z_filtered[i][1])  # 提取每个 lst_ij 的第 b 列
+        Z_new[i] = Z_filtered[i][0]  # 提取每个 lst_ij 的第 b 列
 
     Z_grouped = group_vectors_one_sided_hungarian(
         [Z_new], deltas3,
         value_weights=value_weights,
         deriv_weights=deriv_weights,
-        max_m=14
+        max_m=8
     )
 
     # 假设你已经得到了 grid_coords, Z
     new_coords, Z_target1 = group_solution(
         new_coords, Z_grouped,
-        freq_index=6  # 第n个频率
+        freq_index=1  # 第n个频率
     )
     new_coords, Z_target2 = group_solution(
         new_coords, Z_grouped,
-        freq_index=8  # 第n个频率
+        freq_index=2  # 第n个频率
+    )
+    new_coords, Z_target3 = group_solution(
+        new_coords, Z_grouped,
+        freq_index=3  # 第n个频率
+    )
+    new_coords, Z_target4 = group_solution(
+        new_coords, Z_grouped,
+        freq_index=5  # 第n个频率
     )
 
     print("去掉 bg_n 后的参数：")
@@ -101,11 +97,11 @@ if __name__ == '__main__':
         print(f"  {k}: {v}")
 
     data_path = prepare_plot_data(
-        new_coords, [Z_target1, Z_target2], x_key="m1", fixed_params={},
+        new_coords, [Z_target1, Z_target2, Z_target3, Z_target4], x_key="k", fixed_params={},
         save_dir='./rsl/eigensolution',
     )
 
-    from plot_3D.projects.SE.plot_thickband import main
+    from plot_3D.projects.NearFieldVortex.plot_thickband import main
 
     main(data_path)
 

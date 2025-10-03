@@ -12,9 +12,9 @@ from .utils import safe_str
 from plot_3D.advance_plot_styles.line_plot import plot_line_advanced
 from plot_3D.advance_plot_styles.scatter_plot import plot_scatter_advanced
 
-# fontsize
-fs = 12
-plt.rcParams.update({'font.size': fs})
+# # fontsize
+# fs = 12
+# plt.rcParams.update({'font.size': fs})
 
 
 def add_annotations(ax, plot_params):
@@ -117,7 +117,7 @@ def add_annotations(ax, plot_params):
 
     # 1. 设置标题（仅当 show_axis_labels=True 且 title 提供时）
     if show_axis_labels and title:
-        ax.set_title(title, fontsize=fs//1.2)
+        ax.set_title(title)
 
     # 2. 设置轴标签（仅当 show_axis_labels=True 且 提供时）
     if show_axis_labels:

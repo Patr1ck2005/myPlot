@@ -56,36 +56,37 @@ def prepare_plot_data(new_coords, Z_list, x_key, y_key=None, fixed_params=None, 
         subs = [np.concatenate([sub[::-1], sub]) for sub in subs]
         y_vals = np.concatenate([-y_vals[::-1], y_vals])  # 假设y也需镜像
 
-    cleaned_subs = []
-    if is_1d:
-        for sub in subs:
-            mask = np.isnan(sub)
-            if np.any(mask):
-                print(f"Warning: 存在非法数据，已移除。")
-                cleaned_sub = sub[~mask]
-                # 注意：1D下x_vals也需相应切片，但当前代码中temp_x_vals未全局应用；建议统一
-                temp_x_vals = x_vals[~mask]
-                # 为简单，假设所有曲线共享x_vals；若不，需存多个x
-            else:
-                cleaned_sub = sub
-                temp_x_vals = x_vals
-            cleaned_subs.append(cleaned_sub)
-        x_vals = temp_x_vals  # 更新x_vals
-    else:
-        cleaned_subs = subs  # 2D暂无NaN处理，可扩展
+    # # 当前不适合处理NaN
+    # cleaned_subs = []
+    # if is_1d:
+    #     for sub in subs:
+    #         mask = np.isnan(sub)
+    #         if np.any(mask):
+    #             print(f"Warning: 存在非法数据，已移除。")
+    #             cleaned_sub = sub[~mask]
+    #             # 注意：1D下x_vals也需相应切片，但当前代码中temp_x_vals未全局应用；建议统一
+    #             temp_x_vals = x_vals[~mask]
+    #             # 为简单，假设所有曲线共享x_vals；若不，需存多个x
+    #         else:
+    #             cleaned_sub = sub
+    #             temp_x_vals = x_vals
+    #         cleaned_subs.append(cleaned_sub)
+    #     x_vals = temp_x_vals  # 更新x_vals
+    # else:
+    #     cleaned_subs = subs  # 2D暂无NaN处理，可扩展
 
     # Step 4: 创建 PlotData 对象 (规范结构)
     plot_data = {
         'x_vals': x_vals,
         'y_vals': y_vals,
-        'subs': cleaned_subs,  # list of Z subs
+        'subs': subs,  # list of Z subs
         'is_1d': is_1d,
         'metadata': {
             'x_key': x_key,
             'y_key': y_key,
             'fixed_params': fixed_params,
             'timestamp': time.strftime("%Y%m%d_%H%M%S"),
-            'data_shape': [sub.shape for sub in cleaned_subs]
+            'data_shape': [sub.shape for sub in subs]
         }
     }
 

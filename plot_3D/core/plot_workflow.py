@@ -15,11 +15,13 @@ from plot_3D.advance_plot_styles.scatter_plot import plot_scatter_advanced
 class PlotConfig:
     """配置类：统一参数管理"""
     figsize: tuple = (3, 4)
+    fs: int = 16  # 字体大小
     save_dir: str = './rsl'
     show: bool = True
     plot_params: Dict[str, Any] = None  # e.g., {'cmap': 'magma', 'add_colorbar': True}
     annotations: Dict[str, Any] = None  # e.g., {'xlabel': r'f (c/P)', 'ylabel': 'P'}
     dpi: int = 300
+    tick_direction: str = 'out'  # 刻度线方向
 
 
 class BasePlotter(ABC):
@@ -39,6 +41,9 @@ class BasePlotter(ABC):
         self.x_vals: Optional[np.ndarray] = None
         self.y_vals: Optional[np.ndarray] = None
         self.subs: Optional[List[np.ndarray]] = None
+        plt.rcParams.update({'font.size': config.fs})
+        plt.rcParams['xtick.direction'] = config.tick_direction  # 将x周的刻度线方向设置向内
+        plt.rcParams['ytick.direction'] = config.tick_direction  # 将y轴的刻度方向设置向内
 
     def re_initialized(self, config: Optional[Union[PlotConfig, Dict]] = None, data_path: Optional[str] = None) -> None:
         """优化：只重置config/data相关，不重置fig/ax，支持重叠绘图"""
