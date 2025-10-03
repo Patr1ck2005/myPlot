@@ -70,7 +70,7 @@ def filter_eigensolution(grid_coords, Z, z_keys):
 
 
 if __name__ == '__main__':
-    data_path = './data/UGR/test.csv'
+    data_path = 'data/test.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程

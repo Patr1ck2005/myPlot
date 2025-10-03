@@ -168,10 +168,10 @@ def divide_regions_by_zero(z, X=None, Y=None, visualize=False):
 
     # 可视化
     if visualize:
-        plt.figure(figsize=(8, 6))
+        plt.figure(figsize=(4, 3))
         plt.contour(X, Y, z, levels=[0], colors='red', linewidths=2)  # =0 曲线
         plt.contourf(X, Y, pos_labels + neg_labels, cmap='tab20', alpha=0.5)  # 区域填充
-        plt.title('=0 边界线和划分区域')
+        plt.title('=0 Boundary Line and Divided Regions')
         plt.colorbar()
         plt.show()
 

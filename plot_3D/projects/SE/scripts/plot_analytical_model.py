@@ -49,8 +49,8 @@ class PlotParams:
     omega_samples: int = 512
 
     # 图2：k 积分范围与 ω 取样
-    # k_int_range: Tuple[float, float] = (-10.0, 10.0)
-    k_int_range: Tuple[float, float] = (-.5, .5)
+    k_int_range: Tuple[float, float] = (-10.0, 10.0)
+    # k_int_range: Tuple[float, float] = (-.5, .5)
     omega_int_min: float = -0.1
     omega_int_max: float = 0.1
     omega_int_samples: int = 129
@@ -351,6 +351,11 @@ def plot_figure_2(mode: str,
         y = integrate_over_k(power_fn, gval, sp, pp, omega_array)
         # ax.plot(omega_array, y, label=rf'$\gamma$ = {gval}', color=cmap(idx))
         ax.plot(omega_array, y, label=rf'$\gamma$ = {gval}', color=cmap.to_rgba(gval))
+        A = np.sqrt(sp.gamma0*(sp.gamma0+gval))
+        B = np.sqrt(A**2+omega_array**2)
+        # analytical_y = (np.pi*(sp.gamma0+gval))/B+(np.pi*sp.gamma0*(omega_array**2+(sp.gamma0+gval)**2))/(B**3)
+        analytical_y = abs(np.pi/omega_array*(np.sqrt(omega_array**2+1j*gval*omega_array)+np.sqrt(omega_array**2-1j*gval*omega_array)))
+        ax.plot(omega_array, analytical_y, label=rf'$\gamma$ = {gval}', color=cmap.to_rgba(gval))
 
     # ax.set_xlabel("Frequency ω")
     # ax.set_ylabel(f"k-integrated {mode}")
@@ -409,7 +414,7 @@ if __name__ == "__main__":
     sp = SystemParams(
         omega0=0.0,
         delta=0.0,
-        gamma0=5e-3,
+        gamma0=1e-3,
         d1=1.0,
         d2=0.0
     )
@@ -429,7 +434,7 @@ if __name__ == "__main__":
         # omega_int_max = 0.5,
         omega_int_min=-0.50,
         omega_int_max=0.50,
-        omega_int_samples=129 * 3,
+        omega_int_samples=128*4+1,
 
         # 色图
         cmap_density="magma",
@@ -439,15 +444,16 @@ if __name__ == "__main__":
     )
 
     # 选择模式：MODE_PTOT 或 MODE_PRAD
-    # mode = MODE_PTOT  # 改成 MODE_PRAD 即可切换
-    mode = MODE_PRAD  # 改成 MODE_PRAD 即可切换
+    mode = MODE_PTOT  # 改成 MODE_PRAD 即可切换
+    # mode = MODE_PRAD  # 改成 MODE_PRAD 即可切换
 
     # 图1：右半密度所用 gamma
     # gamma_for_density = 0.5
     gamma_for_density = 0.1
 
     # 图2：多条曲线的 gamma 列表
-    gamma_values = [0.01, 0.1, 0.5, 1.0, 2.0]
+    # gamma_values = [0.01, 0.1, 0.5, 1.0, 2.0]
+    gamma_values = [0.5]
 
     # 图3：多条曲线的 k 列表
     k_range_values = [0.01, 0.1, 0.5, 1.0, 2.0]
@@ -458,6 +464,6 @@ if __name__ == "__main__":
     # --- 绘制图 ---
     # plot_band(mode, sp, pp, gamma_for_density, show=True)
     # plot_spectrum(mode, sp, pp, gamma_for_density, show=True)
-    plot_figure_1(mode, sp, pp, gamma_for_density, show=True)
-    # plot_figure_2(mode, sp, pp, gamma_values, show=True)
+    # plot_figure_1(mode, sp, pp, gamma_for_density, show=True)
+    plot_figure_2(mode, sp, pp, gamma_values, show=True)
     # plot_figure_3(mode, sp, pp, omega_values, show=True)
