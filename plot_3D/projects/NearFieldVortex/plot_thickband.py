@@ -42,14 +42,14 @@ class MyScript3Plotter(LinePlotter):
         self.ax.set_xlim(self.x_vals.min(), self.x_vals.max())
         self.ax.set_ylim(np.nanmin(y_mins) * 0.98, np.nanmax(y_maxs) * 1.02)
 
-        # plot yspan
-        # compute norm freq span of 900nm to 930nm
-        # period = 350e-9  # C4
-        period = 400e-9  # C6
-        c_const = 299792458
-        f1 = c_const / 930e-9 / (c_const / period)
-        f2 = c_const / 900e-9 / (c_const / period)
-        self.ax.axhspan(f1, f2, color='gray', alpha=0.3, linewidth=0, zorder=-1)
+        # # plot yspan
+        # # compute norm freq span of 900nm to 930nm
+        # # period = 350e-9  # C4
+        # period = 400e-9  # C6
+        # c_const = 299792458
+        # f1 = c_const / 930e-9 / (c_const / period)
+        # f2 = c_const / 900e-9 / (c_const / period)
+        # self.ax.axhspan(f1, f2, color='gray', alpha=0.3, linewidth=0, zorder=-1)
 
 
 def main(data_path):

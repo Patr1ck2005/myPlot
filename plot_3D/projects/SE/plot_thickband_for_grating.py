@@ -23,14 +23,13 @@ class MyScript3Plotter(LinePlotter):
 
     def plot(self) -> None:  # 重写：整体+循环填充
         params = {
-            'enable_fill': True,
-            'gradient_fill': True,
+            'enable_fill': False,
+            'gradient_fill': False,
             'cmap': 'magma',
             'add_colorbar': False,
             'global_color_vmin': 0, 'global_color_vmax': 5e-3,
             'default_color': 'gray', 'alpha_fill': 1,
-            'edge_color': 'none',
-            'gradient_direction': 'z3',
+            'edge_color': 'none'
         }
         y_mins, y_maxs = [], []
         for i, (x, y) in enumerate(zip(self.x_vals_list, self.y_vals_list)):
@@ -46,10 +45,9 @@ def main(data_path):
         plot_params={'scale': 1},
         annotations={'ylabel': 'f (c/P)', 'show_axis_labels': True, 'show_tick_labels': True},
     )
-    config.figsize = (3, 6)
+    config.figsize = (3, 4)
     plotter = MyScript3Plotter(config=config, data_path=data_path)
     plotter.run_full()
 
 if __name__ == '__main__':
-    # main(r"D:\DELL\Documents\myPlots\plot_3D\projects\SE\rsl\manual_datas\eigens\2fold-kloss0-k_space.pkl")
-    pass
+    main(r"D:\DELL\Documents\myPlots\plot_3D\projects\SE\rsl\manual_datas\eigens\2fold-kloss0-k_space.pkl")

@@ -103,12 +103,26 @@ if __name__ == '__main__':
     #     condition_keys=['freq (THz)', freq]  # 310 320 330
     # )
     # lattice_const = 400  # nm
+    # freq = 325
+    # grid_coords1, Z_S123, Z_CP = load_data(
+    #     data_path := 'data/Hex_hole-off_x30nm-a430nm_r1_0.38_r2_0.1_t180nm-0.3kr.csv',
+    #     condition_keys=['freq (THz)', freq]  # 315 320 325 330
+    # )
+    # lattice_const = 430  # nm
+
+    # freq = 106
+    # grid_coords1, Z_S123, Z_CP = load_data(
+    #     data_path := 'data/rect_hole-hole_mid-1296P_400r_400t_1000buffer-0.1kr.csv',
+    #     condition_keys=['freq (THz)', freq]  # 315 320 325 330
+    # )
+    # lattice_const = 1296  # nm
+
+    lattice_const = 400  # nm
     freq = 325
     grid_coords1, Z_S123, Z_CP = load_data(
-        data_path := 'data/Hex_hole-off_x30nm-a430nm_r1_0.38_r2_0.1_t180nm-0.3kr.csv',
-        condition_keys=['freq (THz)', freq]  # 315 320 325 330
+        data_path := 'data/Hex_annular-off_x0nm_y40nm-a400nm_r102nm_r_w80nm_t180nm-0.3kr.csv',
+        condition_keys=['freq (THz)', freq]  # 320 325 330
     )
-    lattice_const = 430  # nm
 
 
     # 定义光速（m/s）

@@ -352,10 +352,10 @@ def plot_figure_2(mode: str,
         # ax.plot(omega_array, y, label=rf'$\gamma$ = {gval}', color=cmap(idx))
         ax.plot(omega_array, y, label=rf'$\gamma$ = {gval}', color=cmap.to_rgba(gval))
         A = np.sqrt(sp.gamma0*(sp.gamma0+gval))
-        B = np.sqrt(A**2+omega_array**2)
-        # analytical_y = (np.pi*(sp.gamma0+gval))/B+(np.pi*sp.gamma0*(omega_array**2+(sp.gamma0+gval)**2))/(B**3)
-        analytical_y = abs(np.pi/omega_array*(np.sqrt(omega_array**2+1j*gval*omega_array)+np.sqrt(omega_array**2-1j*gval*omega_array)))
-        ax.plot(omega_array, analytical_y, label=rf'$\gamma$ = {gval}', color=cmap.to_rgba(gval))
+        analytical_BIC = abs(np.pi/omega_array*(np.sqrt(omega_array**2+1j*gval*omega_array)+np.sqrt(omega_array**2-1j*gval*omega_array)))
+        analytical_QGM = abs(0*np.pi*sp.gamma0/omega_array/gval*(np.sqrt(omega_array**2+1j*gval*omega_array)+np.sqrt(omega_array**2-1j*gval*omega_array))+
+                             np.pi*omega_array*(1/np.sqrt(omega_array**2+1j*gval*omega_array)+1/np.sqrt(omega_array**2-1j*gval*omega_array)))
+        ax.plot(omega_array, analytical_QGM, label=rf'$\gamma$ = {gval}', color=cmap.to_rgba(gval))
 
     # ax.set_xlabel("Frequency ω")
     # ax.set_ylabel(f"k-integrated {mode}")
@@ -415,8 +415,8 @@ if __name__ == "__main__":
         omega0=0.0,
         delta=0.0,
         gamma0=1e-3,
-        d1=1.0,
-        d2=0.0
+        d1=0.0,
+        d2=1.0
     )
 
     # --- 绘图控制参数 ---

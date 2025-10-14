@@ -10,9 +10,7 @@ import numpy as np
 c_const = 299792458
 
 if __name__ == '__main__':
-    # data_path = './data/eigen-Hex_annular-a400nm_r0.25_r_w80nm_t180nm-0.3kr.csv'
-    # data_path = 'data/eigen-Hex_annular-a380nm_r88nm_r_w80nm_t180nm-0.3kr.csv'
-    data_path = 'data/eigen-Hex_annular-a400nm_r102nm_r_w80nm_t180nm-0.3kr.csv'
+    data_path = './data/eigen-Hex_annular-a400nm_r102nm_r_w80nm_t180nm-0.3krRect.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -20,17 +18,15 @@ if __name__ == '__main__':
         return complex(freq_str.replace('i', 'j'))
     def norm_freq(freq, period):
         return freq/(c_const/period)
-    # period = 1000 nm
-    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq, period=400*1e-9*1e12)
-    df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=400*1e-9)
-    df_sample["k"] = df_sample["m1"]-df_sample["m2"]
+    period = 400
+    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq, period=period*1e-9*1e12)
+    df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period*1e-9)
 
     # # 筛选m1<0.1的成分
     # df_sample = df_sample[df_sample["m1"] < 0.3]
 
     # 指定用于构造网格的参数以及目标数据列
-    # param_keys = ["k_r", "k_azimu"]
-    param_keys = ["k"]
+    param_keys = ["m1", "m2"]
     z_keys = ["特征频率 (THz)", "品质因子 (1)", "tanchi (1)", "phi (rad)", "S_air_prop (1)", "频率 (Hz)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
@@ -67,7 +63,8 @@ if __name__ == '__main__':
     Z_new = np.empty_like(Z_filtered, dtype=object)
     # 使用直接的循环来更新 Z_new
     for i in range(Z_filtered.shape[0]):
-        Z_new[i] = Z_filtered[i][0]  # 提取每个 lst_ij 的第 b 列
+        for j in range(Z_filtered.shape[0]):
+            Z_new[i, j] = Z_filtered[i][j][0]  # 提取每个 lst_ij 的第 b 列
 
     Z_grouped = group_vectors_one_sided_hungarian(
         [Z_new], deltas3,

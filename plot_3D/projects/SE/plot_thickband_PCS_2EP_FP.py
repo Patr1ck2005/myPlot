@@ -25,10 +25,11 @@ class MyScript3Plotter(LinePlotter):
         params = {
             'enable_fill': True,
             'gradient_fill': True,
+            # 'cmap': 'magma',
             'cmap': 'magma',
             'add_colorbar': False,
             'global_color_vmin': 0, 'global_color_vmax': 5e-3,
-            'default_color': 'gray', 'alpha_fill': 1,
+            'default_color': 'gray', 'alpha_fill': .5,
             'edge_color': 'none',
             'gradient_direction': 'z3',
         }
@@ -41,15 +42,16 @@ class MyScript3Plotter(LinePlotter):
         self.ax.set_xlim(self.x_vals.min(), self.x_vals.max())
         self.ax.set_ylim(np.nanmin(y_mins) * 0.98, np.nanmax(y_maxs) * 1.02)
 
+
 def main(data_path):
     config = PlotConfig(
         plot_params={'scale': 1},
-        annotations={'ylabel': 'f (c/P)', 'show_axis_labels': True, 'show_tick_labels': True},
+        annotations={'xlabel': 'k (2$\pi$/P)', 'ylabel': 'f (c/P)', 'show_axis_labels': True, 'show_tick_labels': True},
     )
-    config.figsize = (3, 6)
+    config.figsize = (3, 5)
+    config.tick_direction = 'in'
     plotter = MyScript3Plotter(config=config, data_path=data_path)
     plotter.run_full()
 
 if __name__ == '__main__':
-    # main(r"D:\DELL\Documents\myPlots\plot_3D\projects\SE\rsl\manual_datas\eigens\2fold-kloss0-k_space.pkl")
     pass
