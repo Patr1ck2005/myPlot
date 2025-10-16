@@ -281,11 +281,13 @@ def plot_2d_heatmap(ax, x_vals, y_vals, Z, plot_params):
 
 
 
-    X, Y = np.meshgrid(x_vals, y_vals, indexing='ij')
+    # X, Y = np.meshgrid(x_vals, y_vals, indexing='ij')
     # if global_color_vmax is not None and global_color_vmin is not None:
     surf1 = ax.imshow(
         Z_real_plot.T,
-        extent=[X.min(), X.max(), Y.min(), Y.max()],
+        # extent=[X.min(), X.max(), Y.min(), Y.max()],
+        # 应该使用index来标定
+        extent=[x_vals[0], x_vals[-1], y_vals[0], y_vals[-1]],
         origin='lower',
         aspect=imshow_aspect,
         cmap=cmap1_name,
