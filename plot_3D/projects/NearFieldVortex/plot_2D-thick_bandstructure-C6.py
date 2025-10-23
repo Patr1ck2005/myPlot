@@ -12,7 +12,8 @@ c_const = 299792458
 if __name__ == '__main__':
     # data_path = './data/eigen-Hex_annular-a400nm_r0.25_r_w80nm_t180nm-0.3kr.csv'
     # data_path = 'data/eigen-Hex_annular-a380nm_r88nm_r_w80nm_t180nm-0.3kr.csv'
-    data_path = 'data/eigen-Hex_annular-a400nm_r102nm_r_w80nm_t180nm-0.3kr.csv'
+    # data_path = 'data/eigen-Hex_annular-a400nm_r102nm_r_w80nm_t180nm-0.3kr.csv'
+    data_path = 'data/eigen-Hex_annular-a400nm_r105nm_r_w80nm_t180nm-0.3kr.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -73,7 +74,7 @@ if __name__ == '__main__':
         [Z_new], deltas3,
         value_weights=value_weights,
         deriv_weights=deriv_weights,
-        max_m=14
+        max_m=10
     )
 
     # 假设你已经得到了 grid_coords, Z
@@ -97,13 +98,17 @@ if __name__ == '__main__':
         new_coords, Z_grouped,
         freq_index=4  # 第n个频率
     )
+    new_coords, Z_target5 = group_solution(
+        new_coords, Z_grouped,
+        freq_index=5  # 第n个频率
+    )
 
     print("去掉 bg_n 后的参数：")
     for k, v in new_coords.items():
         print(f"  {k}: {v}")
 
     data_path = prepare_plot_data(
-        new_coords, [Z_target0, Z_target1, Z_target2, Z_target4], x_key="k", fixed_params={},
+        new_coords, [Z_target0, Z_target1, Z_target2, Z_target3, Z_target4, Z_target5], x_key="k", fixed_params={},
         save_dir='./rsl/eigensolution',
     )
 

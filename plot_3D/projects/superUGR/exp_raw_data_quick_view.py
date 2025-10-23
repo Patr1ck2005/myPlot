@@ -106,17 +106,31 @@ def load_and_visualize_ftir_spectra(directory, prefix, start_num, end_num, angle
     return data_dict
 
 
+# # 示例调用（根据你的数据，替换为实际值）
+# directory = r'D:\DELL\Documents\myPlots\plot_3D\projects\superUGR\data\exp\25.10.13 KEREN\1'
+# prefix = 'Sample name.'
+# start_num = 5897
+# end_num = 5912
+
+# angles = list(range(0, 16))  # 0到15，共16个
+# data = load_and_visualize_ftir_spectra(directory, prefix, start_num, end_num, angles, save_plots=True, plot_dir='./')
+
+# directory = r'D:\DELL\Documents\myPlots\plot_3D\projects\superUGR\data\exp\25.10.13 KEREN\2'
+# prefix = 'Sample name.'
+# start_num = 5913
+# end_num = 5913 + 15
+# data = load_and_visualize_ftir_spectra(directory, prefix, start_num, end_num, angles, save_plots=True, plot_dir='./')
+
 # 示例调用（根据你的数据，替换为实际值）
-directory = r'D:\DELL\Documents\myPlots\plot_3D\projects\superUGR\data\exp\25.10.13 KEREN\1'
+
 prefix = 'Sample name.'
-start_num = 5897
-end_num = 5912
+directory = r'D:\DELL\Documents\myPlots\plot_3D\projects\superUGR\data\exp\25.10.20 KEREN\1'
+start_num = 6028
+end_num = 6043
+
+# directory = r'D:\DELL\Documents\myPlots\plot_3D\projects\superUGR\data\exp\25.10.20 KEREN\2'
+# start_num = 6044
+# end_num = 6059
 
 angles = list(range(0, 16))  # 0到15，共16个
-data = load_and_visualize_ftir_spectra(directory, prefix, start_num, end_num, angles, save_plots=True, plot_dir='./')
-
-directory = r'D:\DELL\Documents\myPlots\plot_3D\projects\superUGR\data\exp\25.10.13 KEREN\2'
-prefix = 'Sample name.'
-start_num = 5913
-end_num = 5913 + 15
-data = load_and_visualize_ftir_spectra(directory, prefix, start_num, end_num, angles, save_plots=True, plot_dir='./')
+data = load_and_visualize_ftir_spectra(directory, prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt')

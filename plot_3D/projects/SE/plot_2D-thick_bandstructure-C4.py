@@ -12,8 +12,9 @@ c_const = 299792458
 if __name__ == '__main__':
     # data_path = 'data/eigen-Rect-18ACSNano-0.3kr.csv'
     # data_path = 'data/1fold-PCS_Rod-25NanoLetters-eigen.csv'
-    data_path = 'data/1fold-PCS_Rod-25NanoLetters-BIC-eigen.csv'
-    # data_path = 'data/1fold-PCS_FP-eigen.csv'
+    # data_path = 'data/1fold-PCS_Rod-25NanoLetters-BIC-eigen.csv'
+    # data_path = 'data/1fold-PCS_FP-2EP-eigen.csv'
+    data_path = 'data/1fold-PCS_FP-lowQ-eigen.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -21,9 +22,9 @@ if __name__ == '__main__':
         return complex(freq_str.replace('i', 'j'))
     def norm_freq(freq, period):
         return freq/(c_const/period)
-    # period = 720*1.8
+    period = 1300
     # period = 560
-    period = 700
+    # period = 700
     df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq, period=period*1e-9*1e12)
     df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period*1e-9)
     # df_sample["k"] = df_sample.apply(lambda row: row["k_r"] if row["k_azimu"] == 0 else -row["k_r"], axis=1)
@@ -33,8 +34,9 @@ if __name__ == '__main__':
 
     # 指定用于构造网格的参数以及目标数据列
     # param_keys = ["k_r", "k_azimu"]
-    param_keys = ["k"]
-    z_keys = ["特征频率 (THz)", "品质因子 (1)", "tanchi (1)", "phi (rad)", "S_pml_prop (1)", "频率 (Hz)"]
+    param_keys = ["k", "buffer (nm)"]
+    # z_keys = ["特征频率 (THz)", "品质因子 (1)", "tanchi (1)", "phi (rad)", "S_pml_prop (1)", "频率 (Hz)"]
+    z_keys = ["特征频率 (THz)", "品质因子 (1)", "tanchi (1)", "phi (rad)", "fake_factor (1)", "频率 (Hz)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
     grid_coords, Z = create_data_grid(df_sample, param_keys, z_keys, deduplication=False)
@@ -47,12 +49,15 @@ if __name__ == '__main__':
     new_coords, Z_filtered, min_lens = advanced_filter_eigensolution(
         grid_coords, Z,
         z_keys=z_keys,
-        fixed_params={},  # 固定
+        fixed_params={
+            'buffer (nm)': 875,
+        },  # 固定
         # fixed_params={"m1": 0, "m2": 0, "loss_k": 1e-3*0},  # 固定
         filter_conditions={
-            "S_pml_prop (1)": {"<": 1},  # 筛选
+            # "S_pml_prop (1)": {"<": 1},  # 筛选
+            "fake_factor (1)": {"<": 1},  # 筛选
             # "m1": {"<": .1},  # 筛选
-            "频率 (Hz)": {">": 0.0, "<": 0.58},  # 筛选
+            # "频率 (Hz)": {">": 0.0, "<": 0.58},  # 筛选
         }
     )
 
@@ -150,7 +155,7 @@ if __name__ == '__main__':
             Z_target4,
             Z_target5,
             Z_target6,
-            Z_target7,
+            # Z_target7,
             # Z_target8,
             # Z_target9,
             # Z_target10,
