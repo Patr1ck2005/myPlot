@@ -30,7 +30,7 @@ from typing import Callable, Dict, Tuple, List, Optional
 GLOBAL_FACTOR = 0.5  # overall scaling factor for k and E
 E_ref = -0.6  # S1 reference plane (imaginary helper)
 A_iso = -1.5  # S2 isotropic coefficient
-A_4 = -1.0  # S2 fourfold anisotropy strength
+A_4 = -1.0 * 0  # S2 fourfold anisotropy strength
 inv_mass = 0.50  # S3 ~ ħ^2/(2m*)
 E_offset = -1  # S3 energy offset
 
@@ -152,7 +152,7 @@ CONFIG = {
         "S3": {
             "visible": True,
             "mode": "solid",
-            "solid_color": (0.3, 0.5, 0.85),
+            "solid_color": "lawngreen",
             "opacity": 0.40,
             "smooth_shading": True,
             "cmap": "viridis",
@@ -170,8 +170,8 @@ CONFIG = {
     "intersections": {
         "draw": True,
         "pairs": [
-            {"surface1": "S2", "surface2": "S1", "color": "white", "line_width": 10.0},
-            {"surface1": "S2", "surface2": "S3", "color": "blue", "line_width": 10.0},
+            {"surface1": "S2", "surface2": "S1", "color": "white", "line_width": 15.0},
+            {"surface1": "S2", "surface2": "S3", "color": "lawngreen", "line_width": 15.0},
         ],
         "tol_rel": 1e-3,
         "export": {
@@ -183,9 +183,14 @@ CONFIG = {
 
     # Spheres (annotation objects)
     "spheres": [
-        {"center": (0.5, 0.5, None), "radius": 0.06, "color": (1.0, 0.4, 0.4), "opacity": 0.9},
-        {"center": (1.0, 0.0, None), "radius": 0.06, "color": (0.4, 1.0, 0.4), "opacity": 0.9},
-        {"center": (-0.8, 0.6, None), "radius": 0.06, "color": (0.4, 0.6, 1.0), "opacity": 0.9},
+        {"center": (0.5, 0.5, None), "radius": 0.1, "color": "magenta", "opacity": 1},
+        {"center": (-0.5, 0.5, None), "radius": 0.1, "color": "magenta", "opacity": 1},
+        {"center": (0.5, -0.5, None), "radius": 0.1, "color": "magenta", "opacity": 1},
+        {"center": (-0.5, -0.5, None), "radius": 0.1, "color": "magenta", "opacity": 1},
+        {"center": (0.5 * np.sqrt(2), 0, None), "radius": 0.1, "color": "deepskyblue", "opacity": 1},
+        {"center": (-0.5 * np.sqrt(2), 0, None), "radius": 0.1, "color": "deepskyblue", "opacity": 1},
+        {"center": (0, -0.5 * np.sqrt(2), None), "radius": 0.1, "color": "deepskyblue", "opacity": 1},
+        {"center": (0, 0.5 * np.sqrt(2), None), "radius": 0.1, "color": "deepskyblue", "opacity": 1},
     ],
 
     # Output options
@@ -408,27 +413,29 @@ def main():
                 zval = float(S2_func(np.array([[cx]]), np.array([[cy]]))[0, 0])
             else:
                 zval = float(cz)
-            sphere = pv.Sphere(radius=float(sph.get("radius", 0.06)),
-                               center=(cx, cy, zval),
-                               theta_resolution=48, phi_resolution=48)
-            plotter.add_mesh(sphere,
-                             color=sph.get("color", None),
-                             opacity=float(sph.get("opacity", 0.9)),
-                             smooth_shading=True,
-                             name=f"sphere{i}")
+            sphere = pv.Sphere(
+                radius=float(sph.get("radius", 0.06)),
+                center=(cx, cy, zval),
+                theta_resolution=48, phi_resolution=48,
+            )
+            plotter.add_mesh(
+                sphere,
+                color=sph.get("color", None),
+                opacity=float(sph.get("opacity", 0.9)),
+                smooth_shading=True,
+                name=f"sphere{i}",
+                lighting=False
+            )
 
-    # axes and bounds (使用pyvista_axes_config)
+    # axes and bounds
     clean_view = sc.get("clean_view", False) or sc.get("pure_surface_only", False)
     pyvista_ax_conf = sc.get("pyvista_axes_config", {})
-
     if not clean_view:
-        # 使用 add_axes 来控制中心轴线和标签/刻度
         if sc.get("axes", True):
             plotter.add_axes(
                 line_width=pyvista_ax_conf.get("axes_line_width", 2),
                 labels_off=not pyvista_ax_conf.get("show_axes_labels", True)
             )
-        # 使用 show_bounds 来控制外部边界框，并移除大网格
         if sc.get("show_bounds", True):
             plotter.show_bounds(
                 grid=pyvista_ax_conf.get("bounds_grid", False),
@@ -442,8 +449,6 @@ def main():
                 ytitle=pyvista_ax_conf.get("bounds_ytitle", "k_y"),
                 ztitle=pyvista_ax_conf.get("bounds_ztitle", "E"),
             )
-    else:  # clean_view 情况下，PyVista不绘制轴和边界
-        pass  # PyVista的默认行为就是不绘制，所以此处无需额外代码。
 
     # camera
     cam = sc.get("camera", {})
@@ -466,8 +471,6 @@ def main():
         plotter.show()
 
 
-# =========================
 # Entry
-# =========================
 if __name__ == "__main__":
     main()
