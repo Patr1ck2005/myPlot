@@ -30,8 +30,10 @@ from typing import Callable, Dict, Tuple, List, Optional
 GLOBAL_FACTOR = 0.5  # overall scaling factor for k and E
 E_ref = -0.6  # S1 reference plane (imaginary helper)
 A_iso = -1.5  # S2 isotropic coefficient
-A_4 = -1.0 * 0  # S2 fourfold anisotropy strength
-inv_mass = 0.50  # S3 ~ ħ^2/(2m*)
+# A_iso = -1.0  # S2 isotropic coefficient
+# A_4 = -1.0 * 0  # S2 fourfold anisotropy strength
+A_4 = -1.0 * 1  # S2 fourfold anisotropy strength
+inv_mass = 0.8  # S3 ~ ħ^2/(2m*)
 E_offset = -1  # S3 energy offset
 
 # k-space sampling
@@ -88,6 +90,15 @@ SURFACE_FUNCS = {
 # =========================
 # MASTER CONFIG
 # =========================
+
+# for isotropic case
+r_X = 0.66
+r_M = 0.66
+
+# # for anisotropic case
+# r_X = 0.55
+# r_M = 0.90
+
 CONFIG = {
     "scene": {
         "window_size": (1024, 1024),  # 固定窗口大小
@@ -183,14 +194,14 @@ CONFIG = {
 
     # Spheres (annotation objects)
     "spheres": [
-        {"center": (0.5, 0.5, None), "radius": 0.1, "color": "magenta", "opacity": 1},
-        {"center": (-0.5, 0.5, None), "radius": 0.1, "color": "magenta", "opacity": 1},
-        {"center": (0.5, -0.5, None), "radius": 0.1, "color": "magenta", "opacity": 1},
-        {"center": (-0.5, -0.5, None), "radius": 0.1, "color": "magenta", "opacity": 1},
-        {"center": (0.5 * np.sqrt(2), 0, None), "radius": 0.1, "color": "deepskyblue", "opacity": 1},
-        {"center": (-0.5 * np.sqrt(2), 0, None), "radius": 0.1, "color": "deepskyblue", "opacity": 1},
-        {"center": (0, -0.5 * np.sqrt(2), None), "radius": 0.1, "color": "deepskyblue", "opacity": 1},
-        {"center": (0, 0.5 * np.sqrt(2), None), "radius": 0.1, "color": "deepskyblue", "opacity": 1},
+        {"center": (r_M/np.sqrt(2), r_M/np.sqrt(2), None), "radius": 0.1, "color": "magenta", "opacity": 1},
+        {"center": (r_M/np.sqrt(2), -r_M/np.sqrt(2), None), "radius": 0.1, "color": "magenta", "opacity": 1},
+        {"center": (-r_M/np.sqrt(2), -r_M/np.sqrt(2), None), "radius": 0.1, "color": "magenta", "opacity": 1},
+        {"center": (-r_M/np.sqrt(2), r_M/np.sqrt(2), None), "radius": 0.1, "color": "magenta", "opacity": 1},
+        {"center": (r_X, 0, None), "radius": 0.1, "color": "deepskyblue", "opacity": 1},
+        {"center": (-r_X, 0, None), "radius": 0.1, "color": "deepskyblue", "opacity": 1},
+        {"center": (0, -r_X, None), "radius": 0.1, "color": "deepskyblue", "opacity": 1},
+        {"center": (0, r_X, None), "radius": 0.1, "color": "deepskyblue", "opacity": 1},
     ],
 
     # Output options

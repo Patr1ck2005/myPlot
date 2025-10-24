@@ -15,8 +15,9 @@ import matplotlib.pyplot as plt
 KMAX = 1.0  # k-space range [-KMAX, KMAX]
 NGRID = 240  # grid density
 A_iso = -1.5  # S2 isotropic coefficient
-A_4 = -1.0  # S2 fourfold anisotropy strength
-inv_mass = 0.50  # S3 ~ ħ^2/(2m*)
+# A_4 = -1.0*0  # S2 fourfold anisotropy strength
+A_4 = -1.0*1  # S2 fourfold anisotropy strength
+inv_mass = 0.8  # S3 ~ ħ^2/(2m*)
 E_offset_values = [-1.0, -.5, -0.2]  # Multiple E_offset for overlays
 
 # Plotting configuration
@@ -24,12 +25,12 @@ PLOT_CONFIG = {
     "contour": {
         "cmap": "twilight",  # For S2 contour background
         "alpha": 0.7,  # Transparency for filled contours
-        "levels": np.linspace(-2.5, 0, 10),  # Contour levels for S2
+        "levels": np.linspace(-2.5, 0, 8),  # Contour levels for S2
         "zero_color": "black",  # Zero contour color (for S2∩S1 reference)
         "zero_line_width": 1.0,
         "intersection_color": "green",  # For S2∩S3
         "intersection_line_width": 1.0,
-        "contour_line_width": 1.0,
+        "contour_line_width": 1.0*0,
     },
 }
 
@@ -118,11 +119,12 @@ def plot_contour_map():
             intersections.append(inter)
 
     # 1. With axes
-    fig, ax = plt.subplots(figsize=(2, 2))
+    fig, ax = plt.subplots(figsize=(1, 1))
 
     # Background: S2 contour (filled)
     cs = ax.contourf(KX, KY, S2, levels=levels, cmap=cmap, alpha=alpha)
-    ax.contour(KX, KY, S2, levels=levels, colors="black", linewidths=contour_line_width)  # Outlines
+    if contour_line_width > 0:
+        ax.contour(KX, KY, S2, levels=levels, colors="black", linewidths=contour_line_width)  # Outlines
 
     # Overlay S2∩S3 intersections
     for label, points, param in intersections:
@@ -130,25 +132,25 @@ def plot_contour_map():
                 label=f"{label} (E_offset={param:.1f})")
         ax.plot(points[[0, -1], 0], points[[0, -1], 1], color=inter_color, linewidth=inter_width)  # Close
 
-    ax.set_xlabel(r"$k_x$")
-    ax.set_ylabel(r"$k_y$")
-    ax.set_title("S2 Contour with S2∩S3 Overlays")
-    ax.legend()
-    ax.grid(True, linestyle="--", alpha=0.5)
+    # ax.set_xlabel(r"$k_x$")
+    # ax.set_ylabel(r"$k_y$")
     ax.set_xlim(-KMAX, KMAX)
     ax.set_ylim(-KMAX, KMAX)
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
     ax.set_aspect("equal")
-    plt.colorbar(cs, ax=ax, label="S2 Energy")
+    # plt.colorbar(cs, ax=ax, label="S2 Energy")
     plt.savefig("contour_with_axes.svg", format="svg", bbox_inches="tight")
     plt.close(fig)
     print("[INFO] Saved contour_with_axes.svg")
 
     # 2. Without axes
-    fig, ax = plt.subplots(figsize=(1.5, 1.5))
+    fig, ax = plt.subplots(figsize=(1, 1))
 
     # Background: S2 contour
     ax.contourf(KX, KY, S2, levels=levels, cmap=cmap, alpha=alpha)
-    # ax.contour(KX, KY, S2, levels=levels, colors="black", linewidths=contour_line_width)
+    if contour_line_width > 0:
+        ax.contour(KX, KY, S2, levels=levels, colors="black", linewidths=contour_line_width)
 
     # Overlay S2∩S3 intersections
     for _, points, _ in intersections:
