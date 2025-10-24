@@ -9,13 +9,12 @@ Surfaces in k-space (kx, ky):
   S3 (auxiliary paraboloid, imaginary):       inv_mass*k^2 + E_offset
 
 Key ideas:
-- All behavior is driven by CONFIG (per-surface visibility, color mapping, scalar bars, opacity, etc.)
-- Colorizers are pluggable; per-surface choose 'height' / 'radial' / 'none' / custom function
-- Intersections are modular: choose pairs, robust zero-crossing with tolerance & graceful fallback
-- Optional exports: screenshot, intersection polylines to VTK/CSV
-- Enhanced: per-intersection colors, detailed surface controls (lighting, ambient), clean view, camera for screenshot
+- All behavior driven by CONFIG (visibility, color mapping, opacity, etc.)
+- Pluggable colorizers; per-surface polar mode; robust PyVista axes customization.
+- Outputs: PNG screenshot with PyVista's native, clean axes.
+- No Matplotlib post-processing, no SVG output.
 
-Requires:   pip install pyvista pyvistaqt
+Requires: pip install pyvista pyvistaqt
 """
 
 from __future__ import annotations
@@ -28,15 +27,17 @@ from typing import Callable, Dict, Tuple, List, Optional
 # =========================
 # Physics parameters
 # =========================
-E_ref      = -2     # S1 reference plane (imaginary helper)
-A_iso      = -0.80  # S2 isotropic coefficient
-A_4        = -0.40  # S2 fourfold anisotropy strength
-inv_mass   = 0.50   # S3 ~ ħ^2/(2m*)
-E_offset   = -3     # S3 energy offset
+GLOBAL_FACTOR = 0.5  # overall scaling factor for k and E
+E_ref = -0.6  # S1 reference plane (imaginary helper)
+A_iso = -1.5  # S2 isotropic coefficient
+A_4 = -1.0  # S2 fourfold anisotropy strength
+inv_mass = 0.50  # S3 ~ ħ^2/(2m*)
+E_offset = -1  # S3 energy offset
 
 # k-space sampling
-KMAX   = 2.0          # range [-KMAX, KMAX]
-NGRID  = 240          # grid density
+KMAX = 1.0  # range [-KMAX, KMAX]
+NGRID = 240  # grid density
+
 
 # =========================
 # Colorizers (return [0,1] scalar field)
@@ -46,17 +47,19 @@ def colorize_height(kx, ky, z):
     if np.isclose(zmax, zmin): return np.zeros_like(z, dtype=float)
     return (z - zmin) / (zmax - zmin)
 
+
 def colorize_radial(kx, ky, z):
-    r = np.sqrt(kx**2 + ky**2)
+    r = np.sqrt(kx ** 2 + ky ** 2)
     rmin, rmax = float(np.nanmin(r)), float(np.nanmax(r))
     if np.isclose(rmax, rmin): return np.zeros_like(r, dtype=float)
     return (r - rmin) / (rmax - rmin)
 
-# 你可在此注册更多色标器；也可直接在 CONFIG 里传自定义函数
+
 COLORIZER_REGISTRY: Dict[str, Callable] = {
     "height": colorize_height,
     "radial": colorize_radial,
 }
+
 
 # =========================
 # Surface definitions
@@ -64,14 +67,17 @@ COLORIZER_REGISTRY: Dict[str, Callable] = {
 def S1_func(kx: np.ndarray, ky: np.ndarray) -> np.ndarray:
     return np.full_like(kx, E_ref, dtype=float)
 
+
 def S2_func(kx: np.ndarray, ky: np.ndarray) -> np.ndarray:
-    r2 = kx**2 + ky**2
+    r2 = kx ** 2 + ky ** 2
     th = np.arctan2(ky, kx)
     return r2 * (A_iso + A_4 * np.cos(4.0 * th))
 
+
 def S3_func(kx: np.ndarray, ky: np.ndarray) -> np.ndarray:
-    r2 = kx**2 + ky**2
+    r2 = kx ** 2 + ky ** 2
     return inv_mass * r2 + E_offset
+
 
 SURFACE_FUNCS = {
     "S1": S1_func,
@@ -84,20 +90,34 @@ SURFACE_FUNCS = {
 # =========================
 CONFIG = {
     "scene": {
-        "window_size": (1200, 900),
+        "window_size": (1024, 1024),  # 固定窗口大小
         "background": "white",
         "theme": "document",
-        "depth_peeling": True,        # better translucency in VTK backends
+        "depth_peeling": True,
         "camera": {"preset": "iso", "elev": 25, "azim": 35},
-        "show_bounds": True,
-        "axes": True,
-        "clean_view": False,          # 新增: 如果True，隐藏轴和边界，使曲面更纯净
-        "pure_surface_only": False,   # 新增: 如果True，只渲染曲面和交线，不加球或其他
+        "show_bounds": True,  # PyVista的边界框
+        "axes": True,  # PyVista的xyz轴线 (add_axes)
+        "clean_view": True,  # 如果True，PyVista不绘制任何轴或边界
+        "pure_surface_only": False,
+        "anti_aliasing": "msaa",
+        # PyVista 轴配置：控制add_axes和show_bounds
+        "pyvista_axes_config": {
+            "show_axes_labels": True,  # 控制add_axes是否显示X/Y/Z的标签和标题
+            "axes_line_width": 2,  # 控制add_axes的轴线粗细
+            "bounds_grid": False,  # 控制show_bounds是否显示大网格
+            "bounds_location": "outer",
+            "bounds_all_edges": False,
+            "bounds_font_size": 18,  # show_bounds的标题字体大小
+            "bounds_font_family": "arial",
+            "bounds_color": "black",
+            "bounds_ticks": "outside",
+            "bounds_xtitle": "k_x",
+            "bounds_ytitle": "k_y",
+            "bounds_ztitle": "E",
+        },
     },
 
     # Per-surface settings
-    # mode: "colormap" | "solid" | "wireframe"
-    # colorizer: name in registry | callable | None
     "surfaces": {
         "S1": {
             "visible": True,
@@ -106,26 +126,28 @@ CONFIG = {
             "opacity": 0.30,
             "smooth_shading": True,
             "cmap": "viridis",
-            "colorizer": None,        # no scalar mapping on S1
-            "scalar_bar": False,
-            "line_width": 1.0,        # used if wireframe
-            "lighting": False,        # 新增: 默认False
-            "ambient": 0.2,           # 新增: 默认0.2
-            "specular": 0.0,          # 新增: 可选，默认0.0
+            "colorizer": None,
+            "scalar_bar": False,  # 控制色条是否显示
+            "line_width": 1.0,
+            "lighting": True,
+            "ambient": 0.2,
+            "specular": 0.0,
+            "polar_mode": False,
         },
         "S2": {
             "visible": True,
-            "mode": "colormap",       # only S2 is colored by default
+            "mode": "colormap",
             "solid_color": (0.2, 0.2, 0.2),
             "opacity": 0.95,
             "smooth_shading": True,
-            "cmap": "Blues",
-            "colorizer": "height",    # 'height'/'radial'/callable/None
-            "scalar_bar": False,
+            "cmap": "twilight",
+            "colorizer": "height",
+            "scalar_bar": False,  # 控制色条是否显示
             "line_width": 1.0,
-            "lighting": False,        # 新增
-            "ambient": 0.2,           # 新增
-            "specular": 0.0,          # 新增
+            "lighting": True,
+            "ambient": 0.2,
+            "specular": 0.0,
+            "polar_mode": False,
         },
         "S3": {
             "visible": True,
@@ -135,27 +157,27 @@ CONFIG = {
             "smooth_shading": True,
             "cmap": "viridis",
             "colorizer": None,
-            "scalar_bar": False,
+            "scalar_bar": False,  # 控制色条是否显示
             "line_width": 1.0,
-            "lighting": False,        # 新增
-            "ambient": 0.2,           # 新增
-            "specular": 0.0,          # 新增
+            "lighting": True,
+            "ambient": 0.2,
+            "specular": 0.0,
+            "polar_mode": False,
         },
     },
 
     # Intersection settings
-    # pairs: 现在是列表的字典，每个支持独立color和line_width
     "intersections": {
         "draw": True,
         "pairs": [
-            {"surface1": "S2", "surface2": "S1", "color": "white", "line_width": 3.0},
-            {"surface1": "S2", "surface2": "S3", "color": "red", "line_width": 4.0},  # 示例不同颜色
+            {"surface1": "S2", "surface2": "S1", "color": "white", "line_width": 10.0},
+            {"surface1": "S2", "surface2": "S3", "color": "blue", "line_width": 10.0},
         ],
-        "tol_rel": 1e-3,          # relative tolerance for near-zero fallback
-        "export": {               # optional exports
-            "folder": None,       # e.g., "exports" or None
-            "vtk": False,         # save polyline as .vtp
-            "csv": False,         # save as .csv (x,y,z)
+        "tol_rel": 1e-3,
+        "export": {
+            "folder": None,
+            "vtk": False,
+            "csv": False,
         }
     },
 
@@ -168,16 +190,17 @@ CONFIG = {
 
     # Output options
     "output": {
-        "screenshot": {           # 新增: screenshot配置
-            "path": None,         # e.g., './rsl/3d_surface.png' or None
+        "screenshot": {
+            "path": './temp.png',
             "transparent_background": True,
             "camera_azimuth": 10,
-            "camera_elevation": -15,
+            "camera_elevation": 15,
             "parallel_projection": True,
         },
         "allow_empty_mesh": False,
     },
 }
+
 
 # =========================
 # Utility functions
@@ -185,20 +208,18 @@ CONFIG = {
 def make_grid(X: np.ndarray, Y: np.ndarray, Z: np.ndarray) -> pv.StructuredGrid:
     return pv.StructuredGrid(X, Y, Z)
 
+
 def compute_color_scalars(kind, kx, ky, z):
-    """Return None (no mapping) or flat array in Fortran order."""
     if kind is None:
         return None
-    fn = kind
-    if isinstance(kind, str):
-        fn = COLORIZER_REGISTRY.get(kind)
-        if fn is None:
-            raise ValueError(f"Unknown colorizer: {kind}")
+    fn = kind if callable(kind) else COLORIZER_REGISTRY.get(kind)
+    if fn is None:
+        raise ValueError(f"Unknown colorizer: {kind}")
     scal = fn(kx, ky, z)
     return np.ascontiguousarray(scal.ravel(order="F"))
 
+
 def _zero_contour(mesh: pv.StructuredGrid, F: np.ndarray, name: str, tol_rel: float):
-    """Robust zero contour with tolerance fallback; return (poly, used_iso or None)."""
     F = F.astype(np.float32)
     m = mesh.copy()
     m[name] = F.ravel(order="F")
@@ -210,33 +231,38 @@ def _zero_contour(mesh: pv.StructuredGrid, F: np.ndarray, name: str, tol_rel: fl
         poly = m.contour([0.0], scalars=name)
         if poly and poly.n_points > 0: return poly, 0.0
     eps = tol_rel * rng
-    trials = [eps, -eps, 0.5*eps, -0.5*eps]
-    absmin_val = float(F.ravel()[np.nanargmin(np.abs(F))])
-    trials.append(absmin_val)
+    trials = [eps, -eps, 0.5 * eps, -0.5 * eps, float(F.ravel()[np.nanargmin(np.abs(F))])]
     for val in trials:
         poly = m.contour([val], scalars=name)
         if poly and poly.n_points > 0: return poly, val
     return None, None
+
 
 def extract_intersections(meshes: Dict[str, pv.StructuredGrid],
                           fields: Dict[str, np.ndarray],
                           pairs: List[Dict[str, any]],
                           tol_rel: float
                           ) -> List[Tuple[str, pv.PolyData, Optional[float], Dict]]:
-    """Return list of (label, poly, used_iso, pair_conf)."""
     out = []
     for pconf in pairs:
         a, b = pconf["surface1"], pconf["surface2"]
+        grid_a = meshes[a]
         Za = fields[a]
-        Zb = fields[b]
-        base = a  # extract on surface a
-        poly, used = _zero_contour(meshes[base], Za - Zb, f"f_{a}_{b}", tol_rel)
+        if meshes[b].dimensions != grid_a.dimensions:
+            print(f"[WARN] {b} grid differs from {a}; recomputing {b} on {a}'s grid.")
+            x, y, _ = grid_a.points.T.reshape(3, *grid_a.dimensions[:2])
+            Zb = SURFACE_FUNCS[b](x, y)
+        else:
+            Zb = fields[b]
+        poly, used = _zero_contour(grid_a, Za - Zb, f"f_{a}_{b}", tol_rel)
         out.append((f"{a}∩{b}", poly, used, pconf))
     return out
+
 
 def ensure_folder(path: Optional[str]):
     if path and not os.path.isdir(path):
         os.makedirs(path, exist_ok=True)
+
 
 def export_poly(poly: pv.PolyData, basename: str, folder: str, want_vtk: bool, want_csv: bool):
     if not poly or poly.n_points == 0: return
@@ -250,31 +276,46 @@ def export_poly(poly: pv.PolyData, basename: str, folder: str, want_vtk: bool, w
             w.writerow(["kx", "ky", "E"])
             w.writerows(pts.tolist())
 
+
 # =========================
 # Build & render
 # =========================
 def main():
-    # global toggles
     out = CONFIG["output"]
     if out.get("allow_empty_mesh", False):
         pv.global_theme.allow_empty_mesh = True
 
     sc = CONFIG["scene"]
     pv.set_plot_theme(sc.get("theme", "document"))
-    plotter = pv.Plotter(window_size=sc.get("window_size", (1200, 900)))
+    off_screen = out.get("screenshot", {}).get("path", None)
+    plotter = pv.Plotter(off_screen=off_screen, window_size=sc.get("window_size", (1200, 900)))
     plotter.set_background(sc.get("background", "white"))
     if sc.get("depth_peeling", False):
         plotter.enable_depth_peeling()
+    aa_mode = sc.get("anti_aliasing", None)
+    if aa_mode:
+        plotter.enable_anti_aliasing(aa_mode)
 
-    # grid
-    k = np.linspace(-KMAX, KMAX, NGRID)
-    KX, KY = np.meshgrid(k, k, indexing="xy")
-
-    # fields and meshes
-    Z_fields: Dict[str, np.ndarray] = {name: func(KX, KY)
-                                       for name, func in SURFACE_FUNCS.items()}
-    meshes: Dict[str, pv.StructuredGrid] = {name: make_grid(KX, KY, Z_fields[name])
-                                            for name in SURFACE_FUNCS.keys()}
+    # per-surface grids
+    Z_fields = {}
+    meshes = {}
+    for name, sconf in CONFIG["surfaces"].items():
+        if not sconf.get("visible", True):
+            continue
+        polar = sconf.get("polar_mode", False)
+        if polar:
+            print(f"[INFO] {name}: Using polar mode (r <= KMAX)")
+            r = np.linspace(0, KMAX, NGRID)
+            theta = np.linspace(0, 2 * np.pi, int(NGRID * 1.5))
+            R, THETA = np.meshgrid(r, theta, indexing="ij")
+            KX = R * np.cos(THETA)
+            KY = R * np.sin(THETA)
+        else:
+            k = np.linspace(-KMAX, KMAX, NGRID)
+            KX, KY = np.meshgrid(k, k, indexing="xy")
+        Z = SURFACE_FUNCS[name](KX, KY)
+        Z_fields[name] = Z
+        meshes[name] = make_grid(KX, KY, Z)
 
     # add surfaces
     for name, sconf in CONFIG["surfaces"].items():
@@ -285,12 +326,12 @@ def main():
         opacity = float(sconf.get("opacity", 1.0))
         smooth = bool(sconf.get("smooth_shading", True))
         line_width = float(sconf.get("line_width", 1.0))
-        lighting = bool(sconf.get("lighting", False))  # 新增
-        ambient = float(sconf.get("ambient", 0.2))     # 新增
-        specular = float(sconf.get("specular", 0.0))   # 新增
+        lighting = bool(sconf.get("lighting", False))
+        ambient = float(sconf.get("ambient", 0.2))
+        specular = float(sconf.get("specular", 0.0))
 
         if mode == "colormap":
-            scal = compute_color_scalars(sconf.get("colorizer", None), KX, KY, Z_fields[name])
+            scal = compute_color_scalars(sconf.get("colorizer", None), grid.x, grid.y, Z_fields[name])
             if scal is None:
                 raise ValueError(f"{name}: mode 'colormap' requires a colorizer")
             grid["color"] = scal
@@ -302,9 +343,9 @@ def main():
                 smooth_shading=smooth,
                 show_scalar_bar=bool(sconf.get("scalar_bar", False)),
                 name=name,
-                lighting=lighting,      # 新增
-                ambient=ambient,        # 新增
-                specular=specular,      # 新增
+                lighting=lighting,
+                ambient=ambient,
+                specular=specular,
             )
         elif mode == "solid":
             plotter.add_mesh(
@@ -342,11 +383,10 @@ def main():
         for label, poly, used, pconf in curves:
             if poly is not None and poly.n_points > 0:
                 plotter.add_mesh(poly,
-                                 color=pconf.get("color", "black"),  # 新增: per-pair color
-                                 line_width=float(pconf.get("line_width", 3.0)),  # 新增: per-pair
+                                 color=pconf.get("color", "black"),
+                                 line_width=float(pconf.get("line_width", 3.0)),
                                  name=label)
                 print(f"[INFO] drew {label} (iso ~ {0.0 if used is None else used:.3e})")
-                # optional export
                 exp = iconf.get("export", {})
                 folder = exp.get("folder")
                 if folder:
@@ -354,14 +394,17 @@ def main():
                                 want_vtk=bool(exp.get("vtk", False)),
                                 want_csv=bool(exp.get("csv", False)))
             else:
-                print(f"[WARN] {label}: empty (no zero-crossing within tolerance). Skipped.")
+                print(f"[WARN] {label}: empty. Skipped.")
 
-    # spheres (skip if pure_surface_only)
+    # spheres
     if not sc.get("pure_surface_only", False):
         for i, sph in enumerate(CONFIG.get("spheres", []), start=1):
             cx, cy, cz = sph.get("center", (0.0, 0.0, None))
+            r_sph = np.sqrt(cx ** 2 + cy ** 2)
+            if r_sph > KMAX:
+                print(f"[WARN] Sphere {i} at r={r_sph:.2f} > KMAX; skipped.")
+                continue
             if cz is None:
-                # place on S2 by default
                 zval = float(S2_func(np.array([[cx]]), np.array([[cy]]))[0, 0])
             else:
                 zval = float(cz)
@@ -374,34 +417,54 @@ def main():
                              smooth_shading=True,
                              name=f"sphere{i}")
 
-    # axes, bounds, camera (skip if clean_view or pure_surface_only)
+    # axes and bounds (使用pyvista_axes_config)
     clean_view = sc.get("clean_view", False) or sc.get("pure_surface_only", False)
+    pyvista_ax_conf = sc.get("pyvista_axes_config", {})
+
     if not clean_view:
+        # 使用 add_axes 来控制中心轴线和标签/刻度
         if sc.get("axes", True):
-            plotter.add_axes(line_width=2, labels_off=False)
+            plotter.add_axes(
+                line_width=pyvista_ax_conf.get("axes_line_width", 2),
+                labels_off=not pyvista_ax_conf.get("show_axes_labels", True)
+            )
+        # 使用 show_bounds 来控制外部边界框，并移除大网格
         if sc.get("show_bounds", True):
-            plotter.show_bounds(grid="front", location="outer", all_edges=True,
-                                xtitle="k_x", ytitle="k_y", ztitle="E")
+            plotter.show_bounds(
+                grid=pyvista_ax_conf.get("bounds_grid", False),
+                location=pyvista_ax_conf.get("bounds_location", "outer"),
+                all_edges=pyvista_ax_conf.get("bounds_all_edges", False),
+                font_size=pyvista_ax_conf.get("bounds_font_size", 18),
+                font_family=pyvista_ax_conf.get("bounds_font_family", "arial"),
+                color=pyvista_ax_conf.get("bounds_color", "black"),
+                ticks=pyvista_ax_conf.get("bounds_ticks", "outside"),
+                xtitle=pyvista_ax_conf.get("bounds_xtitle", "k_x"),
+                ytitle=pyvista_ax_conf.get("bounds_ytitle", "k_y"),
+                ztitle=pyvista_ax_conf.get("bounds_ztitle", "E"),
+            )
+    else:  # clean_view 情况下，PyVista不绘制轴和边界
+        pass  # PyVista的默认行为就是不绘制，所以此处无需额外代码。
+
+    # camera
     cam = sc.get("camera", {})
     if cam.get("preset", "iso") == "iso":
         plotter.camera_position = "iso"
     plotter.camera.elevation = float(cam.get("elev", 25))
-    plotter.camera.azimuth   = float(cam.get("azim", 35))
+    plotter.camera.azimuth = float(cam.get("azim", 35))
 
-    # screenshot settings (新增)
+    # output
     ss_conf = out.get("screenshot", {})
     screenshot_path = ss_conf.get("path", None)
     if screenshot_path:
-        # 设置自定义相机
         plotter.camera.azimuth = float(ss_conf.get("camera_azimuth", 10))
-        plotter.camera.elevation = float(ss_conf.get("camera_elevation", -15))
+        plotter.camera.elevation = float(ss_conf.get("camera_elevation", 15))
         if ss_conf.get("parallel_projection", True):
             plotter.enable_parallel_projection()
-        # 保存
         plotter.screenshot(screenshot_path, transparent_background=ss_conf.get("transparent_background", True))
-        print(f"[INFO] Screenshot saved to {screenshot_path}")
+        print(f"[INFO] PNG saved to {screenshot_path}")
     else:
         plotter.show()
+
 
 # =========================
 # Entry
