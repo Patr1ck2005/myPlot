@@ -29,8 +29,8 @@ def create_paraboloid(kx_range, ky_range, resolution, omega_Gamma, a_1, a_2, sca
     grid = pv.StructuredGrid(KX, KY, omega)
     grid.point_data[scalar_field] = omega.flatten()
     R2 = (KX ** 2 + KY ** 2)
-    # efficiency = 0 + np.exp(-R2/4*0)*np.clip(R2*2, 0, 0.8)/1
-    efficiency = 0 + np.exp(-R2/4)*np.clip(R2*100, 0, 1.0)
+    efficiency = 0 + np.exp(-R2/4*0)*np.clip(R2*2, 0, 0.8)/1
+    # efficiency = 0 + np.exp(-R2/4)*np.clip(R2*100, 0, 1.0)
     grid.point_data['efficiency'] = efficiency.flatten()
 
     return grid
@@ -118,10 +118,10 @@ def add_surface(plotter, surface, scalar_field="omega", cmap="Blues_r", clim=Non
 def main():
     # 设置常数
     omega_Gamma = 1.4
-    a_1 = 0.1
-    a_2 = -0.2
-    # a_1 = -1.5
-    # a_2 = 0
+    # a_1 = 0.1
+    # a_2 = -0.2
+    a_1 = -1.5
+    a_2 = 0
     # a_1 = 0.5
     # a_2 = -0
     kx_range = (-1, 1)
@@ -156,7 +156,7 @@ def main():
         plotter,
         grid_clipped,
         scalar_field="efficiency",  # 可通过此参数指定映射数据
-        cmap="magma",
+        cmap="Blues",
         clim=[0, 1],
         opacity=1.0,
         lighting=False,
