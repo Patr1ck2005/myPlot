@@ -25,7 +25,8 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, index=0, **kwargs):
         - alpha_line: float, 线透明度 (默认 0.8)。
         - alpha_fill: float, 填充透明度 (默认 0.3)。
         - cmap: str 或 Colormap, 自定义颜色表 (默认 'RdBu' for 动态颜色, 'Blues' for 纯色/渐变)。
-        - default_color: str, 默认颜色 (默认 'blue')。
+        - default_line_color: str, 默认线颜色 (默认 'blue')。
+        - default_fill_color: str, 默认填充颜色 (默认 'gray')。
         - default_linestyle: str, 默认 (默认 '-')。
         - add_colorbar: bool, 是否添加颜色条 (默认 False)。
         - linewidth_base: float, 基础线宽 (默认 1)。
@@ -42,10 +43,12 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, index=0, **kwargs):
     scale = kwargs.get('scale', 0.5)
     alpha_line = kwargs.get('alpha_line', 0.8)
     alpha_fill = kwargs.get('alpha_fill', 0.3)
-    cmap = kwargs.get('cmap', 'RdBu' if enable_dynamic_color else 'Blues')
-    if isinstance(cmap, str):
-        cmap = cm.get_cmap(cmap)
-    default_color = kwargs.get('default_color', 'blue')
+    fill_cmap = kwargs.get('cmap', 'RdBu' if enable_dynamic_color else 'Blues')
+    if isinstance(fill_cmap, str):
+        fill_cmap = cm.get_cmap(fill_cmap)
+    # line_cmap = kwargs.get('line_cmap', 'RdBu')
+    default_line_color = kwargs.get('default_color', 'blue')
+    default_fill_color = kwargs.get('default_fill_color', 'gray')
     default_linestyle = kwargs.get('default_linestyle', '-')
     edge_color = kwargs.get('edge_color', 'gray')
     add_colorbar = kwargs.get('add_colorbar', False)
@@ -78,20 +81,20 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, index=0, **kwargs):
         norm_color = plt.Normalize(vmin=np.min(color_vals), vmax=np.max(color_vals)) if z3 is not None else None
 
     # 绘制基础线条（所有模式都包含）
-    if enable_dynamic_color and not enable_fill:
+    if enable_dynamic_color:
         # 样式 C：动态颜色线条 (LineCollection)
         if z3 is None:
             raise ValueError("启用 dynamic_color 且不填充需要 z3")
         points = np.array([x_vals, z1]).T.reshape(-1, 1, 2)
         segments = np.concatenate([points[:-1], points[1:]], axis=1)
-        lc = LineCollection(segments, array=color_vals, cmap=cmap, norm=norm_color, linewidth=linewidth_base, alpha=alpha_line)
+        lc = LineCollection(segments, array=color_vals, cmap=fill_cmap, norm=norm_color, linewidth=linewidth_base, alpha=alpha_line)
         ax.add_collection(lc)
     else:
         # 基础样式或填充模式的细线
         if not kwargs.get('default_color', False):
             # assign default color according to index
-            default_color = plt.cm.tab10(index % 10)
-        ax.plot(x_vals, z1, color=default_color, linewidth=linewidth_base, alpha=alpha_line, label='Base Line', linestyle=default_linestyle)
+            default_line_color = plt.cm.tab10(index % 10)
+        ax.plot(x_vals, z1, color=default_line_color, linewidth=linewidth_base, alpha=alpha_line, label='Base Line', linestyle=default_linestyle)
 
     # 填充模式
     if enable_fill:
@@ -127,7 +130,7 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, index=0, **kwargs):
             # 绘制渐变图像
             im = ax.imshow(
                 gradient_data,
-                cmap=cmap,
+                cmap=fill_cmap,
                 aspect='auto',
                 extent=[xlim[0], xlim[1], ylim[0], ylim[1]],  # 用当前数据范围，确保覆盖路径无空白
                 alpha=alpha_fill,
@@ -151,17 +154,17 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, index=0, **kwargs):
                         (x_vals[i + 1], y_lower[i + 1])
                     ])
                     colors.append((color_vals[i] + color_vals[i + 1]) / 2)  # 平滑过渡
-                poly = PolyCollection(verts, array=colors, cmap=cmap, norm=norm_color, alpha=alpha_fill)
+                poly = PolyCollection(verts, array=colors, cmap=fill_cmap, norm=norm_color, alpha=alpha_fill)
                 ax.add_collection(poly)
             else:
                 # 样式 B：纯色填充 (fill_between)
-                ax.fill_between(x_vals, y_lower, y_upper, color=default_color, alpha=alpha_fill, label='Fill Width')
+                ax.fill_between(x_vals, y_lower, y_upper, color=default_fill_color, alpha=alpha_fill, label='Fill Width', edgecolor=edge_color)
 
     # 添加颜色条
     if add_colorbar:
         if (enable_dynamic_color or gradient_fill) and z3 is not None:
             # 颜色条 for 动态颜色或渐变 (z3)
-            sm = cm.ScalarMappable(norm=norm_color, cmap=cmap)
+            sm = cm.ScalarMappable(norm=norm_color, cmap=fill_cmap)
             sm.set_array(color_vals)
             cbar = plt.colorbar(sm, ax=ax)
             cbar.set_label('z3 (controls color)')

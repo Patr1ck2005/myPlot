@@ -14,8 +14,8 @@ from plot_3D.advance_plot_styles.scatter_plot import plot_scatter_advanced
 @dataclass
 class PlotConfig:
     """配置类：统一参数管理"""
-    figsize: tuple = (3, 4)
-    fs: int = 16  # 字体大小
+    figsize: tuple = (2, 3)
+    fs: int = 9  # 字体大小
     save_dir: str = './rsl'
     show: bool = True
     plot_params: Dict[str, Any] = None  # e.g., {'cmap': 'magma', 'add_colorbar': True}

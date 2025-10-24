@@ -34,7 +34,7 @@ def advanced_filter_eigensolution(grid_coords, Z, z_keys, fixed_params=None, fil
             raise ValueError(f"固定参数 {param_key} 不在网格参数中")
         dim_idx = param_keys.index(param_key)
         coord_values = grid_coords[param_key]  # 用原grid_coords查找
-        match_indices = np.where(coord_values == fixed_value)[0]
+        match_indices = np.where(np.isclose(coord_values, fixed_value))[0]
         if len(match_indices) == 0:
             raise ValueError(f"在 {param_key} 中未找到值 {fixed_value}")
         slices[dim_idx] = match_indices[0]  # 取第一个匹配的整数索引（假设唯一）
