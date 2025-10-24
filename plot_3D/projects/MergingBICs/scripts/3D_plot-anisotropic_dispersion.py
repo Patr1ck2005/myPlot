@@ -39,7 +39,8 @@ S2_iso_coeff = -0.7  # S2 isotropic coefficient for k^2 term
 S2_aniso_strength = -0.0  # S2 fourfold anisotropy strength for cos(4θ)
 S3_iso_coeff = -0.3  # S3 isotropic coefficient for k^2 term
 S3_aniso_strength = 0.8  # S3 fourfold anisotropy strength for cos(4θ)
-S3_energy_shift = 0.2-0.5  # S3 energy offset for the surface
+S3_energy_shift = 0.2-0.5*0  # S3 energy offset for the surface
+S3_phase_shift = np.pi  # S3 energy offset for the surface
 
 # k-space sampling
 KMAX = 1.0  # Range [-KMAX, KMAX]
@@ -81,7 +82,7 @@ def S3_func(kx: np.ndarray, ky: np.ndarray) -> np.ndarray:
     """Auxiliary surface with isotropic, anisotropic terms, and energy shift."""
     r2 = kx ** 2 + ky ** 2
     th = np.arctan2(ky, kx)
-    return r2 * (S3_iso_coeff + S3_aniso_strength * np.cos(4.0 * th)) + S3_energy_shift
+    return r2 * (S3_iso_coeff + S3_aniso_strength * np.cos(4.0 * th + S3_phase_shift)) + S3_energy_shift
 
 SURFACE_FUNCS = {
     "S1": S1_func,
@@ -100,13 +101,13 @@ SURFACE_FUNCS = {
 # r_X = 0.55
 # r_M = 0.90
 
-# # for ani-anisotropic case 1
-# r_X = 2
-# r_M = 0.70
-
-# for ani-anisotropic case 2
-r_X = 0.50
+# for ani-anisotropic case 1
+r_X = 0.70
 r_M = 2
+
+# # for ani-anisotropic case 2
+# r_X = 2
+# r_M = 0.5
 
 CONFIG = {
     "scene": {

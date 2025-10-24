@@ -30,6 +30,7 @@ S2_aniso_strength = -0  # S2 fourfold anisotropy strength
 # ---------- S3 ----------
 S3_iso_coeff = -0.3  # S3 isotropic coefficient (originally inv_mass)
 S3_aniso_strength = 0.8  # S3 fourfold anisotropy strength (NEW)
+S3_phase_shift = np.pi
 S3_energy_shift_values = [-0.5, -0.2, 0.2]  # Multiple energy shifts for overlays
 
 
@@ -65,7 +66,7 @@ def S3_func(kx: np.ndarray, ky: np.ndarray, energy_shift: float) -> np.ndarray:
     """Auxiliary surface with isotropic, anisotropic terms, and energy shift."""
     r2 = kx ** 2 + ky ** 2
     th = np.arctan2(ky, kx)
-    return r2 * (S3_iso_coeff + S3_aniso_strength * np.cos(4.0 * th)) + energy_shift
+    return r2 * (S3_iso_coeff + S3_aniso_strength * np.cos(4.0 * th + S3_phase_shift)) + energy_shift
 
 
 # =========================
