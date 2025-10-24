@@ -13,6 +13,7 @@ if __name__ == '__main__':
     # data_path = 'data/FP_PhC-diff_FP.csv'
     data_path = 'data/FP_PhC-diff_FP-detailed.csv'
     # data_path = 'data/FP_PhC-diff_FP-detailed-supp1.csv'
+    # data_path = 'data/FP_PhC-diff_FP-detailed-merging.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -42,13 +43,12 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            'buffer (nm)': 600-20,
+            'buffer (nm)': 600-20+10,
             # 'buffer (nm)': 600-15,
         },  # 固定
         # fixed_params={"m1": 0, "m2": 0, "loss_k": 1e-3*0},  # 固定
         filter_conditions={
-            # "S_pml_prop (1)": {"<": 1},  # 筛选
-            "fake_factor (1)": {"<": 2},  # 筛选
+            "fake_factor (1)": {"<": 1},  # 筛选
             # "m1": {"<": .1},  # 筛选
             # "频率 (Hz)": {">": 0.0, "<": 0.58},  # 筛选
         }

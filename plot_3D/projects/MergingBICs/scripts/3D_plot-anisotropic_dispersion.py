@@ -4,12 +4,12 @@
 Modular & highly-configurable band-surface visualizer (PyVista/VTK, no argparse).
 
 Surfaces in k-space (kx, ky):
-  S1 (reference plane, imaginary):            E_ref
-  S2 (real dispersion):                       E2(k)=k^2*(A_iso + A_4*cos(4θ))
-  S3 (auxiliary paraboloid, imaginary):       inv_mass*k^2 + E_offset
+  S1 (reference plane, imaginary):            E = S1_energy_level
+  S2 (real dispersion):                       E2(k) = k^2 * (S2_iso_coeff + S2_aniso_strength * cos(4θ))
+  S3 (auxiliary surface, imaginary):          E3(k) = k^2 * (S3_iso_coeff + S3_aniso_strength * cos(4θ)) + S3_energy_shift
 
 Key ideas:
-- All behavior driven by CONFIG (visibility, color mapping, opacity, etc.)
+- All behavior driven by CONFIG (visibility, color mapping, opacity, etc.).
 - Pluggable colorizers; per-surface polar mode; robust PyVista axes customization.
 - Outputs: PNG screenshot with PyVista's native, clean axes.
 - No Matplotlib post-processing, no SVG output.
@@ -27,19 +27,23 @@ from typing import Callable, Dict, Tuple, List, Optional
 # =========================
 # Physics parameters
 # =========================
-GLOBAL_FACTOR = 0.5  # overall scaling factor for k and E
-E_ref = -0.6  # S1 reference plane (imaginary helper)
-A_iso = -1.5  # S2 isotropic coefficient
-# A_iso = -1.0  # S2 isotropic coefficient
-# A_4 = -1.0 * 0  # S2 fourfold anisotropy strength
-A_4 = -1.0 * 1  # S2 fourfold anisotropy strength
-inv_mass = 0.8  # S3 ~ ħ^2/(2m*)
-E_offset = -1  # S3 energy offset
+# S1_energy_level = -0.6  # S1 reference plane energy (imaginary helper)
+# S2_iso_coeff = -1.5  # S2 isotropic coefficient for k^2 term
+# S2_aniso_strength = -1.0  # S2 fourfold anisotropy strength for cos(4θ)
+# S3_iso_coeff = 0.8  # S3 isotropic coefficient for k^2 term
+# S3_aniso_strength = 0.0  # S3 fourfold anisotropy strength for cos(4θ)
+# S3_energy_shift = -1.0  # S3 energy offset for the surface
+
+S1_energy_level = -0.6  # S1 reference plane energy (imaginary helper)
+S2_iso_coeff = -0.7  # S2 isotropic coefficient for k^2 term
+S2_aniso_strength = -0.0  # S2 fourfold anisotropy strength for cos(4θ)
+S3_iso_coeff = -0.3  # S3 isotropic coefficient for k^2 term
+S3_aniso_strength = 0.8  # S3 fourfold anisotropy strength for cos(4θ)
+S3_energy_shift = 0.2-0.5  # S3 energy offset for the surface
 
 # k-space sampling
-KMAX = 1.0  # range [-KMAX, KMAX]
-NGRID = 240  # grid density
-
+KMAX = 1.0  # Range [-KMAX, KMAX]
+NGRID = 240  # Grid density
 
 # =========================
 # Colorizers (return [0,1] scalar field)
@@ -49,37 +53,35 @@ def colorize_height(kx, ky, z):
     if np.isclose(zmax, zmin): return np.zeros_like(z, dtype=float)
     return (z - zmin) / (zmax - zmin)
 
-
 def colorize_radial(kx, ky, z):
     r = np.sqrt(kx ** 2 + ky ** 2)
     rmin, rmax = float(np.nanmin(r)), float(np.nanmax(r))
     if np.isclose(rmax, rmin): return np.zeros_like(r, dtype=float)
     return (r - rmin) / (rmax - rmin)
 
-
 COLORIZER_REGISTRY: Dict[str, Callable] = {
     "height": colorize_height,
     "radial": colorize_radial,
 }
 
-
 # =========================
 # Surface definitions
 # =========================
 def S1_func(kx: np.ndarray, ky: np.ndarray) -> np.ndarray:
-    return np.full_like(kx, E_ref, dtype=float)
-
+    """Reference plane at fixed energy level."""
+    return np.full_like(kx, S1_energy_level, dtype=float)
 
 def S2_func(kx: np.ndarray, ky: np.ndarray) -> np.ndarray:
+    """Real dispersion surface with isotropic and fourfold anisotropic terms."""
     r2 = kx ** 2 + ky ** 2
     th = np.arctan2(ky, kx)
-    return r2 * (A_iso + A_4 * np.cos(4.0 * th))
-
+    return r2 * (S2_iso_coeff + S2_aniso_strength * np.cos(4.0 * th))
 
 def S3_func(kx: np.ndarray, ky: np.ndarray) -> np.ndarray:
+    """Auxiliary surface with isotropic, anisotropic terms, and energy shift."""
     r2 = kx ** 2 + ky ** 2
-    return inv_mass * r2 + E_offset
-
+    th = np.arctan2(ky, kx)
+    return r2 * (S3_iso_coeff + S3_aniso_strength * np.cos(4.0 * th)) + S3_energy_shift
 
 SURFACE_FUNCS = {
     "S1": S1_func,
@@ -90,35 +92,41 @@ SURFACE_FUNCS = {
 # =========================
 # MASTER CONFIG
 # =========================
-
-# for isotropic case
-r_X = 0.66
-r_M = 0.66
+# # For isotropic case
+# r_X = 0.66
+# r_M = 0.66
 
 # # for anisotropic case
 # r_X = 0.55
 # r_M = 0.90
 
+# # for ani-anisotropic case 1
+# r_X = 2
+# r_M = 0.70
+
+# for ani-anisotropic case 2
+r_X = 0.50
+r_M = 2
+
 CONFIG = {
     "scene": {
-        "window_size": (1024, 1024),  # 固定窗口大小
+        "window_size": (1024, 1024),
         "background": "white",
         "theme": "document",
         "depth_peeling": True,
         "camera": {"preset": "iso", "elev": 25, "azim": 35},
-        "show_bounds": True,  # PyVista的边界框
-        "axes": True,  # PyVista的xyz轴线 (add_axes)
-        "clean_view": True,  # 如果True，PyVista不绘制任何轴或边界
+        "show_bounds": True,
+        "axes": True,
+        "clean_view": True,
         "pure_surface_only": False,
         "anti_aliasing": "msaa",
-        # PyVista 轴配置：控制add_axes和show_bounds
         "pyvista_axes_config": {
-            "show_axes_labels": True,  # 控制add_axes是否显示X/Y/Z的标签和标题
-            "axes_line_width": 2,  # 控制add_axes的轴线粗细
-            "bounds_grid": False,  # 控制show_bounds是否显示大网格
+            "show_axes_labels": True,
+            "axes_line_width": 2,
+            "bounds_grid": False,
             "bounds_location": "outer",
             "bounds_all_edges": False,
-            "bounds_font_size": 18,  # show_bounds的标题字体大小
+            "bounds_font_size": 18,
             "bounds_font_family": "arial",
             "bounds_color": "black",
             "bounds_ticks": "outside",
@@ -127,8 +135,6 @@ CONFIG = {
             "bounds_ztitle": "E",
         },
     },
-
-    # Per-surface settings
     "surfaces": {
         "S1": {
             "visible": True,
@@ -138,7 +144,7 @@ CONFIG = {
             "smooth_shading": True,
             "cmap": "viridis",
             "colorizer": None,
-            "scalar_bar": False,  # 控制色条是否显示
+            "scalar_bar": False,
             "line_width": 1.0,
             "lighting": True,
             "ambient": 0.2,
@@ -153,7 +159,7 @@ CONFIG = {
             "smooth_shading": True,
             "cmap": "twilight",
             "colorizer": "height",
-            "scalar_bar": False,  # 控制色条是否显示
+            "scalar_bar": False,
             "line_width": 1.0,
             "lighting": True,
             "ambient": 0.2,
@@ -168,7 +174,7 @@ CONFIG = {
             "smooth_shading": True,
             "cmap": "viridis",
             "colorizer": None,
-            "scalar_bar": False,  # 控制色条是否显示
+            "scalar_bar": False,
             "line_width": 1.0,
             "lighting": True,
             "ambient": 0.2,
@@ -176,8 +182,6 @@ CONFIG = {
             "polar_mode": False,
         },
     },
-
-    # Intersection settings
     "intersections": {
         "draw": True,
         "pairs": [
@@ -191,8 +195,6 @@ CONFIG = {
             "csv": False,
         }
     },
-
-    # Spheres (annotation objects)
     "spheres": [
         {"center": (r_M/np.sqrt(2), r_M/np.sqrt(2), None), "radius": 0.1, "color": "magenta", "opacity": 1},
         {"center": (r_M/np.sqrt(2), -r_M/np.sqrt(2), None), "radius": 0.1, "color": "magenta", "opacity": 1},
@@ -203,8 +205,6 @@ CONFIG = {
         {"center": (0, -r_X, None), "radius": 0.1, "color": "deepskyblue", "opacity": 1},
         {"center": (0, r_X, None), "radius": 0.1, "color": "deepskyblue", "opacity": 1},
     ],
-
-    # Output options
     "output": {
         "screenshot": {
             "path": './temp.png',
@@ -217,13 +217,11 @@ CONFIG = {
     },
 }
 
-
 # =========================
 # Utility functions
 # =========================
 def make_grid(X: np.ndarray, Y: np.ndarray, Z: np.ndarray) -> pv.StructuredGrid:
     return pv.StructuredGrid(X, Y, Z)
-
 
 def compute_color_scalars(kind, kx, ky, z):
     if kind is None:
@@ -233,7 +231,6 @@ def compute_color_scalars(kind, kx, ky, z):
         raise ValueError(f"Unknown colorizer: {kind}")
     scal = fn(kx, ky, z)
     return np.ascontiguousarray(scal.ravel(order="F"))
-
 
 def _zero_contour(mesh: pv.StructuredGrid, F: np.ndarray, name: str, tol_rel: float):
     F = F.astype(np.float32)
@@ -253,12 +250,9 @@ def _zero_contour(mesh: pv.StructuredGrid, F: np.ndarray, name: str, tol_rel: fl
         if poly and poly.n_points > 0: return poly, val
     return None, None
 
-
 def extract_intersections(meshes: Dict[str, pv.StructuredGrid],
                           fields: Dict[str, np.ndarray],
-                          pairs: List[Dict[str, any]],
-                          tol_rel: float
-                          ) -> List[Tuple[str, pv.PolyData, Optional[float], Dict]]:
+                          pairs: List[Dict[str, any]], tol_rel: float) -> List[Tuple[str, pv.PolyData, Optional[float], Dict]]:
     out = []
     for pconf in pairs:
         a, b = pconf["surface1"], pconf["surface2"]
@@ -274,11 +268,9 @@ def extract_intersections(meshes: Dict[str, pv.StructuredGrid],
         out.append((f"{a}∩{b}", poly, used, pconf))
     return out
 
-
 def ensure_folder(path: Optional[str]):
     if path and not os.path.isdir(path):
         os.makedirs(path, exist_ok=True)
-
 
 def export_poly(poly: pv.PolyData, basename: str, folder: str, want_vtk: bool, want_csv: bool):
     if not poly or poly.n_points == 0: return
@@ -291,7 +283,6 @@ def export_poly(poly: pv.PolyData, basename: str, folder: str, want_vtk: bool, w
             w = csv.writer(f)
             w.writerow(["kx", "ky", "E"])
             w.writerows(pts.tolist())
-
 
 # =========================
 # Build & render
@@ -480,7 +471,6 @@ def main():
         print(f"[INFO] PNG saved to {screenshot_path}")
     else:
         plotter.show()
-
 
 # Entry
 if __name__ == "__main__":

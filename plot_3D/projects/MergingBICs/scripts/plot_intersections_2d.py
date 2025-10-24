@@ -14,11 +14,24 @@ import matplotlib.pyplot as plt
 # =========================
 KMAX = 1.0  # k-space range [-KMAX, KMAX]
 NGRID = 240  # grid density
-A_iso = -1.5  # S2 isotropic coefficient
-# A_4 = -1.0*0  # S2 fourfold anisotropy strength
-A_4 = -1.0*1  # S2 fourfold anisotropy strength
-inv_mass = 0.8  # S3 ~ ħ^2/(2m*)
-E_offset_values = [-1.0, -.5, -0.2]  # Multiple E_offset for overlays
+
+# # ---------- S2 ----------
+# S2_iso_coeff = -1.5  # S2 isotropic coefficient
+# # S2_aniso_strength = -1.0*0  # S2 fourfold anisotropy strength (comment to disable)
+# S2_aniso_strength = -1.0*1  # S2 fourfold anisotropy strength
+# # ---------- S3 ----------
+# S3_iso_coeff = 0.8  # S3 isotropic coefficient (originally inv_mass)
+# S3_aniso_strength = 0  # S3 fourfold anisotropy strength (NEW)
+# S3_energy_shift_values = [-1.0, -0.5, -0.2]  # Multiple energy shifts for overlays
+
+# ---------- S2 ----------
+S2_iso_coeff = -0.7  # S2 isotropic coefficient
+S2_aniso_strength = -0  # S2 fourfold anisotropy strength
+# ---------- S3 ----------
+S3_iso_coeff = -0.3  # S3 isotropic coefficient (originally inv_mass)
+S3_aniso_strength = 0.8  # S3 fourfold anisotropy strength (NEW)
+S3_energy_shift_values = [-0.5, -0.2, 0.2]  # Multiple energy shifts for overlays
+
 
 # Plotting configuration
 PLOT_CONFIG = {
@@ -42,27 +55,30 @@ plt.rcParams.update({"font.size": fs})
 # Surface definitions
 # =========================
 def S2_func(kx: np.ndarray, ky: np.ndarray) -> np.ndarray:
+    """Real dispersion surface with isotropic and fourfold anisotropic terms."""
     r2 = kx ** 2 + ky ** 2
     th = np.arctan2(ky, kx)
-    return r2 * (A_iso + A_4 * np.cos(4.0 * th))
+    return r2 * (S2_iso_coeff + S2_aniso_strength * np.cos(4.0 * th))
 
 
-def S3_func(kx: np.ndarray, ky: np.ndarray, E_offset: float) -> np.ndarray:
+def S3_func(kx: np.ndarray, ky: np.ndarray, energy_shift: float) -> np.ndarray:
+    """Auxiliary surface with isotropic, anisotropic terms, and energy shift."""
     r2 = kx ** 2 + ky ** 2
-    return inv_mass * r2 + E_offset
+    th = np.arctan2(ky, kx)
+    return r2 * (S3_iso_coeff + S3_aniso_strength * np.cos(4.0 * th)) + energy_shift
 
 
 # =========================
 # Intersection calculation (simplified for S2∩S3 only)
 # =========================
-def compute_s2_s3_intersections(E_offset: float) -> tuple:
+def compute_s2_s3_intersections(energy_shift: float) -> tuple:
     # Create kx-ky grid
     k = np.linspace(-KMAX, KMAX, NGRID)
     KX, KY = np.meshgrid(k, k, indexing="xy")
 
     # Compute diff = S2 - S3
     S2 = S2_func(KX, KY)
-    S3 = S3_func(KX, KY, E_offset)
+    S3 = S3_func(KX, KY, energy_shift)
     diff = S2 - S3
 
     # Use contour to find zero level
@@ -72,13 +88,13 @@ def compute_s2_s3_intersections(E_offset: float) -> tuple:
     # Extract points
     paths = cs.get_paths()
     if not paths:
-        print(f"[WARN] S2∩S3: No intersection found for E_offset={E_offset}")
+        print(f"[WARN] S2∩S3: No intersection found for energy_shift={energy_shift}")
         return None
 
     # Take the first path (assuming single closed curve)
     points = paths[0].vertices  # Shape: (N, 2) for kx, ky
     if len(points) < 2:
-        print(f"[WARN] S2∩S3: Too few points ({len(points)}) for E_offset={E_offset}")
+        print(f"[WARN] S2∩S3: Too few points ({len(points)}) for energy_shift={energy_shift}")
         return None
 
     # Sort points by polar angle
@@ -87,7 +103,7 @@ def compute_s2_s3_intersections(E_offset: float) -> tuple:
     sorted_indices = np.argsort(theta)
     sorted_points = points[sorted_indices]
 
-    return ("S2∩S3", sorted_points, E_offset)
+    return ("S2∩S3", sorted_points, energy_shift)
 
 
 # =========================
@@ -111,14 +127,16 @@ def plot_contour_map():
     inter_width = PLOT_CONFIG["contour"]["intersection_line_width"]
     contour_line_width = PLOT_CONFIG["contour"]["contour_line_width"]
 
-    # Compute S2∩S3 intersections for multiple E_offset
+    # Compute S2∩S3 intersections for multiple energy shifts
     intersections = []
-    for E_offset in E_offset_values:
-        inter = compute_s2_s3_intersections(E_offset)
+    for shift in S3_energy_shift_values:
+        inter = compute_s2_s3_intersections(shift)
         if inter:
             intersections.append(inter)
 
+    # ------------------------------
     # 1. With axes
+    # ------------------------------
     fig, ax = plt.subplots(figsize=(1, 1))
 
     # Background: S2 contour (filled)
@@ -129,7 +147,7 @@ def plot_contour_map():
     # Overlay S2∩S3 intersections
     for label, points, param in intersections:
         ax.plot(points[:, 0], points[:, 1], color=inter_color, linewidth=inter_width,
-                label=f"{label} (E_offset={param:.1f})")
+                label=f"{label} (shift={param:.1f})")
         ax.plot(points[[0, -1], 0], points[[0, -1], 1], color=inter_color, linewidth=inter_width)  # Close
 
     # ax.set_xlabel(r"$k_x$")
@@ -144,7 +162,9 @@ def plot_contour_map():
     plt.close(fig)
     print("[INFO] Saved contour_with_axes.svg")
 
+    # ------------------------------
     # 2. Without axes
+    # ------------------------------
     fig, ax = plt.subplots(figsize=(1, 1))
 
     # Background: S2 contour
