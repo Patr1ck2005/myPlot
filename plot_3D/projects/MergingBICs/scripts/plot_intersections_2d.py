@@ -15,15 +15,6 @@ import matplotlib.pyplot as plt
 KMAX = 1.0  # k-space range [-KMAX, KMAX]
 NGRID = 240  # grid density
 
-# # ---------- S2 ----------
-# S2_iso_coeff = -1.5  # S2 isotropic coefficient
-# # S2_aniso_strength = -1.0*0  # S2 fourfold anisotropy strength (comment to disable)
-# S2_aniso_strength = -1.0*1  # S2 fourfold anisotropy strength
-# # ---------- S3 ----------
-# S3_iso_coeff = 0.8  # S3 isotropic coefficient (originally inv_mass)
-# S3_aniso_strength = 0  # S3 fourfold anisotropy strength (NEW)
-# S3_energy_shift_values = [-1.0, -0.5, -0.2]  # Multiple energy shifts for overlays
-
 # ---------- S2 ----------
 S2_iso_coeff = -0.7  # S2 isotropic coefficient
 S2_aniso_strength = -0  # S2 fourfold anisotropy strength
@@ -31,8 +22,7 @@ S2_aniso_strength = -0  # S2 fourfold anisotropy strength
 S3_iso_coeff = -0.3  # S3 isotropic coefficient (originally inv_mass)
 S3_aniso_strength = 0.8  # S3 fourfold anisotropy strength (NEW)
 S3_phase_shift = np.pi
-S3_energy_shift_values = [-0.5, -0.2, 0.2]  # Multiple energy shifts for overlays
-
+S3_energy_shift_values = [-0.2, -0.1, 0.1, 0.2]  # Multiple energy shifts for overlays
 
 # Plotting configuration
 PLOT_CONFIG = {
@@ -51,7 +41,6 @@ PLOT_CONFIG = {
 fs = 9
 plt.rcParams.update({"font.size": fs})
 
-
 # =========================
 # Surface definitions
 # =========================
@@ -61,18 +50,18 @@ def S2_func(kx: np.ndarray, ky: np.ndarray) -> np.ndarray:
     th = np.arctan2(ky, kx)
     return r2 * (S2_iso_coeff + S2_aniso_strength * np.cos(4.0 * th))
 
-
 def S3_func(kx: np.ndarray, ky: np.ndarray, energy_shift: float) -> np.ndarray:
     """Auxiliary surface with isotropic, anisotropic terms, and energy shift."""
     r2 = kx ** 2 + ky ** 2
     th = np.arctan2(ky, kx)
     return r2 * (S3_iso_coeff + S3_aniso_strength * np.cos(4.0 * th + S3_phase_shift)) + energy_shift
 
+from matplotlib.path import Path as MplPath
 
 # =========================
 # Intersection calculation (simplified for S2∩S3 only)
 # =========================
-def compute_s2_s3_intersections(energy_shift: float) -> tuple:
+def compute_s2_s3_intersections(energy_shift: float):
     # Create kx-ky grid
     k = np.linspace(-KMAX, KMAX, NGRID)
     KX, KY = np.meshgrid(k, k, indexing="xy")
@@ -84,27 +73,57 @@ def compute_s2_s3_intersections(energy_shift: float) -> tuple:
 
     # Use contour to find zero level
     cs = plt.contour(KX, KY, diff, levels=[0])
-    plt.close()  # Close temporary figure
+    plt.close()
 
-    # Extract points
     paths = cs.get_paths()
     if not paths:
         print(f"[WARN] S2∩S3: No intersection found for energy_shift={energy_shift}")
-        return None
+        return []
 
-    # Take the first path (assuming single closed curve)
-    points = paths[0].vertices  # Shape: (N, 2) for kx, ky
-    if len(points) < 2:
-        print(f"[WARN] S2∩S3: Too few points ({len(points)}) for energy_shift={energy_shift}")
-        return None
+    segments = []
+    for p in paths:
+        verts = p.vertices
+        codes = p.codes
 
-    # Sort points by polar angle
-    kx, ky = points[:, 0], points[:, 1]
-    theta = np.arctan2(ky, kx)
-    sorted_indices = np.argsort(theta)
-    sorted_points = points[sorted_indices]
+        if verts is None or len(verts) < 2:
+            continue
 
-    return ("S2∩S3", sorted_points, energy_shift)
+        # 若 codes 为空，视为单段开放曲线
+        if codes is None:
+            segments.append(("S2∩S3", verts.copy(), energy_shift, False))
+            continue
+
+        # --- 关键：按 codes 拆分子路径 ---
+        cur = []
+        for v, c in zip(verts, codes):
+            if c == MplPath.MOVETO:
+                # 开启新段，先把上一段收集起来
+                if len(cur) >= 2:
+                    is_closed = np.allclose(cur[0], cur[-1], atol=1e-12)
+                    segments.append(("S2∩S3", np.asarray(cur), energy_shift, is_closed))
+                cur = [v]
+            elif c == MplPath.LINETO:
+                cur.append(v)
+            elif c == MplPath.CLOSEPOLY:
+                # CLOSEPOLY：闭合当前段
+                if len(cur) >= 2:
+                    # Matplotlib 有时会在 CLOSEPOLY 处给一个“哑”点；几何上首尾视为闭合
+                    is_closed = True
+                    segments.append(("S2∩S3", np.asarray(cur), energy_shift, is_closed))
+                cur = []
+            else:
+                # 其他曲线代码在等值线中基本不会出现；保守处理为断开
+                if len(cur) >= 2:
+                    is_closed = np.allclose(cur[0], cur[-1], atol=1e-12)
+                    segments.append(("S2∩S3", np.asarray(cur), energy_shift, is_closed))
+                cur = []
+
+        # 收尾：最后一段（若没有 CLOSEPOLY）
+        if len(cur) >= 2:
+            is_closed = np.allclose(cur[0], cur[-1], atol=1e-12)
+            segments.append(("S2∩S3", np.asarray(cur), energy_shift, is_closed))
+
+    return segments
 
 
 # =========================
@@ -122,43 +141,40 @@ def plot_contour_map():
     cmap = PLOT_CONFIG["contour"]["cmap"]
     alpha = PLOT_CONFIG["contour"]["alpha"]
     levels = PLOT_CONFIG["contour"]["levels"]
-    zero_color = PLOT_CONFIG["contour"]["zero_color"]
-    zero_line_width = PLOT_CONFIG["contour"]["zero_line_width"]
     inter_color = PLOT_CONFIG["contour"]["intersection_color"]
     inter_width = PLOT_CONFIG["contour"]["intersection_line_width"]
     contour_line_width = PLOT_CONFIG["contour"]["contour_line_width"]
 
-    # Compute S2∩S3 intersections for multiple energy shifts
+    # 收集所有能量位移的分段
     intersections = []
     for shift in S3_energy_shift_values:
-        inter = compute_s2_s3_intersections(shift)
-        if inter:
-            intersections.append(inter)
+        segs = compute_s2_s3_intersections(shift)
+        if segs:
+            intersections.extend(segs)
 
     # ------------------------------
     # 1. With axes
     # ------------------------------
     fig, ax = plt.subplots(figsize=(1, 1))
-
-    # Background: S2 contour (filled)
     cs = ax.contourf(KX, KY, S2, levels=levels, cmap=cmap, alpha=alpha)
     if contour_line_width > 0:
-        ax.contour(KX, KY, S2, levels=levels, colors="black", linewidths=contour_line_width)  # Outlines
+        ax.contour(KX, KY, S2, levels=levels, colors="black", linewidths=contour_line_width)
 
-    # Overlay S2∩S3 intersections
-    for label, points, param in intersections:
-        ax.plot(points[:, 0], points[:, 1], color=inter_color, linewidth=inter_width,
-                label=f"{label} (shift={param:.1f})")
-        ax.plot(points[[0, -1], 0], points[[0, -1], 1], color=inter_color, linewidth=inter_width)  # Close
+    # 每一段单独画，绝不跨段连线；只在 is_closed=True 且首尾未重复时补闭合
+    for i, (label, pts, param, is_closed) in enumerate(intersections):
+        if len(pts) < 2:
+            continue
+        # 只给第一段加图例，避免重复
+        lbl = f"{label} (shift={param:.1f})" if i == 0 else None
+        ax.plot(pts[:, 0], pts[:, 1], color=inter_color, linewidth=inter_width, label=lbl)
+        if is_closed and not np.allclose(pts[0], pts[-1], atol=1e-12):
+            ax.plot([pts[0, 0], pts[-1, 0]], [pts[0, 1], pts[-1, 1]], color=inter_color, linewidth=inter_width)
 
-    # ax.set_xlabel(r"$k_x$")
-    # ax.set_ylabel(r"$k_y$")
     ax.set_xlim(-KMAX, KMAX)
     ax.set_ylim(-KMAX, KMAX)
     ax.set_xticklabels([])
     ax.set_yticklabels([])
     ax.set_aspect("equal")
-    # plt.colorbar(cs, ax=ax, label="S2 Energy")
     plt.savefig("contour_with_axes.svg", format="svg", bbox_inches="tight")
     plt.close(fig)
     print("[INFO] Saved contour_with_axes.svg")
@@ -167,16 +183,16 @@ def plot_contour_map():
     # 2. Without axes
     # ------------------------------
     fig, ax = plt.subplots(figsize=(1, 1))
-
-    # Background: S2 contour
     ax.contourf(KX, KY, S2, levels=levels, cmap=cmap, alpha=alpha)
     if contour_line_width > 0:
         ax.contour(KX, KY, S2, levels=levels, colors="black", linewidths=contour_line_width)
 
-    # Overlay S2∩S3 intersections
-    for _, points, _ in intersections:
-        ax.plot(points[:, 0], points[:, 1], color=inter_color, linewidth=inter_width)
-        ax.plot(points[[0, -1], 0], points[[0, -1], 1], color=inter_color, linewidth=inter_width)  # Close
+    for (_, pts, _, is_closed) in intersections:
+        if len(pts) < 2:
+            continue
+        ax.plot(pts[:, 0], pts[:, 1], color=inter_color, linewidth=inter_width)
+        if is_closed and not np.allclose(pts[0], pts[-1], atol=1e-12):
+            ax.plot([pts[0, 0], pts[-1, 0]], [pts[0, 1], pts[-1, 1]], color=inter_color, linewidth=inter_width)
 
     ax.axis("off")
     ax.set_aspect("equal")
