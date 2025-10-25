@@ -1,6 +1,5 @@
 from plot_3D.core.data_postprocess.data_filter import advanced_filter_eigensolution
 from plot_3D.core.data_postprocess.data_grouper import *
-from plot_3D.core.data_postprocess.symmetry_supp import complete_C4_polarization
 from plot_3D.core.plot_3D_params_space_plt import *
 from plot_3D.core.plot_3D_params_space_pv import plot_Z_diff_pyvista
 from plot_3D.core.prepare_plot import prepare_plot_data
@@ -148,7 +147,8 @@ def symmetric_complete_coords(new_coords, Z, mode='C4_rot'):
 
 if __name__ == '__main__':
     # data_path = 'data/FP_PhC-600nmFP-0.1k.csv'
-    data_path = 'data/FP_PhC-full_600_700nm.csv'
+    # data_path = 'data/FP_PhC-full_600_700nm.csv'
+    data_path = 'data/FP_PhC-full_685nm.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -159,8 +159,9 @@ if __name__ == '__main__':
     period = 1300
     df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq, period=period*1e-9*1e12)
     df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period*1e-9)
+    df_sample["phi (rad)"] = df_sample["phi (rad)"].apply(lambda x: x % np.pi)
     # # 筛选m1<0.1的成分
-    # df_sample = df_sample[df_sample["m1"] < 0.3]
+    # df_sample = df_sample[df_sample["m1"] < 0.05]
     # 指定用于构造网格的参数以及目标数据列
     param_keys = ["m1", "m2", "buffer (nm)"]
     z_keys = ["特征频率 (THz)", "品质因子 (1)", "tanchi (1)", "phi (rad)", "fake_factor (1)", "频率 (Hz)"]
@@ -177,7 +178,8 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            'buffer (nm)': 600,
+            'buffer (nm)': 600-15,
+            # 'buffer (nm)': 600,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 1},  # 筛选
@@ -287,18 +289,47 @@ if __name__ == '__main__':
     fs = 9
     plt.rcParams.update({'font.size': fs})
 
-    # new_coords, Z_target2 = symmetric_complete_coords(new_coords, Z_target2, mode='C4_rot')
     fig = plt.figure(figsize=(3, 4))
     ax = fig.add_subplot(111, projection='3d')
     m1_vals = new_coords['m1']
     m2_vals = new_coords['m2']
+
+    target2_phi = np.zeros(((additional_Z_grouped.shape[0]), (additional_Z_grouped.shape[1])))
+    target2_tanchi = np.zeros(((additional_Z_grouped.shape[0]), (additional_Z_grouped.shape[1])))
+    target2_Qfactor = np.zeros(((additional_Z_grouped.shape[0]), (additional_Z_grouped.shape[1])))
+    # 把形状51,51的列表中的[1][3]数据提取出来
+    for i in range(additional_Z_grouped.shape[0]):
+        for j in range(additional_Z_grouped.shape[1]):
+            target2_phi[i][j] = additional_Z_grouped[i][j][1][3]
+            target2_tanchi[i][j] = additional_Z_grouped[i][j][1][2]
+            target2_Qfactor[i][j] = additional_Z_grouped[i][j][1][1]
+
     M1, M2 = np.meshgrid(m1_vals, m2_vals, indexing='ij')
+
+    # fig = plt.figure()
+    # plt.imshow(target2_phi)
+    # plt.colorbar()
+    # plt.show()
+
     # 绘制多个 Z_target, 同时使用 Qfactor 作为颜色映射
     # Z_targets = [Z_target1, Z_target2, Z_target3]
-    # additional_Zs = [additional_Z_grouped[:, :][0], additional_Z_grouped[:, :][1], additional_Z_grouped[:, :][2]]
-    # additional_Zs = [additional_Z_grouped[:][:][1][3]]
+    additional_Zs = [target2_phi,]
     Z_targets = [Z_target2,]
-    # Qfactor = Z_target.real/Z_target.imag/2
+
+    from polar_postprocess import from_legacy_and_save
+
+    pkl_path = 'rsl/eigensolution/polar_fields.pkl'
+    from_legacy_and_save(
+        pkl_path=pkl_path,
+        m1=new_coords['m1'],
+        m2=new_coords['m2'],
+        Z_target_complex=Z_target2,  # 你的目标频带（复数也行，内部取 real 做等频线）
+        phi_Q1=target2_phi,  # 第一象限 φ
+        tanchi_Q1=target2_tanchi,  # 第一象限 tanchi
+        Q_Q1=target2_Qfactor,  # 第一象限 Q（自己按数据生成一个同shape数组）
+        do_complete=True,
+    )
+
     for idx, Z_target in enumerate(Z_targets):
         FREQ = np.empty(M1.shape)
         Qfactor = np.empty(M1.shape)
@@ -308,21 +339,22 @@ if __name__ == '__main__':
             for j in range(M1.shape[1]):
                 val = Z_target[i, j]
                 FREQ[i, j] = val.real
-                Qfactor[i, j] = np.log10(val.real/val.imag/2 if val.imag != 0 else 0)
-                Qfactor[i, j] = np.log10(additional_Z_grouped[i][j][1][1])
-                # Phi[i, j] = additional_Z_grouped[i][j][1][3]
+                # Qfactor[i, j] = np.log10(val.real/val.imag/2 if val.imag != 0 else 0)
+                # Qfactor[i, j] = np.log10(additional_Z_grouped[i][j][1][1])
+                Phi[i, j] = additional_Zs[idx][i, j]
                 # tanchi[i, j] = additional_Z_grouped[i][j][1][2]
                 # tanchi[i, j] = additional_Zs[idx][i][j]
-        surf_color_data = Qfactor
-        # surf_color_data = np.mod(Phi, np.pi)
+        # surf_color_data = Qfactor
+        surf_color_data = np.mod(Phi, np.pi)
         # surf_color_data = tanchi
         # surf_colors = plt.cm.RdBu((surf_color_data - -1) / 2)
-        surf_colors = plt.cm.hot((surf_color_data - np.min(surf_color_data)) / (np.max(surf_color_data) - np.min(surf_color_data)))
+        # surf_colors = plt.cm.hot((surf_color_data - np.min(surf_color_data)) / (np.max(surf_color_data) - np.min(surf_color_data)))
+        # surf_colors = plt.cm.hot((surf_color_data - 2) / (6 - 2))
         # surf_colors = plt.cm.hsv((surf_color_data - np.min(surf_color_data)) / (np.max(surf_color_data) - np.min(surf_color_data)))
-        # surf_colors = plt.cm.twilight((surf_color_data - np.min(surf_color_data)) / (np.max(surf_color_data) - np.min(surf_color_data)))
+        surf_colors = plt.cm.twilight((surf_color_data - np.min(surf_color_data)) / (np.max(surf_color_data) - np.min(surf_color_data)))
         surf = ax.plot_surface(M1, M2, FREQ, facecolors=surf_colors, rstride=1, cstride=1, alpha=0.8, label=f'Band {idx+1}')
     # 添加颜色条
-    mappable = plt.cm.ScalarMappable(cmap='hot')
+    mappable = plt.cm.ScalarMappable(cmap='twilight')
     mappable.set_array(surf_color_data)
     cbar = plt.colorbar(mappable, ax=ax)
     ax.set_xlabel('m1')
@@ -337,7 +369,6 @@ if __name__ == '__main__':
 
     plt.savefig('temp.svg', transparent=True)
     plt.show()
-
 
 
 
