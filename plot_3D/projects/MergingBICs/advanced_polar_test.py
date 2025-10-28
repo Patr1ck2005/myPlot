@@ -48,14 +48,27 @@ chi = data['chi_full'];
 Q = data['Q_full']
 
 
-# color_field = phi
-# color_field = chi
-color_field = Q
+fig, ax = plt.subplots(figsize=(5,4))
+plt.imshow(phi-np.pi/2, extent=(m1.min(), m1.max(), m2.min(), m2.max()), origin='lower', cmap='RdBu', vmin=-1e-1, vmax=1e-1)
+# plt.imshow(np.sin(2*phi), extent=(m1.min(), m1.max(), m2.min(), m2.max()), origin='lower', cmap='RdBu', vmin=-1e-6, vmax=1e-6)
+plt.show()
 
-# 3D 面图
-fig1, ax1 = plot_band_surface_with_overlay(m1, m2, FREQ, color_field, cmap='hot')
 
-plt.savefig('./temp.svg', bbox_inches='tight', transparent=True)
+# m1, m2 = data['m1_full'], data['m2_full']
+# phi    = data['phi_full']  # φ∈[0, π)
+
+fig, ax = plt.subplots(figsize=(3,3))
+plot_phi0_phi90(
+    ax, m1, m2, phi,
+    lw=2.0,
+    color_phi0='limegreen',   # φ=0/π
+    color_phi90='black',      # φ=π/2
+    overlay='s2',             # 看看 sin(2φ) 的正负分区，直观
+)
+plt.show()
+
+
+
 
 # # 提取等频线
 # paths = extract_isofreq_paths(m1, m2, FREQ, level=isofreq)

@@ -10,8 +10,8 @@ import matplotlib.pyplot as plt
 # 基础与对称小工具（复用）
 # =========================
 def _wrap_angle_pi(phi):
-    """把 φ 规约到 (-π/2, π/2]（线偏振角模 π）。"""
-    return (phi + np.pi/2) % np.pi - np.pi/2
+    """把 φ 规约到 (0, π]（线偏振角模 π）。"""
+    return (phi) % np.pi
 
 def _axis_coords(arr):
     """坐标轴镜像：不重复 0 且保持升序。"""
@@ -537,3 +537,169 @@ def plot_polarization_ellipses(ax, xgrid, ygrid, phi, chi,
     ax.set_aspect('equal', adjustable='box')
     return pc
 
+import numpy as np
+import matplotlib.pyplot as plt
+
+# --- 小工具 ---
+def _wrap_pi_0(phi):  # φ ∈ [0, π)
+    return np.mod(np.asarray(phi), np.pi)
+
+def _bilinear(xg, yg, F, xq, yq):
+    xg, yg, F = map(np.asarray, (xg, yg, F))
+    xq, yq = np.asarray(xq), np.asarray(yq)
+    nx, ny = len(xg), len(yg)
+    assert F.shape == (nx, ny)
+
+    # 单元左边界（中心中点法）
+    xl = np.empty_like(xg); xl[1:] = (xg[:-1] + xg[1:]) / 2; xl[0] = xg[0] - (xg[1]-xg[0]) / 2
+    yl = np.empty_like(yg); yl[1:] = (yg[:-1] + yg[1:]) / 2; yl[0] = yg[0] - (yg[1]-yg[0]) / 2
+
+    i = np.clip(np.searchsorted(xl, xq, side='right') - 1, 0, nx-2)
+    j = np.clip(np.searchsorted(yl, yq, side='right') - 1, 0, ny-2)
+    x0, x1 = xg[i], xg[i+1]; y0, y1 = yg[j], yg[j+1]
+    tx = (xq - x0) / (x1 - x0 + 1e-12); ty = (yq - y0) / (y1 - y0 + 1e-12)
+    f00, f10, f01, f11 = F[i, j], F[i+1, j], F[i, j+1], F[i+1, j+1]
+    return (1-tx)*(1-ty)*f00 + tx*(1-ty)*f10 + (1-tx)*ty*f01 + tx*ty*f11
+
+def _ms_zero_isolines(xg, yg, F, level=0.0, eps=None):
+    xg, yg, F = np.asarray(xg), np.asarray(yg), np.asarray(F, dtype=float)
+    nx, ny = F.shape
+    assert (nx, ny) == (len(xg), len(yg))
+
+    if eps is not None:
+        F = F.copy()
+        F[np.abs(F-level) < eps] = level
+
+    def interp(p0, p1, v0, v1):
+        den = (v1 - v0); t = 0.5 if den == 0 else (level - v0) / den
+        t = np.clip(t, 0.0, 1.0); return p0 + t*(p1 - p0)
+
+    table = {
+        0:[],1:[(3,0)],2:[(0,1)],3:[(3,1)],
+        4:[(1,2)],5:[(3,2),(0,1)],6:[(0,2)],7:[(3,2)],
+        8:[(2,3)],9:[(0,2)],10:[(1,3),(0,2)],11:[(1,2)],
+        12:[(1,3)],13:[(0,1)],14:[(3,0)],15:[]
+    }
+    segs=[]
+    for i in range(nx-1):
+        x0,x1 = xg[i], xg[i+1]
+        for j in range(ny-1):
+            y0,y1 = yg[j], yg[j+1]
+            f00,f10,f11,f01 = F[i,j], F[i+1,j], F[i+1,j+1], F[i,j+1]
+            c0 = 1 if f00 >= level else 0
+            c1 = 1 if f10 >= level else 0
+            c2 = 1 if f11 >= level else 0
+            c3 = 1 if f01 >= level else 0
+            code = (c0 | (c1<<1) | (c2<<2) | (c3<<3))
+
+            if code in (5,10):
+                fcen = 0.25*(f00+f10+f11+f01)
+                if (code==5 and fcen<level) or (code==10 and fcen>=level):
+                    code = 5 if code==10 else 10
+
+            if not table[code]: continue
+            E = {
+                0: ((np.array([x0,y0]), np.array([x1,y0])), (f00,f10)),
+                1: ((np.array([x1,y0]), np.array([x1,y1])), (f10,f11)),
+                2: ((np.array([x0,y1]), np.array([x1,y1])), (f01,f11)),
+                3: ((np.array([x0,y0]), np.array([x0,y1])), (f00,f01)),
+            }
+            for e0,e1 in table[code]:
+                (p0a,p0b),(v0a,v0b) = E[e0]
+                (p1a,p1b),(v1a,v1b) = E[e1]
+                P0 = interp(p0a,p0b,v0a,v0b)
+                P1 = interp(p1a,p1b,v1a,v1b)
+                segs.append((tuple(P0), tuple(P1)))
+
+    if not segs: return []
+    tol = 1e-12
+    def key(pt): return (round(pt[0]/tol)*tol, round(pt[1]/tol)*tol)
+    start_map, end_map, used = {}, {}, set()
+    for a,b in segs:
+        start_map.setdefault(key(a), []).append((a,b))
+        end_map.setdefault(key(b), []).append((a,b))
+    lines=[]
+    for seg in segs:
+        if seg in used: continue
+        a,b = seg; used.add(seg); line=[a,b]
+        cur=b
+        while True:
+            lst = start_map.get(key(cur), []); nxt=None
+            for cand in lst:
+                if cand in used: continue
+                if np.allclose(cand[0],cur,atol=1e-9, rtol=0): nxt=cand; break
+            if nxt is None: break
+            used.add(nxt); line.append(nxt[1]); cur=nxt[1]
+        cur=a
+        while True:
+            lst = end_map.get(key(cur), []); prv=None
+            for cand in lst:
+                if cand in used: continue
+                if np.allclose(cand[1],cur,atol=1e-9, rtol=0): prv=cand; break
+            if prv is None: break
+            used.add(prv); line.insert(0, prv[0]); cur=prv[0]
+        lines.append(np.asarray(line))
+    return lines
+
+# --- 关键：抽出 sin(2φ)=0 的全部线，再用 cos(2φ) 的符号分类 ---
+def extract_phi0_and_phi90(xgrid, ygrid, phi, *, eps=1e-2):
+    """
+    返回两族折线：
+      - 'phi0'  : φ=0/π（c2>0 的 sin(2φ)=0 分支）
+      - 'phi90' : φ=π/2（c2<0 的 sin(2φ)=0 分支）
+    """
+    xg, yg = np.asarray(xgrid), np.asarray(ygrid)
+    PHI = _wrap_pi_0(phi)
+    s2  = np.sin(2*PHI)
+    c2  = np.cos(2*PHI)
+
+    # 先取全部“轴线”：sin(2φ)=0
+    all_axes = _ms_zero_isolines(xg, yg, s2, level=0.0, eps=eps)
+
+    # 用 cos(2φ) 的符号把每条线分类
+    phi0, phi90 = [], []
+    for P in all_axes:
+        # 在折线点上双线性采样 c2，并用中位数稳健判断
+        vals = _bilinear(xg, yg, c2, P[:,0], P[:,1])
+        med  = np.nanmedian(vals)
+        if med >= 0: phi0.append(P)     # c2>0 ⇒ φ=0/π
+        else:        phi90.append(P)    # c2<0 ⇒ φ=π/2
+    return {'phi0': phi0, 'phi90': phi90}
+
+def plot_phi0_phi90(ax, xgrid, ygrid, phi, *,
+                    lw=2.0,
+                    color_phi0='limegreen',
+                    color_phi90='black',
+                    overlay=None, overlay_alpha=0.9, overlay_cmap=None):
+    """
+    绘制 φ=0/π（绿）与 φ=π/2（黑），并可选叠加底图：
+      overlay: None | 'phi' | 's2' | 'c2'
+    """
+    xg, yg = np.asarray(xgrid), np.asarray(ygrid)
+    PHI = _wrap_pi_0(phi)
+    if overlay == 'phi':
+        img, cm, vmin, vmax = PHI, (overlay_cmap or 'twilight'), 0.0, np.pi
+    elif overlay == 's2':
+        img, cm, vmin, vmax = np.sin(2*PHI), (overlay_cmap or 'RdBu'), -1.0, 1.0
+    elif overlay == 'c2':
+        img, cm, vmin, vmax = np.cos(2*PHI), (overlay_cmap or 'RdBu'), -1.0, 1.0
+    else:
+        img = None
+    if img is not None:
+        ax.imshow(img.T, origin='lower',
+                  extent=(xg[0], xg[-1], yg[0], yg[-1]),
+                  aspect='auto', cmap=cm, vmin=vmin, vmax=vmax, alpha=overlay_alpha)
+
+    lines = extract_phi0_and_phi90(xg, yg, PHI)
+    for P in lines['phi0']:
+        ax.plot(P[:,0], P[:,1], color=color_phi0, lw=lw, label=r'$\phi=0,\pi$')
+    for P in lines['phi90']:
+        ax.plot(P[:,0], P[:,1], color=color_phi90, lw=lw, label=r'$\phi=\pi/2$')
+
+    ax.set_aspect('equal', adjustable='box')
+    # 合并 legend 去重
+    h,l = ax.get_legend_handles_labels()
+    if h:
+        uniq = dict(zip(l,h))
+        ax.legend(uniq.values(), uniq.keys(), frameon=False)
+    return lines
