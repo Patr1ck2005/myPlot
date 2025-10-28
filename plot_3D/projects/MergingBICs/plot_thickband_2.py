@@ -73,7 +73,7 @@ def main(data_path):
         plot_params={'scale': 1},
         annotations={
             'xlabel': 'k (2$\pi$/P)', 'ylabel': 'f (c/P)', 'show_axis_labels': True, 'show_tick_labels': True,
-            # 'ylim': (0.51, 0.58),
+            'ylim': (0.35, 0.52),
         },
     )
     config.figsize = (1.5, 3)

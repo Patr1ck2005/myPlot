@@ -43,7 +43,7 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, index=0, **kwargs):
     scale = kwargs.get('scale', 0.5)
     alpha_line = kwargs.get('alpha_line', 0.8)
     alpha_fill = kwargs.get('alpha_fill', 0.3)
-    fill_cmap = kwargs.get('cmap', 'RdBu' if enable_dynamic_color else 'Blues')
+    fill_cmap = kwargs.get('cmap', 'viridis')
     if isinstance(fill_cmap, str):
         fill_cmap = cm.get_cmap(fill_cmap)
     # line_cmap = kwargs.get('line_cmap', 'RdBu')
