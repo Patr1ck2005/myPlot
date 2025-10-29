@@ -11,8 +11,8 @@ c_const = 299792458
 
 
 if __name__ == '__main__':
-    # data_path = 'data/FP_PhC-diff_FP-thickT-detailed-full_14eigen.csv'
-    data_path = 'data/FP_PhC-14eigens-450nmP-full_250nm.csv'
+    # data_path = 'data/FP_Rod-full-14eigens-400nmP-L210nm.csv'
+    data_path = 'data/FP_Rod-full-14eigens-400nmP-L214nm.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -20,7 +20,7 @@ if __name__ == '__main__':
         return complex(freq_str.replace('i', 'j'))
     def norm_freq(freq, period):
         return freq/(c_const/period)
-    period = 450
+    period = 400
     df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq, period=period*1e-9*1e12)
     df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period*1e-9)
     df_sample["phi (rad)"] = df_sample["phi (rad)"].apply(lambda x: x % np.pi)
@@ -42,11 +42,11 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            'buffer (nm)': 250,
+            'buffer (nm)': 214,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 1},  # 筛选
-            "频率 (Hz)": {">": 0.0, "<": 0.530},  # 筛选
+            # "频率 (Hz)": {">": 0.0, "<": 0.530},  # 筛选
         }
     )
 
@@ -72,7 +72,7 @@ if __name__ == '__main__':
         additional_data=Z_filtered,
         value_weights=value_weights,
         deriv_weights=deriv_weights,
-        max_m=6
+        max_m=9
     )
 
     # 假设你已经得到了 grid_coords, Z
@@ -100,18 +100,18 @@ if __name__ == '__main__':
         new_coords, Z_grouped,
         freq_index=5  # 第n个频率
     )
-    # new_coords, Z_target7 = group_solution(
-    #     new_coords, Z_grouped,
-    #     freq_index=6  # 第n个频率
-    # )
-    # new_coords, Z_target8 = group_solution(
-    #     new_coords, Z_grouped,
-    #     freq_index=7  # 第n个频率
-    # )
-    # new_coords, Z_target9 = group_solution(
-    #     new_coords, Z_grouped,
-    #     freq_index=8  # 第n个频率
-    # )
+    new_coords, Z_target7 = group_solution(
+        new_coords, Z_grouped,
+        freq_index=6  # 第n个频率
+    )
+    new_coords, Z_target8 = group_solution(
+        new_coords, Z_grouped,
+        freq_index=7  # 第n个频率
+    )
+    new_coords, Z_target9 = group_solution(
+        new_coords, Z_grouped,
+        freq_index=8  # 第n个频率
+    )
     # new_coords, Z_target10 = group_solution(
     #     new_coords, Z_grouped,
     #     freq_index=9  # 第n个频率
@@ -143,10 +143,10 @@ if __name__ == '__main__':
     # 把形状51,51的列表中的[1][3]数据提取出来
     for i in range(additional_Z_grouped.shape[0]):
         for j in range(additional_Z_grouped.shape[1]):
-            target_phi[i][j] = additional_Z_grouped[i][j][5][3]
-            target_tanchi[i][j] = additional_Z_grouped[i][j][5][2]
-            target_Qfactor_log[i][j] = np.log10(additional_Z_grouped[i][j][5][1])
-            target_freq[i][j] = additional_Z_grouped[i][j][5][0].real
+            target_phi[i][j] = additional_Z_grouped[i][j][3][3]
+            target_tanchi[i][j] = additional_Z_grouped[i][j][3][2]
+            target_Qfactor_log[i][j] = np.log10(additional_Z_grouped[i][j][3][1])
+            target_freq[i][j] = additional_Z_grouped[i][j][3][0].real
             print(target_freq[i][j])
 
     M1, M2 = np.meshgrid(m1_vals, m2_vals, indexing='ij')
@@ -157,9 +157,9 @@ if __name__ == '__main__':
     # plt.show()
 
     # 绘制多个 Z_target, 同时使用 Qfactor 作为颜色映射
-    # Z_targets = [Z_target1, Z_target2, Z_target3]
+    Z_targets = [Z_target1, Z_target2, Z_target3, Z_target4, Z_target5, Z_target6, Z_target7, Z_target8, Z_target9]
     additional_Zs = [target_phi,]
-    Z_targets = [Z_target6,]
+    # Z_targets = [Z_target7,]
 
     from polar_postprocess import from_legacy_and_save
 
@@ -168,7 +168,7 @@ if __name__ == '__main__':
         pkl_path=pkl_path,
         m1=new_coords['m1'],
         m2=new_coords['m2'],
-        Z_target_complex=Z_target6,  # 你的目标频带（复数也行，内部取 real 做等频线）
+        Z_target_complex=Z_target3,  # 你的目标频带（复数也行，内部取 real 做等频线）
         phi_Q1=target_phi,  # 第一象限 φ
         tanchi_Q1=target_tanchi,  # 第一象限 tanchi
         Q_Q1=target_Qfactor_log,  # 第一象限 Q（自己按数据生成一个同shape数组）
@@ -184,20 +184,20 @@ if __name__ == '__main__':
             for j in range(M1.shape[1]):
                 val = Z_target[i, j]
                 FREQ[i, j] = val.real
-                # Qfactor[i, j] = np.log10(val.real/val.imag/2 if val.imag != 0 else 0)
+                Qfactor[i, j] = np.log10(val.real/val.imag/2 if val.imag != 0 else 0)
                 # Qfactor[i, j] = np.log10(additional_Z_grouped[i][j][5][1])
                 # Qfactor[i, j] = target_Qfactor_log[i][j]
-                Phi[i, j] = additional_Zs[idx][i, j]
+                # Phi[i, j] = additional_Zs[idx][i, j]
                 # tanchi[i, j] = additional_Z_grouped[i][j][1][2]
                 # tanchi[i, j] = target_tanchi[i][j]
-        # surf_color_data = Qfactor
-        surf_color_data = Phi
+        surf_color_data = Qfactor
+        # surf_color_data = Phi
         # surf_color_data = tanchi
         # surf_colors = plt.cm.RdBu((surf_color_data - -1) / 2)
-        # surf_colors = plt.cm.hot((surf_color_data - np.min(surf_color_data)) / (np.max(surf_color_data) - np.min(surf_color_data)))
+        surf_colors = plt.cm.hot((surf_color_data - np.min(surf_color_data)) / (np.max(surf_color_data) - np.min(surf_color_data)))
         # surf_colors = plt.cm.hot((surf_color_data - 2) / (6 - 2))
         # surf_colors = plt.cm.hsv((surf_color_data - np.min(surf_color_data)) / (np.max(surf_color_data) - np.min(surf_color_data)))
-        surf_colors = plt.cm.twilight((surf_color_data - np.min(surf_color_data)) / (np.max(surf_color_data) - np.min(surf_color_data)))
+        # surf_colors = plt.cm.twilight((surf_color_data - np.min(surf_color_data)) / (np.max(surf_color_data) - np.min(surf_color_data)))
         surf = ax.plot_surface(M1, M2, FREQ, facecolors=surf_colors, rstride=1, cstride=1, alpha=0.8, label=f'Band {idx+1}')
     # 添加颜色条
     mappable = plt.cm.ScalarMappable(cmap='twilight')

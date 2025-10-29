@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 
+from plot_3D.core.data_postprocess.polar_edges import *
 from polar_postprocess import *
 
 
@@ -19,8 +20,10 @@ fig, ax = plt.subplots(figsize=(3/2, 3/2))
 plot_polarization_ellipses(
     ax, m1, m2, phi, chi,
     step=(5, 5),  # 适当抽样，防止太密
+    # step=(5, 5),  # 适当抽样，防止太密
     scale=1e-2,  # 自动用 0.8*min(dx,dy)
-    color_by='phi', cmap='hsv',
+    # color_by='chi', cmap='hsv',
+    color_by='chi', cmap='RdBu',
     alpha=1, lw=1,
 )
 
@@ -54,18 +57,17 @@ plt.imshow(phi-np.pi/2, extent=(m1.min(), m1.max(), m2.min(), m2.max()), origin=
 plt.show()
 
 
-# m1, m2 = data['m1_full'], data['m2_full']
-# phi    = data['phi_full']  # φ∈[0, π)
+fig, ax = plt.subplots(figsize=(3/2, 3/2))
+# np.sin(2*phi)>0 绘制淡绿色区域， np.sin(2*phi)<0 绘制淡红色区域
+color_1 = 'lightgreen'
+color_2 = 'lightcoral'
+# 绘制区域
+ax.contourf(m1, m2, np.sin(2*phi)>0, levels=[-0.5, 0.5], colors=[color_2, color_1], alpha=0.5)
 
-fig, ax = plt.subplots(figsize=(3,3))
-plot_phi0_phi90(
-    ax, m1, m2, phi,
-    lw=2.0,
-    color_phi0='limegreen',   # φ=0/π
-    color_phi90='black',      # φ=π/2
-    overlay='s2',             # 看看 sin(2φ) 的正负分区，直观
-)
+ax = plot_phi_families_split(ax, m1, m2, phi, overlay=None, lw=1)
+plt.tight_layout()
 plt.show()
+
 
 
 

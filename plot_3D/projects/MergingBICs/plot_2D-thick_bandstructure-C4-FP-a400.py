@@ -67,7 +67,7 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            'buffer (nm)': 150,
+            'buffer (nm)': 214,
             # "sp_polar_show": 1,
         },  # 固定
         filter_conditions={
