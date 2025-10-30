@@ -35,9 +35,15 @@ logs/
 *.c4d
 *.gif
 *.webp
+*.dxf
+*.mp4
+*.jpeg
 
 # 忽略多个文件夹
 my_folder/
 .idea/
+
+# 忽略所有名为 data 的文件夹及其内容
+**/data/
 
 
