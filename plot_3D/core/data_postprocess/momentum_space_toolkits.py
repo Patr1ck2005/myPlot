@@ -1,4 +1,4 @@
-# polar_postprocess.py
+# momentum_space_toolkits.py
 # -*- coding: utf-8 -*-
 import os
 import pickle
@@ -81,11 +81,13 @@ def _mirror_phi_chi_y(phiR, chiR):
     """kx→-kx 镜像：φ 用 2φ→π-2φ；χ 取反；行翻转对齐。"""
     return _angle_mirror(np.flip(phiR[1:], 0)), -np.flip(chiR[1:], 0)
 
-def complete_C4_polarization(kx, ky, phi_Q1, chi_Q1):
+def complete_C4_polarization(coords, phi_Q1, chi_Q1):
     """
     由第一象限 (phi, chi) 补全至全平面：
     """
-    kx, ky = np.asarray(kx), np.asarray(ky)
+    keys = list(coords.keys())
+    xk, yk = ('kx','ky') if {'kx','ky'}.issubset(coords) else (keys[0], keys[1])
+    kx, ky = coords[xk], coords[yk]
     phi, chi = _wrap_angle_pi(np.asarray(phi_Q1)), np.asarray(chi_Q1)
 
     assert kx.ndim==ky.ndim==1 and np.all(np.diff(kx)>0) and np.all(np.diff(ky)>0)
@@ -133,35 +135,13 @@ def complete_C2_polarization(kx, ky, phi_Q1, chi_Q1):
 # =========================
 # 序列化
 # =========================
-def from_legacy_and_save(pkl_path, m1, m2, Z_target_complex,
-                         phi_Q1, tanchi_Q1, Q_Q1,
-                         do_complete=True):
-    m1, m2 = np.asarray(m1), np.asarray(m2)
-    Zc, phi, chi, Q = np.asarray(Z_target_complex), np.asarray(phi_Q1), np.asarray(tanchi_Q1), np.asarray(Q_Q1)
-
-    if do_complete:
-        m1f, m2f, phi_f, chi_f = complete_C4_polarization(m1, m2, phi, chi)
-        (_, _), Z_f = geom_complete({'m1':m1, 'm2':m2}, Zc, mode='C4')
-        Q_R  = np.concatenate([np.flip(Q[:,1:],1), Q], 1)
-        Q_f  = np.concatenate([np.flip(Q_R[1:],0), Q_R], 0)  # Q 偶（几何镜像）
-    else:
-        m1f, m2f, phi_f, chi_f, Z_f, Q_f = m1, m2, phi, chi, Zc, Q
-    # 预览chi结果
-    fig = plt.figure(figsize=(6,5))
-    plt.imshow(phi_f.T, origin='lower', extent=(m1f[0], m1f[-1], m2f[0], m2f[-1]), aspect='auto', cmap='hsv')
-    plt.colorbar(label='φ (rad)'); plt.title('Completed φ field preview'); plt.xlabel('m1'); plt.ylabel('m2')
-    plt.show()
-    bundle = dict(m1_full=m1f, m2_full=m2f, Z_full=Z_f, phi_full=phi_f, chi_full=chi_f, Q_full=Q_f)
-    with open(pkl_path, 'wb') as f: pickle.dump(bundle, f)
-    print(f"[SAVE] {pkl_path}")
-
 def load_bundle(pkl_path):
     if not os.path.exists(pkl_path):
         raise FileNotFoundError(f"未找到数据文件：{pkl_path}")
     with open(pkl_path, 'rb') as f:
         bundle = pickle.load(f)
     # 基本校验
-    need = ['m1_full','m2_full','Z_full','phi_full','chi_full','Q_full']
+    need = ['m1_full','m2_full','Z_full','phi_full','tanchi_full','Qlog_full']
     for k in need:
         if k not in bundle:
             raise KeyError(f"pkl 中缺少键：{k}")
@@ -272,8 +252,6 @@ def extract_isofreq_paths(xgrid, ygrid, FREQ, level):
 
     return paths
 
-
-
 def resample_path_uniform(path_xy, step=None, npts=400):
     """
     将路径按弧长重采样为等距点列；若提供 step（物理步长），优先用 step；否则用 npts。
@@ -315,25 +293,6 @@ def sample_fields_along_path(xgrid, ygrid, fields, path_xy, step=None, npts=400)
 # ------------------------------
 # 绘图：3D 面+着色；等频线上的曲线
 # ------------------------------
-def plot_band_surface_with_overlay(m1, m2, FREQ, color_field, cmap='twilight', zlabel='Frequency (normalized)'):
-    M1, M2 = np.meshgrid(m1, m2, indexing='ij')
-    surf_color_data = color_field
-    norm = (surf_color_data - np.nanmin(surf_color_data)) / (np.nanmax(surf_color_data) - np.nanmin(surf_color_data) + 1e-12)
-    colors = plt.cm.get_cmap(cmap)(norm)
-
-    fig = plt.figure(figsize=(2, 2))
-    ax = fig.add_subplot(111, projection='3d')
-    # 调整亮度
-    # ax.plot_surface(M1, M2, FREQ, facecolors=colors, rstride=1, cstride=1, alpha=0.9)
-    ax.plot_surface(M1, M2, FREQ, facecolors=colors, rstride=1, cstride=1, linewidth=0, antialiased=False, shade=False, alpha=1)
-    # ax.set_xlabel('m1'); ax.set_ylabel('m2'); ax.set_zlabel(zlabel)
-    ax.set_xticklabels([])
-    ax.set_yticklabels([])
-    ax.set_zticklabels([])
-    ax.view_init(elev=45, azim=25)
-    ax.set_box_aspect([1,1,0.5])
-    return fig, ax
-
 def plot_lines_along_isofreq(samples_list, labels=None):
     """
     接受多个 samples（比如多条等频曲线），逐一画出 φ/tanchi/Q 的 s-曲线。
@@ -357,58 +316,6 @@ def plot_lines_along_isofreq(samples_list, labels=None):
     plt.tight_layout()
     return fig, axs
 
-# ------------------------------
-# 一步到位：加载并绘制、提取等频线
-# ------------------------------
-def load_and_plot(pkl_path, isofreq, color='phi', cmap='twilight', n_contour_pts=500):
-    """
-    新脚本调用：
-      1) 从 pkl 加载 m1,m2,Z,phi,chi,Q；
-      2) 画 3D 面（颜色使用 φ 或 tanchi 或 Q）；
-      3) 提取等频线（以 Z_full.real 为频率），并沿等频线插值画 φ/tanchi/Q。
-    """
-    data = load_bundle(pkl_path)
-    m1 = data['m1_full']; m2 = data['m2_full']
-    Z = data['Z_full']; FREQ = np.real(Z)
-    phi = data['phi_full']; chi = data['chi_full']; Q = data['Q_full']
-
-    if color == 'phi':
-        color_field = np.mod(phi, np.pi)
-    elif color == 'tanchi':
-        color_field = chi
-    elif color == 'Q':
-        color_field = Q
-    else:
-        color_field = np.mod(phi, np.pi)
-
-    # 3D 面图
-    fig1, ax1 = plot_band_surface_with_overlay(m1, m2, FREQ, color_field, cmap=cmap)
-
-    # 提取等频线
-    paths = extract_isofreq_paths(m1, m2, FREQ, level=isofreq)
-    if len(paths) == 0:
-        print(f"[WARN] isofreq={isofreq} 未找到等频线。可检查频率范围：[{np.nanmin(FREQ):.4g}, {np.nanmax(FREQ):.4g}]")
-        return
-
-    plt.savefig('./temp.svg', bbox_inches='tight', transparent=True)
-
-    # 沿每条等频线插值采样
-    fields = {'phi': phi, 'chi': chi, 'Q': Q, 'freq': FREQ}
-    samples_list = []
-    for p in paths:
-        samp = sample_fields_along_path(m1, m2, fields, p, npts=n_contour_pts)
-        samples_list.append(samp)
-
-    # 画曲线
-    fig2, axs2 = plot_lines_along_isofreq(samples_list,
-                                          labels=[f'Γ{i+1}' for i in range(len(samples_list))])
-
-    plt.show()
-    return dict(paths=paths, samples=samples_list)
-
-# ------------------------------
-# 2D 叠加绘图：iso-freq 轮廓 & 偏振椭圆场（均接受 ax）
-# ------------------------------
 from matplotlib.patches import Ellipse
 from matplotlib.collections import PatchCollection
 

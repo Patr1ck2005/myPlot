@@ -169,29 +169,43 @@ def compress_data_axis(coords, data, axis_key, aggregator=np.max, selection_rang
     return new_coords, new_data
 
 
-
 def group_solution(grid_coords, Z, freq_index=1):
+    """
+    Extracts the `freq_index`-th element from lists stored in a multi-dimensional array.
 
-    # 2. 构造新的 coords
+    Parameters:
+        grid_coords (dict): Dictionary of grid coordinates.
+        Z (np.ndarray): Multi-dimensional array with lists as elements.
+        freq_index (int): Index of the frequency to extract (0-based).
+
+    Returns:
+        tuple: A tuple containing:
+            - new_coords (dict): The unchanged grid coordinates.
+            - Z_new (np.ndarray): A new array with the extracted frequency values.
+    """
+    if not isinstance(Z, np.ndarray) or Z.dtype != object:
+        raise TypeError("Z must be a numpy array with dtype=object.")
+    if not isinstance(freq_index, int) or freq_index < 0:
+        raise ValueError("freq_index must be a non-negative integer.")
+
+    # 2. Construct new coordinates
     new_coords = grid_coords
 
-    # 3. 新数组的 shape
-    new_shape = list(Z.shape)
+    # 3. Initialize the new array
+    new_shape = Z.shape
     Z_new = np.zeros(shape=new_shape, dtype=complex)
 
-    # 4. 遍历所有索引，计算差值
-    #    我们需要对原始 Z 的所有索引 i1,...,iN（含 bg_n_dim）取两次值
-    it = np.ndindex(*new_shape)
-    for idx in it:
-        idx_full_A = list(idx)
+    # 4. Iterate over all indices
+    for idx in np.ndindex(*new_shape):
+        list_A = Z[idx]
 
-        # 取出对应的列表
-        list_A = Z[tuple(idx_full_A)]
-
-        # 检查长度
         if len(list_A) <= freq_index:
-            raise IndexError(f"在索引 {idx} 处，列表长度不足以取到第 {freq_index + 1} 个元素")
+            raise IndexError(
+                f"Index {idx} has a list of length {len(list_A)}, "
+                f"which is insufficient to access element {freq_index + 1}."
+            )
 
         Z_new[idx] = list_A[freq_index]
 
     return new_coords, Z_new
+
