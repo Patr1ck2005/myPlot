@@ -10,7 +10,7 @@ from .spectrum_fit_core import (
     compute_curve_physics_core,
     fit_curve_physics_core,
 )
-from plot_3D.projects.SE.scripts.physics_core import SystemParams
+from projects.SE.scripts.physics_core import SystemParams
 
 def interactive_preview(
     x: np.ndarray,

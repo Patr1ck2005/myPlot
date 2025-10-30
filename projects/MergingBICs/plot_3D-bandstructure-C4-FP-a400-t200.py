@@ -3,6 +3,7 @@ from core.data_postprocess.data_filter import advanced_filter_eigensolution
 from core.data_postprocess.data_grouper import *
 from core.data_postprocess.polar_edges import plot_phi_families_split
 from core.plot_3D_params_space_plt import *
+from core.prepare_plot import prepare_plot_data
 from core.process_multi_dim_params_space import *
 
 import numpy as np
@@ -136,16 +137,23 @@ if __name__ == '__main__':
     # 提取 band= 的附加场数据
     phi, tanchi, qlog, freq_real = extract_basic_analysis_fields(additional_Z_grouped, z_keys=z_keys, band_index=8)
 
-    m1 = new_coords['m1']
-    m2 = new_coords['m2']
     m1f, m2f, phi_f, tanchi_f = complete_C4_polarization(new_coords, phi, tanchi)
     (_, _), Z_f = geom_complete(new_coords, Z_target9, mode='C4')
     (_, _), qlog_f = geom_complete(new_coords, qlog, mode='C4')
-    pkl_path = 'rsl/eigensolution/polar_fields.pkl'
-    bundle = dict(m1_full=m1f, m2_full=m2f, Z_full=Z_f, phi_full=phi_f, tanchi_full=tanchi_f, Qlog_full=qlog_f)
-    with open(pkl_path, 'wb') as f:
-        pickle.dump(bundle, f)
-    print(f"[SAVE] {pkl_path}")
+    # pkl_path = 'rsl/eigensolution/polar_fields.pkl'
+    # bundle = dict(m1_full=m1f, m2_full=m2f, Z_full=Z_f, phi_full=phi_f, tanchi_full=tanchi_f, Qlog_full=qlog_f)
+    # with open(pkl_path, 'wb') as f:
+    #     pickle.dump(bundle, f)
+    # print(f"[SAVE] {pkl_path}")
+    dataset1 = {
+        'eigenfreq': Z_f,
+        'phi': phi_f,
+        'tanchi': tanchi_f,
+        'Qlog': qlog_f,
+    }
+    data_path = prepare_plot_data(
+        coords=new_coords, dataset_list=[dataset1], fixed_params={},
+    )
 
     # 绘图
     Mx, My = np.meshgrid(m1f, m2f, indexing='ij')

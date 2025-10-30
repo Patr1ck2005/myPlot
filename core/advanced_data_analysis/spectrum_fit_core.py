@@ -12,7 +12,7 @@ except Exception:
     _HAS_SCIPY = False
 
 # 复用你的 physics_core 计算核
-from plot_3D.projects.SE.scripts.physics_core import SystemParams, NonHermitianTwoLevel
+from projects.SE.scripts.physics_core import SystemParams, NonHermitianTwoLevel
 
 # ---------------------------
 # 工具

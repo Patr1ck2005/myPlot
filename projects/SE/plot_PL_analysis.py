@@ -19,7 +19,7 @@ class MyScript1Plotter(ScatterPlotter, LinePlotter, PolarPlotter, HeatmapPlotter
         """重写：手动提取Lumerical数据"""
         ref_path = self.data_path.replace('PL_Analysis.json', 'PL_Analysis_Ref.json')
         ref_data = load_lumerical_jsondata(ref_path)
-        target_data = self.raw_dataset
+        target_data = self.raw_datasets
         self.freq = structure_lumerical_jsondata(ref_data, 'freq').ravel() / (c_const / 1e-6)
         self.purcell_freq = np.linspace(self.freq[0], self.freq[-1], 1000)
         self.NA_list = structure_lumerical_jsondata(ref_data, 'NA_list').ravel().tolist()
@@ -137,7 +137,7 @@ class SimpleScriptPlotter(ScatterPlotter, LinePlotter, PolarPlotter, HeatmapPlot
 
     def prepare_data(self) -> None:
         """重写：手动提取Lumerical数据"""
-        target_data = self.raw_dataset
+        target_data = self.raw_datasets
         self.freq = structure_lumerical_jsondata(target_data, 'freq').ravel() / (c_const / 1e-6)
         self.purcell_freq = np.linspace(self.freq[0], self.freq[-1], 1000)
         self.target_k_list = structure_lumerical_jsondata(target_data, 'para_list').ravel().tolist()
@@ -224,8 +224,8 @@ if __name__ == '__main__':
     #     }
     # )
     # config.figsize = (2, 2)
-    # plotter = MyScript1Plotter(config=config, data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\lowQ-BIC\sweep_NAs\PL_Analysis.json')
-    # # plotter = MyScript1Plotter(config=config, data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\highQ-BIC\sweep_NAs\PL_Analysis.json')
+    # plotter = MyScript1Plotter(config=config, data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\lowQ-BIC\sweep_NAs\PL_Analysis.json')
+    # # plotter = MyScript1Plotter(config=config, data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\highQ-BIC\sweep_NAs\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
     # plot_dataset = plotter.compute_polar_lines(k_index=0)  # 手动选场景
@@ -234,7 +234,7 @@ if __name__ == '__main__':
     # plotter.new_fig('polar')
     # plotter.plot_polar(theta=theta[0]*10, radial=radial[366]/np.max(radial[366]), default_color='k')  # for lowQ-BIC
     # # plotter.plot_polar(theta=theta[0]*10, radial=radial[332]/np.max(radial[332]), default_color='red')  # for highQ-BIC
-    # # plotter.re_initialized(config=config, data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\highQ-QGM\sweep_NAs\PL_Analysis.json')
+    # # plotter.re_initialized(config=config, data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\highQ-QGM\sweep_NAs\PL_Analysis.json')
     # # plotter.load_data()
     # # plotter.prepare_data()
     # # plot_dataset = plotter.compute_polar_lines(k_index=0)  # 手动选场景
@@ -269,7 +269,7 @@ if __name__ == '__main__':
     # )
     # config.figsize = (4, 3)
     # plotter = MyScript1Plotter(config=config,
-    #                            data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\lowQ-BIC\sweep_ks\PL_Analysis.json')
+    #                            data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\lowQ-BIC\sweep_ks\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
     # plotter.new_fig()
@@ -287,7 +287,7 @@ if __name__ == '__main__':
     #     enable_dynamic_color=True, zorder=100, alpha=1
     # )
     # plotter.re_initialized(config=config,
-    #                        data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\highQ-BIC\sweep_ks\PL_Analysis.json')
+    #                        data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\highQ-BIC\sweep_ks\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
     # plot_dataset_2 = plotter.compute_k_max_line()  # 手动选场景
@@ -316,7 +316,7 @@ if __name__ == '__main__':
     )
     # config.figsize = (4, 3)
     config.figsize = (6.5, 3)
-    plotter = MyScript1Plotter(config=config, data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\lowQ-BIC\sweep_NAs\PL_Analysis.json')
+    plotter = MyScript1Plotter(config=config, data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\lowQ-BIC\sweep_NAs\PL_Analysis.json')
     plotter.load_data()
     plotter.prepare_data()
     plotter.new_fig()
@@ -329,7 +329,7 @@ if __name__ == '__main__':
         marker='o', zorder=999
     )
     plotter.re_initialized(config=config,
-                           data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\highQ-BIC\sweep_NAs\PL_Analysis.json')
+                           data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\highQ-BIC\sweep_NAs\PL_Analysis.json')
     plotter.load_data()
     plotter.prepare_data()
     plot_dataset_2 = plotter.compute_NA_max_line()  # 手动选场景
@@ -340,7 +340,7 @@ if __name__ == '__main__':
         marker='D', zorder=999
     )
     plotter.re_initialized(config=config,
-                           data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\highQ-QGM\sweep_NAs\PL_Analysis.json')
+                           data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\highQ-QGM\sweep_NAs\PL_Analysis.json')
     plotter.load_data()
     plotter.prepare_data()
     plot_dataset_3 = plotter.compute_NA_max_line()  # 手动选场景
@@ -365,7 +365,7 @@ if __name__ == '__main__':
     # )
     # config.figsize = (4.3, 2.6)
     # # config.figsize = (2, 4)
-    # plotter = MyScript1Plotter(config=config, data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\lowQ-BIC\sweep_NAs\PL_Analysis.json')
+    # plotter = MyScript1Plotter(config=config, data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\lowQ-BIC\sweep_NAs\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
     # plotter.new_fig()
@@ -375,7 +375,7 @@ if __name__ == '__main__':
     #     x=plot_dataset_1['x'], z1=plot_dataset_1['y'], default_color='k', default_linestyle='-'
     # )
     # plotter.add_annotations()  # 注解
-    # plotter.re_initialized(config=config, data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\highQ-BIC\sweep_NAs\PL_Analysis.json')
+    # plotter.re_initialized(config=config, data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\highQ-BIC\sweep_NAs\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
     # plot_dataset_2 = plotter.compute_single_line_purcell()  # 手动选场景
@@ -385,7 +385,7 @@ if __name__ == '__main__':
     #     twiny=True,
     #     default_color='red', default_linestyle='-'
     # )
-    # plotter.re_initialized(config=config, data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\highQ-QGM\sweep_NAs\PL_Analysis.json')
+    # plotter.re_initialized(config=config, data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\highQ-QGM\sweep_NAs\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
     # plot_dataset_3 = plotter.compute_single_line_purcell()  # 手动选场景
@@ -412,7 +412,7 @@ if __name__ == '__main__':
     # )
     # config.figsize = (4, 3)
     # plotter = MyScript1Plotter(config=config,
-    #                            data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\lowQ-BIC\sweep_ks\PL_Analysis.json')
+    #                            data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\lowQ-BIC\sweep_ks\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
     # plotter.new_fig()
@@ -445,8 +445,8 @@ if __name__ == '__main__':
     # # config.figsize = (2, 3)
     # config.figsize = (2, 2)
     # plotter = MyScript1Plotter(config=config,
-    #                            data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\QGM\PL_Analysis.json')
-    #                            # data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\BIC\PL_Analysis.json')
+    #                            data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\QGM\PL_Analysis.json')
+    #                            # data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\BIC\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
     # plotter.new_fig()
@@ -490,7 +490,7 @@ if __name__ == '__main__':
     # )
     # config.figsize = (2, 3)
     # plotter = MyScript1Plotter(config=config,
-    #                            data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\BIC\PL_Analysis.json')
+    #                            data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\BIC\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
     # plotter.new_fig()
@@ -533,7 +533,7 @@ if __name__ == '__main__':
     # # config.figsize = (2, 3)
     # config.figsize = (2, 2)
     # plotter = MyScript1Plotter(config=config,
-    #                            data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\BIC\PL_Analysis.json')
+    #                            data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\BIC\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
     # plotter.new_fig()
@@ -567,7 +567,7 @@ if __name__ == '__main__':
     # )
     # config.figsize = (2, 4)
     # plotter = SimpleScriptPlotter(config=config,
-    #                            data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\highQ-BIC\sweep_nx\PL_Analysis.json')
+    #                            data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\highQ-BIC\sweep_nx\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
     # plotter.new_fig()
@@ -575,14 +575,14 @@ if __name__ == '__main__':
     # plotter.plot_line(plot_dataset_1['k_array'], plot_dataset_1['purcell_max'], default_color='k', default_linestyle='-')
     # plotter.plot_scatter(x=plot_dataset_1['k_array'], z1=plot_dataset_1['purcell_max'], default_color='red', marker='o',zorder=100, alpha=1)
     # plotter.re_initialized(config=config,
-    #                            data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\highQ-QGM\sweep_nx\PL_Analysis.json')
+    #                            data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\highQ-QGM\sweep_nx\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
     # plot_dataset_2 = plotter.compute_k_max_line()  # 预处理最大值
     # plotter.plot_line(plot_dataset_2['k_array'], plot_dataset_2['purcell_max'], default_color='k', default_linestyle='-')
     # plotter.plot_scatter(x=plot_dataset_2['k_array'], z1=plot_dataset_2['purcell_max'], default_color='blue', marker='o',zorder=100, alpha=1)
     # plotter.re_initialized(config=config,
-    #                            data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\lowQ-BIC\sweep_nx\PL_Analysis.json')
+    #                            data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\lowQ-BIC\sweep_nx\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
     # plot_dataset_1 = plotter.compute_k_max_line()  # 预处理最大值
@@ -603,7 +603,7 @@ if __name__ == '__main__':
     # )
     # config.figsize = (3, 1.5)
     # plotter = SimpleScriptPlotter(config=config,
-    #                            data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\highQ-BIC\sweep_nx\PL_Analysis.json')
+    #                            data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\highQ-BIC\sweep_nx\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
     # plotter.new_fig()
@@ -615,7 +615,7 @@ if __name__ == '__main__':
     #     default_color='red', default_linestyle='-'
     # )
     # plotter.re_initialized(config=config,
-    #                            data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\highQ-QGM\sweep_nx\PL_Analysis.json')
+    #                            data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\highQ-QGM\sweep_nx\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
     # plot_dataset_2 = plotter.compute_multi_k_lines(mode=1)  # 手动选场景
@@ -639,7 +639,7 @@ if __name__ == '__main__':
     # )
     # config.figsize = (3, 1.5)
     # plotter = SimpleScriptPlotter(config=config,
-    #                            data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\lowQ-BIC\sweep_nx\PL_Analysis.json')
+    #                            data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\lowQ-BIC\sweep_nx\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
     # plotter.new_fig()
@@ -670,7 +670,7 @@ if __name__ == '__main__':
     # config.figsize = (2, 2)
     # # config.figsize = (4, 2)
     # plotter = MyScript1Plotter(config=config,
-    #                            data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\lowQ-BIC\sweep_NAs\PL_Analysis.json')
+    #                            data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\lowQ-BIC\sweep_NAs\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
     # plotter.new_fig()
@@ -772,7 +772,7 @@ if __name__ == '__main__':
     # config.figsize = (4, 2)
     # # config.figsize = (2, 2)
     # plotter = MyScript1Plotter(config=config,
-    #                            data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\highQ-BIC\sweep_NAs\PL_Analysis.json')
+    #                            data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\highQ-BIC\sweep_NAs\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
     # plotter.new_fig()
@@ -857,7 +857,7 @@ if __name__ == '__main__':
     #     x=res.x_fit, z1=res.y_fit * np.max(plot_dataset_1['y']), default_color='green', default_linestyle='-'
     # )
     # plotter.re_initialized(config=config,
-    #                            data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\highQ-QGM\sweep_NAs\PL_Analysis.json')
+    #                            data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\highQ-QGM\sweep_NAs\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
     # plot_dataset_1 = plotter.compute_single_line_purcell()  # 手动选场景
@@ -897,7 +897,7 @@ if __name__ == '__main__':
     # )
     # config.figsize = (1, 1.5)
     # plotter = MyScript1Plotter(config=config,
-    #                            data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\lowQ-BIC\sweep_NAs\PL_Analysis.json')
+    #                            data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\lowQ-BIC\sweep_NAs\PL_Analysis.json')
     # plotter.load_data()
     # plotter.prepare_data()
     # plotter.new_fig()

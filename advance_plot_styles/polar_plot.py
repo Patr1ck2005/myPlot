@@ -56,8 +56,6 @@ def plot_polarization_ellipses(ax, xgrid, ygrid, s1, s2, s3, S0=None,
 
     ax.add_collection(pc)
     ax.set_aspect('equal', adjustable='box')
-    ax.set_xlabel(r'$k_x$'); ax.set_ylabel(r'$k_y$')
-    ax.set_title('Polarization ellipse field (colored by $S_3/S_0$, RdBu)')
     return ax
 
 def imshow_phi(ax, phi, extent=None, vmin=-np.pi/2, vmax=np.pi/2, **imshow_kwargs):

@@ -173,23 +173,27 @@ if __name__ == '__main__':
     for k, v in new_coords.items():
         print(f"  {k}: {v}")
 
+    dataset1 = {'eigenfreq': Z_target1}
+    dataset2 = {'eigenfreq': Z_target2}
+    dataset3 = {'eigenfreq': Z_target3}
+    dataset4 = {'eigenfreq': Z_target4}
+    dataset5 = {'eigenfreq': Z_target5}
+    dataset6 = {'eigenfreq': Z_target6}
+    dataset7 = {'eigenfreq': Z_target7}
+    dataset8 = {'eigenfreq': Z_target8}
+    dataset9 = {'eigenfreq': Z_target9}
+    dataset10 = {'eigenfreq': Z_target10}
+    dataset11 = {'eigenfreq': Z_target11}
+    dataset12 = {'eigenfreq': Z_target12}
+    dataset13 = {'eigenfreq': Z_target13}
+    dataset14 = {'eigenfreq': Z_target14}
+
+
     data_path = prepare_plot_data(
         new_coords, [
-            Z_target1,
-            Z_target2,
-            Z_target3,
-            Z_target4,
-            Z_target5,
-            Z_target6,
-            Z_target7,
-            Z_target8,
-            Z_target9,
-            Z_target10,
-            Z_target11,
-            Z_target12,
-            Z_target13,
-            Z_target14,
-        ], x_key="k", fixed_params={},
+            dataset1, dataset2, dataset3, dataset4, dataset5, dataset6, dataset7,
+            dataset8, dataset9, dataset10, dataset11, dataset12, dataset13, dataset14,
+        ], fixed_params={},
         save_dir='./rsl/eigensolution',
     )
 

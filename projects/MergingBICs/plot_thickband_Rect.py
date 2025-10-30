@@ -3,24 +3,11 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from core.plot_3D_params_space_plt import plot_1d_lines
+from core.plot_cls import BandPlotterOneDim
 from core.plot_workflow import PlotConfig, LinePlotter
 
 
-class MyScript3Plotter(LinePlotter):
-    def prepare_data(self) -> None:  # 手动重写：NaN过滤
-        self.x_vals_list = []
-        self.y_vals_list = []
-        for sub in self.subs:
-            mask = np.isnan(sub)
-            if np.any(mask):
-                print("Warning: NaN移除⚠️")
-                y_vals = sub[~mask]
-                temp_x = self.x_vals[~mask]
-            else:
-                y_vals = sub
-                temp_x = self.x_vals
-            self.x_vals_list.append(temp_x)
-            self.y_vals_list.append(y_vals)
+class MyScriptPlotter(BandPlotterOneDim):
 
     def plot(self) -> None:  # 重写：整体+循环填充
         params_bg = {
@@ -78,7 +65,7 @@ def main(data_path):
     )
     config.figsize = (1.5, 3)
     config.tick_direction = 'in'
-    plotter = MyScript3Plotter(config=config, data_path=data_path)
+    plotter = MyScriptPlotter(config=config, data_path=data_path)
     plotter.run_full()
 
 if __name__ == '__main__':

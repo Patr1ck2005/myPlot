@@ -5,10 +5,10 @@ from typing import Dict, Any, List, Optional, Union
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from matplotlib import pyplot as plt
-from plot_3D.core.plot_3D_params_space_plt import *  # 假设这些模块存在
-from plot_3D.advance_plot_styles.polar_coord_plot import plot_polar_line
-from plot_3D.core.utils import *  # load_lumerical_jsondata 等
-from plot_3D.advance_plot_styles.scatter_plot import plot_scatter_advanced
+from core.plot_3D_params_space_plt import *  # 假设这些模块存在
+from advance_plot_styles.polar_coord_plot import plot_polar_line
+from core.utils import *  # load_lumerical_jsondata 等
+from advance_plot_styles.scatter_plot import plot_scatter_advanced
 
 
 @dataclass
@@ -37,10 +37,10 @@ class BasePlotter(ABC):
         self.data_path = data_path
         self.fig: Optional[plt.Figure] = None
         self.ax: Optional[plt.Axes] = None
-        self.raw_dataset: Any = None
-        self.x_vals: Optional[np.ndarray] = None
-        self.y_vals: Optional[np.ndarray] = None
-        self.subs: Optional[List[np.ndarray]] = None
+        self.raw_datasets: Any = None
+        self.coordinates: Optional[Dict] = None
+        # self.y_vals: Optional[np.ndarray] = None
+        # self.subs: Optional[List[np.ndarray]] = None
         plt.rcParams.update({'font.size': config.fs})
         plt.rcParams['xtick.direction'] = config.tick_direction  # 将x周的刻度线方向设置向内
         plt.rcParams['ytick.direction'] = config.tick_direction  # 将y轴的刻度方向设置向内
@@ -49,15 +49,16 @@ class BasePlotter(ABC):
         """优化：只重置config/data相关，不重置fig/ax，支持重叠绘图"""
         self.config = PlotConfig(**config) if isinstance(config, dict) else config or self.config
         self.data_path = data_path or self.data_path
-        self.raw_dataset = None
-        self.x_vals = None
-        self.y_vals = None
-        self.subs = None
+        self.raw_datasets = None
+        self.coordinates = None
+        # self.x_vals = None
+        # self.y_vals = None
+        # self.subs = None
         print("Re-initialized data/config，fig/ax保留以支持重叠绘图 🔄")
         return self
 
     def load_data(self) -> None:
-        """共性：加载，支持JSON/Pickle（用户可重写自定义加载）"""
+        """加载，支持JSON/Pickle（用户可重写自定义加载）"""
         if not self.data_path:
             raise ValueError("data_path 未提供！")
         if self.data_path.endswith('.json'):
@@ -67,19 +68,33 @@ class BasePlotter(ABC):
         else:
             raise ValueError(f"不支持的文件类型: {self.data_path}")
         print(f"数据加载成功 📂")
+        
+    def get_datasets(self) -> Any:
+        """获取原始数据，便于外部访问"""
+        return self.raw_datasets
+    
+    def get_dataset(self, index):
+        """获取单个数据集，便于外部访问"""
+        return self.raw_datasets[index]
+
+    def get_coordinates(self) -> Optional[Dict]:
+        """获取坐标数据，便于外部访问"""
+        return self.coordinates
 
     def _load_json(self) -> None:
-        """JSON加载骨架（脚本1专用，用户重写扩展多文件）"""
-        self.raw_dataset = load_lumerical_jsondata(self.data_path)
+        """JSON加载骨架"""
+        self.raw_datasets = load_lumerical_jsondata(self.data_path)
 
     def _load_pickle(self) -> None:
-        """Pickle加载骨架（脚本2/3/4，用户重写后处理）"""
+        """Pickle加载骨架"""
         with open(self.data_path, 'rb') as f:
-            self.raw_dataset = pickle.load(f)
-        self.x_vals = self.raw_dataset.get('x_vals', np.array([]))
-        self.y_vals = self.raw_dataset.get('y_vals', np.array([]))
-        self.subs = self.raw_dataset.get('subs', [])
-        print(f"Pickle基础提取: x_shape={self.x_vals.shape}, subs_len={len(self.subs)} 🔍")
+            self.raw_datasets = pickle.load(f)
+        self.coordinates = self.raw_datasets.get('coords', {})
+        # self.x_vals = self.raw_dataset.get('x_vals', np.array([]))
+        # self.y_vals = self.raw_dataset.get('y_vals', np.array([]))
+        # self.subs = self.raw_dataset.get('subs', [])
+        # print(f"Pickle基础提取: x_shape={self.x_vals.shape}, subs_len={len(self.subs)} 🔍")
+        print(f"Pickle基础提取: {self.raw_datasets.keys} 🔍")
 
     @abstractmethod
     def prepare_data(self) -> None:
@@ -104,33 +119,33 @@ class BasePlotter(ABC):
             return self.ax
 
     def new_fig(self, projection: str = 'rectilinear') -> None:
-        """共性：创建新fig/ax，支持polar。手动调用以控制新图"""
+        """创建新fig/ax，支持polar。手动调用以控制新图"""
         kwargs = {'figsize': self.config.figsize}
         if projection == 'polar':
             kwargs['subplot_kw'] = {'projection': 'polar'}
         self.fig, self.ax = plt.subplots(**kwargs)
 
     def add_annotations(self) -> None:
-        """共性：添加标签/限（用户可重写加自定义scale）"""
+        """添加标签/限（用户可重写加自定义scale）"""
         if self.config.annotations is None:
             print("Warning: 未设置annotations ⚠️")
         self.fig, self.ax = add_annotations(self.ax, self.config.annotations)
 
     def add_twinx_annotations(self) -> None:
-        """共性：添加双轴标签"""
+        """添加双轴标签"""
         if self.config.annotations is None:
             print("Warning: 未设置annotations ⚠️")
         self.fig, self.twinx_ax = add_annotations(self.twinx_ax, self.config.annotations)
 
     def add_twiny_annotations(self) -> None:
-        """共性：添加双轴标签"""
+        """添加双轴标签"""
         if self.config.annotations is None:
             print("Warning: 未设置annotations ⚠️")
         self.fig, self.twiny_ax = add_annotations(self.twiny_ax, self.config.annotations)
 
     def save_and_show(self, save=True, save_type='svg', custom_name: Optional[str] = None,
                       custom_abs_path: Optional[str] = None) -> None:
-        """共性：保存/show（支持自定义名）"""
+        """保存/show（支持自定义名）"""
         if save:
             full_params = self.config.plot_params or {}
             if custom_abs_path:
@@ -157,7 +172,7 @@ class BasePlotter(ABC):
         print("全流程完成！🚀")
 
 
-# 分类子类0: ScatterPlotter（0D点类）
+# ScatterPlotter（0D点类）
 class ScatterPlotter(BasePlotter):
     """0D点类骨架：提供plot_scatter绘图"""
 
@@ -168,7 +183,7 @@ class ScatterPlotter(BasePlotter):
         self.ax = plot_scatter_advanced(ax, x, z1=z1, z3=z1, **params)
 
 
-# 分类子类1: LinePlotter（1D线类）
+# LinePlotter（1D线类）
 class LinePlotter(BasePlotter):
     """1D线类骨架：提供plot_line绘图，用户在main调用"""
 
@@ -179,7 +194,7 @@ class LinePlotter(BasePlotter):
         self.ax = plot_line_advanced(ax, x, z1=z1, **params)
 
 
-# 分类子类2: PolarPlotter（极坐标）
+# PolarPlotter（极坐标）
 class PolarPlotter(BasePlotter):
     """极坐标骨架：提供plot_polar绘图"""
 
@@ -192,7 +207,7 @@ class PolarPlotter(BasePlotter):
         self.ax.set_thetalim(np.deg2rad(-60), np.deg2rad(60))
 
 
-# 分类子类3: HeatmapPlotter（2D类）
+# HeatmapPlotter（2D类）
 class HeatmapPlotter(BasePlotter):
     """2D类骨架：提供plot_heatmap/multiline绘图"""
 
