@@ -40,13 +40,14 @@ def prepare_plot_data(coords, dataset_list, fixed_params=None, save_dir='./rsl/'
     with open(file_path, 'wb') as f:
         pickle.dump(plot_data, f)
     print(f"纯净绘图数据已保存为：{file_path} 🎉")
-    print(f"绝对路径：{os.path.abspath(file_path)}")
+    print(f"文件夹绝对路径：{os.path.abspath(data_dir)}")
     # 将数据加载到剪切板
     ...
     # 再保存一份临时数据在当前目录，方便快速访问
     temp_path = os.path.join('.', 'temp_plot_data.pkl')
     with open(temp_path, 'wb') as f:
         pickle.dump(plot_data, f)
+    print(f"临时数据已保存为：{temp_path} 🎉")
 
     return file_path
 

@@ -5,7 +5,8 @@ from core.plot_workflow import PlotConfig
 if __name__ == '__main__':
     # data_path = r"D:\DELL\Documents\myPlots\projects\momentum_space_sky_topology\rsl\manual\3Deigen-grating-H400nm.pkl"
     # data_path = r"D:\DELL\Documents\myPlots\projects\momentum_space_sky_topology\rsl\manual\3Deigen-grating-H450nm.pkl"
-    data_path = r"D:\DELL\Documents\myPlots\projects\momentum_space_sky_topology\rsl\manual\3Deigen-grating-H500nm.pkl"
+    # data_path = r"D:\DELL\Documents\myPlots\projects\momentum_space_sky_topology\rsl\manual\3Deigen-grating-H500nm.pkl"
+    data_path = r"D:\DELL\Documents\myPlots\projects\momentum_space_sky_topology\rsl\manual\3Deigen-Rod-chiral0.1-H410nm.pkl"
     config = PlotConfig(
         plot_params={},
         annotations={},

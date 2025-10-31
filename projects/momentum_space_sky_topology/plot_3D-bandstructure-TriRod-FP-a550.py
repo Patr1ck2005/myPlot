@@ -144,7 +144,7 @@ if __name__ == '__main__':
     plotter.prepare_data()
 
     plotter.new_2d_fig()
-    plotter.plot_polarization_ellipses(index=2)
+    plotter.plot_polarization_ellipses(index=2, step=(4, 4))
     # plotter.plot_isofreq_contours2D(index=0, levels=(0.509, 0.510, 0.511))
     plotter.save_and_show()
 
