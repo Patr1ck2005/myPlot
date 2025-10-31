@@ -1,4 +1,5 @@
-from core.data_postprocess.data_grouper import group_surfaces_one_sided_hungarian
+from core.data_postprocess.data_filter import advanced_filter_eigensolution
+from core.data_postprocess.data_grouper import group_vectors_one_sided_hungarian
 from core.plot_3D_params_space_plt import *
 from core.plot_3D_params_space_pv import plot_Z_diff_pyvista
 from core.process_multi_dim_params_space import *
@@ -48,78 +49,81 @@ if __name__ == '__main__':
 
     # 指定用于构造网格的参数以及目标数据列
     param_keys = ["a", "b"]
-    z_key = "特征频率 (THz)"
+    z_keys = ["特征频率 (THz)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
-    grid_coords, Z = create_data_grid(df_sample, param_keys, z_key)
+    grid_coords, Z = create_data_grid(df_sample, param_keys, z_keys)
     print("网格参数：")
     for key, arr in grid_coords.items():
         print(f"  {key}: {arr}")
     print("数据网格 Z 的形状：", Z.shape)
 
-    # # 示例查询某个参数组合对应的数据
-    # query = {"a": 0.00, "b": 0.0000}
-    # result = query_data_grid(grid_coords, Z, query)
-    # print("\n查询结果（保留列表）：", result)
+    # 假设已得到grid_coords, Z
+    new_coords, Z_filtered, min_lens = advanced_filter_eigensolution(
+        grid_coords, Z,
+        z_keys=z_keys,
+        fixed_params={
+            # "sp_polar_show": 1,
+        },  # 固定
+        filter_conditions={
+            # "fake_factor (1)": {"<": 1},  # 筛选
+            # "频率 (Hz)": {"<": 0.52, ">": 0},  # 筛选
+        }
+    )
 
-    deltas3 = (1.0e-3, 1.0)  # n个维度的网格间距
+    deltas3 = (1e-3, 1e-3)  # n个维度的网格间距
     # 当沿维度 d 生长时，值差权重矩阵（n×n）
     # 例如：value_weights[d, j] = 在 grow_dir=d 时，对维度 j 的值差权重
     value_weights = np.array([
-        [1, 0],   # 沿维度0生长时，对 0,1,2 维度的值差权重
-        [0, 1],   # 沿维度2生长时
+        [1, 1], [1, 1]  # 沿维度生长时
     ])
-
     # 当沿维度 d 生长时，导数不连续权重矩阵（n×n）
     deriv_weights = np.array([
-        [0, 0],
-        [0, 0],
+        [1, 1], [1, 1]
     ])
-    Z = group_surfaces_one_sided_hungarian(
-        Z, deltas3,
+    # 创建一个新的数组，用于存储更新后的结果
+    Z_new = np.empty_like(Z_filtered, dtype=object)
+    # 使用直接的循环来更新 Z_new
+    for i in range(Z_filtered.shape[0]):
+        for j in range(Z_filtered.shape[0]):
+            Z_new[i, j] = Z_filtered[i][j][0]
+
+    # 通过散点的方式绘制出来，看看效果
+    for i in range(Z_new.shape[0]):
+        z_vals = Z_new[i, 0]
+        for val in z_vals:
+            if val is not None:
+                plt.scatter(new_coords['a'][i], np.real(val), color='blue', s=10)
+    plt.xlabel('k')
+    plt.ylabel('Re(eigenfreq) (THz)')
+    plt.title('Filtered Eigenfrequencies before Grouping')
+    plt.grid(True)
+    plt.show()
+
+    Z_grouped = group_vectors_one_sided_hungarian(
+        [Z_new], deltas3,
         value_weights=value_weights,
         deriv_weights=deriv_weights,
+        max_m=3
     )
 
     # 假设你已经得到了 grid_coords, Z
     new_coords, Z_target1 = group_eigensolution(
-        grid_coords, Z,
+        grid_coords, Z_grouped,
         freq_index=0  # 第n个频率
         # freq_index=2  # 第n个频率
     )
-    new_coords, Z_target2 = group_eigensolution(
-        grid_coords, Z,
+    _, Z_target2 = group_eigensolution(
+        grid_coords, Z_grouped,
         freq_index=1  # 第n个频率
         # freq_index=2  # 第n个频率
     )
-    new_coords, Z_target3 = group_eigensolution(
-        grid_coords, Z,
+    _, Z_target3 = group_eigensolution(
+        grid_coords, Z_grouped,
         freq_index=2  # 第n个频率
         # freq_index=2  # 第n个频率
     )
 
-    print("去掉 bg_n 后的参数：")
-    for k, v in new_coords.items():
-        print(f"  {k}: {v}")
-    print("Z_diff 形状：", Z_target1.shape)
-    # # 示例查询某个参数组合对应的数据
-    # query = {"a": 0.00, "b": 0.0000}
-    # result = query_data_grid(grid_coords, Z_target1, query)
-    # print("\n差值查询结果（保留列表）：", result)
-
-    # 假设已经得到 new_coords, Z_target
-    # 画一维曲线：params 对 target
-    plot_Z(
-        new_coords, Z_target1,
-        x_key="a",
-        fixed_params={
-            "b": 0.0000
-        },
-        plot_params={
-            'zlabel': 'freq',
-            'imag': False,
-        }
-    )
     # 画二维曲面：a vs w1 对 Δ频率
     plot_params = {
         'zlabel': 'RIU',

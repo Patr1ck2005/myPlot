@@ -12,13 +12,13 @@ from utils.functions import skyrmion_density
 class BandPlotterOneDim(LinePlotter, ABC):
     """能带图骨架"""
 
-    def prepare_data(self) -> None:  # 手动重写：NaN过滤
+    def prepare_data(self, momen_key='k') -> None:  # 手动重写：NaN过滤
         self.x_vals_list = []
         self.y_vals_list = []
         for raw_data in self.raw_datasets["data_list"]:
             sub = raw_data['eigenfreq']
             mask = np.isnan(sub)
-            self.x_vals = self.coordinates['k']
+            self.x_vals = self.coordinates[momen_key]
             if np.any(mask):
                 print("Warning: NaN移除⚠️")
                 self.y_vals = sub[~mask]
@@ -89,6 +89,27 @@ class BandPlotterOneDim(LinePlotter, ABC):
             y_maxs.append(np.max(y.real + widths))
         self.xlim = (self.x_vals.min(), self.x_vals.max())
         self.ylim = (np.nanmin(y_mins) * 0.98, np.nanmax(y_maxs) * 1.02)
+
+    def plot_colored_bg(self) -> None:  # 重写：整体+循环填充
+        params = {
+            'enable_fill': True,
+            'gradient_fill': True,
+            # 'cmap': 'magma',
+            'cmap': 'magma',
+            'add_colorbar': False,
+            'global_color_vmin': 0, 'global_color_vmax': 5e-3,
+            'default_color': 'gray', 'alpha_fill': 1,
+            'edge_color': 'none',
+            'gradient_direction': 'z3',
+        }
+        y_mins, y_maxs = [], []
+        for i, (x, y) in enumerate(zip(self.x_vals_list, self.y_vals_list)):
+            self.plot_line(x, z1=y.real, z2=y.imag, z3=y.imag, **params)  # 填充
+            widths = np.abs(y.imag)
+            y_mins.append(np.min(y.real - widths))
+            y_maxs.append(np.max(y.real + widths))
+        self.ax.set_xlim(self.x_vals.min(), self.x_vals.max())
+        self.ax.set_ylim(np.nanmin(y_mins) * 0.98, np.nanmax(y_maxs) * 1.02)
 
     def plot_colored_line(self) -> None:  # 重写：整体+循环填充
         params_line = {

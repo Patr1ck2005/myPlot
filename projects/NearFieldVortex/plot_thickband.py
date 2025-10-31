@@ -1,55 +1,12 @@
 # 脚本3示例：继承LinePlotter（填充多线变体）
 import numpy as np
 
-from core.plot_3D_params_space_plt import plot_1d_lines
-from core.plot_workflow import PlotConfig, LinePlotter
+from core.plot_workflow import PlotConfig
+from core.plot_cls import BandPlotterOneDim
 
 
-class MyScript3Plotter(LinePlotter):
-    def prepare_data(self) -> None:  # 手动重写：NaN过滤
-        self.x_vals_list = []
-        self.y_vals_list = []
-        for sub in self.subs:
-            mask = np.isnan(sub)
-            if np.any(mask):
-                print("Warning: NaN移除⚠️")
-                y_vals = sub[~mask]
-                temp_x = self.x_vals[~mask]
-            else:
-                y_vals = sub
-                temp_x = self.x_vals
-            self.x_vals_list.append(temp_x)
-            self.y_vals_list.append(y_vals)
-
-    def plot(self) -> None:  # 重写：整体+循环填充
-        params = {
-            'enable_fill': True,
-            'gradient_fill': True,
-            # 'cmap': 'magma',
-            'cmap': 'magma',
-            'add_colorbar': False,
-            'global_color_vmin': 0, 'global_color_vmax': 5e-3,
-            'default_color': 'gray', 'alpha_fill': 1,
-            'edge_color': 'none',
-            'gradient_direction': 'z3',
-        }
-        y_mins, y_maxs = [], []
-        for i, (x, y) in enumerate(zip(self.x_vals_list, self.y_vals_list)):
-            self.plot_line(x, z1=y.real, z2=y.imag, z3=y.imag, **params)  # 填充
-            widths = np.abs(y.imag)
-            y_mins.append(np.min(y.real - widths))
-            y_maxs.append(np.max(y.real + widths))
-        self.ax.set_xlim(self.x_vals.min(), self.x_vals.max())
-        self.ax.set_ylim(np.nanmin(y_mins) * 0.98, np.nanmax(y_maxs) * 1.02)
-
-        # plot yspan
-        # compute norm freq span of 900nm to 930nm
-        # period = 350e-9  # C4
-        period = 400e-9  # C6
-        c_const = 299792458
-        f1 = c_const / 930e-9 / (c_const / period)
-        f2 = c_const / 900e-9 / (c_const / period)
-        self.ax.axhspan(f1, f2, color='gray', alpha=0.3, linewidth=0, zorder=-1)
+class MyScriptPlotter(BandPlotterOneDim):
+    pass
 
 
 def main(data_path):
@@ -59,8 +16,22 @@ def main(data_path):
     )
     config.figsize = (3, 4)
     config.tick_direction = 'in'
-    plotter = MyScript3Plotter(config=config, data_path=data_path)
-    plotter.run_full()
+    plotter = MyScriptPlotter(config=config, data_path=data_path)
+    plotter.load_data()
+    plotter.prepare_data()
+    plotter.new_2d_fig()
+    plotter.plot_colored_bg()
+    plotter.adjust_view_2dim()
+    # plot yspan
+    # compute norm freq span of 900nm to 930nm
+    # period = 350e-9  # C4
+    period = 400e-9  # C6
+    c_const = 299792458
+    f1 = c_const / 930e-9 / (c_const / period)
+    f2 = c_const / 900e-9 / (c_const / period)
+    plotter.ax.axhspan(f1, f2, color='gray', alpha=0.3, linewidth=0, zorder=-1)
+    plotter.add_annotations()
+    plotter.save_and_show()
 
 if __name__ == '__main__':
     pass

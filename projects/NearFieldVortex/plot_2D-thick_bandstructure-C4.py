@@ -1,8 +1,5 @@
 from core.data_postprocess.data_filter import advanced_filter_eigensolution
 from core.data_postprocess.data_grouper import *
-from core.plot_3D_params_space_plt import *
-from core.plot_3D_params_space_pv import plot_Z_diff_pyvista
-from core.prepare_plot import prepare_plot_data
 from core.process_multi_dim_params_space import *
 
 import numpy as np
@@ -10,7 +7,8 @@ import numpy as np
 c_const = 299792458
 
 if __name__ == '__main__':
-    data_path = './data/eigen-rect_annular-off_x20nm_y20nm-a350nm_r0.27_r_w80nm_t180nm-0.3kr.csv'
+    # data_path = './data/eigen-rect_annular-off_x20nm_y20nm-a350nm_r0.27_r_w80nm_t180nm-0.3kr.csv'
+    data_path = './data/eigen-rect_annular-a350nm_r0.27_r_w80nm_t180nm-0.3kr.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -104,13 +102,20 @@ if __name__ == '__main__':
         freq_index=6  # 第n个频率
     )
 
-    print("去掉 bg_n 后的参数：")
-    for k, v in new_coords.items():
-        print(f"  {k}: {v}")
+    dataset1 = {'eigenfreq': Z_target1}
+    dataset2 = {'eigenfreq': Z_target2}
+    dataset3 = {'eigenfreq': Z_target3}
+    dataset4 = {'eigenfreq': Z_target4}
+    dataset5 = {'eigenfreq': Z_target5}
+    dataset6 = {'eigenfreq': Z_target6}
+    dataset7 = {'eigenfreq': Z_target7}
+
+    from core.prepare_plot import prepare_plot_data
 
     data_path = prepare_plot_data(
-        new_coords, [Z_target4, Z_target6, Z_target1, Z_target2, Z_target3, Z_target5, Z_target7], x_key="k", fixed_params={},
-        # new_coords, [Z_target6], x_key="k", fixed_params={},
+        new_coords, [
+            dataset1, dataset2, dataset3, dataset4, dataset5, dataset6, dataset7,
+        ], fixed_params={},
         save_dir='./rsl/eigensolution',
     )
 

@@ -103,12 +103,16 @@ if __name__ == '__main__':
         freq_index=5  # 第n个频率
     )
 
-    print("去掉 bg_n 后的参数：")
-    for k, v in new_coords.items():
-        print(f"  {k}: {v}")
+    dataset1 = {'eigenfreq': Z_target1}
+    dataset2 = {'eigenfreq': Z_target2}
+    dataset3 = {'eigenfreq': Z_target3}
+    dataset4 = {'eigenfreq': Z_target4}
+    dataset5 = {'eigenfreq': Z_target5}
 
     data_path = prepare_plot_data(
-        new_coords, [Z_target0, Z_target1, Z_target2, Z_target3, Z_target4, Z_target5], x_key="k", fixed_params={},
+        new_coords, [
+            dataset1, dataset2, dataset3, dataset4, dataset5,
+        ], fixed_params={},
         save_dir='./rsl/eigensolution',
     )
 

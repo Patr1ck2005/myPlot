@@ -1,8 +1,3 @@
-# 脚本3示例：继承LinePlotter（填充多线变体）
-import numpy as np
-from matplotlib import pyplot as plt
-
-from core.plot_3D_params_space_plt import plot_1d_lines
 from core.plot_cls import BandPlotterOneDim
 from core.plot_workflow import PlotConfig, LinePlotter
 
@@ -22,7 +17,14 @@ def main(data_path):
     config.figsize = (1.5, 3)
     config.tick_direction = 'in'
     plotter = MyScriptPlotter(config=config, data_path=data_path)
-    plotter.run_full()
+    plotter.load_data()
+    plotter.prepare_data()
+    plotter.new_2d_fig()
+    plotter.plot_thick_bg()
+    plotter.plot_colored_line()
+    plotter.adjust_view_2dim()
+    plotter.add_annotations()
+    plotter.save_and_show()
 
 if __name__ == '__main__':
     pass
