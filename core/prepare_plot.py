@@ -19,6 +19,7 @@ def prepare_plot_data(coords, dataset_list, fixed_params=None, save_dir='./rsl/'
         'metadata': {
             'fixed_params': fixed_params,
             'timestamp': time.strftime("%Y%m%d_%H%M%S"),
+            'version': '2.0',
         }
     }
 

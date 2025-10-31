@@ -38,7 +38,12 @@ class BasePlotter(ABC):
         self.fig: Optional[plt.Figure] = None
         self.ax: Optional[plt.Axes] = None
         self.raw_datasets: Any = None
+        self.data_list = None
+        self.data_num = None
         self.coordinates: Optional[Dict] = None
+        self.xlim = None
+        self.ylim = None
+        self.zlim = None
         # self.y_vals: Optional[np.ndarray] = None
         # self.subs: Optional[List[np.ndarray]] = None
         plt.rcParams.update({'font.size': config.fs})
@@ -90,6 +95,8 @@ class BasePlotter(ABC):
         with open(self.data_path, 'rb') as f:
             self.raw_datasets = pickle.load(f)
         self.coordinates = self.raw_datasets.get('coords', {})
+        self.data_list = self.raw_datasets["data_list"]
+        self.data_num = len(self.data_list)
         # self.x_vals = self.raw_dataset.get('x_vals', np.array([]))
         # self.y_vals = self.raw_dataset.get('y_vals', np.array([]))
         # self.subs = self.raw_dataset.get('subs', [])
@@ -118,18 +125,35 @@ class BasePlotter(ABC):
         else:
             return self.ax
 
-    def new_fig(self, projection: str = 'rectilinear') -> None:
+    def new_2d_fig(self, projection: str = 'rectilinear') -> None:
         """创建新fig/ax，支持polar。手动调用以控制新图"""
         kwargs = {'figsize': self.config.figsize}
         if projection == 'polar':
             kwargs['subplot_kw'] = {'projection': 'polar'}
         self.fig, self.ax = plt.subplots(**kwargs)
 
+    def new_3d_fig(self) -> None:
+        """创建新3D fig/ax，手动调用以控制新图"""
+        from mpl_toolkits.mplot3d import Axes3D
+        self.fig = plt.figure(figsize=self.config.figsize)
+        self.ax = self.fig.add_subplot(111, projection='3d')
+
     def add_annotations(self) -> None:
         """添加标签/限（用户可重写加自定义scale）"""
         if self.config.annotations is None:
             print("Warning: 未设置annotations ⚠️")
         self.fig, self.ax = add_annotations(self.ax, self.config.annotations)
+
+    def adjust_view_2dim(self) -> None:
+        """设置2D视图"""
+        self.ax.set_xlim(self.xlim)
+        self.ax.set_ylim(self.ylim)
+
+    def adjust_view_3dim(self) -> None:
+        """设置3D视图"""
+        self.ax.set_xlim(self.xlim)
+        self.ax.set_ylim(self.ylim)
+        self.ax.set_zlim(self.zlim)
 
     def add_twinx_annotations(self) -> None:
         """添加双轴标签"""
@@ -165,7 +189,7 @@ class BasePlotter(ABC):
         """可选完整链：但不推荐，用手动链代替"""
         self.load_data()
         self.prepare_data()
-        self.new_fig()
+        self.new_2d_fig()
         self.plot()
         self.add_annotations()
         self.save_and_show()

@@ -120,122 +120,59 @@ if __name__ == '__main__':
     #     freq_index=10  # 第n个频率
     # )
 
-
-    print("去掉 bg_n 后的参数：")
-    for k, v in new_coords.items():
-        print(f"  {k}: {v}")
-
-    # data_path = prepare_plot_data(
-    #     new_coords, [
-    #         Z_target1,
-    #         Z_target2,
-    #         Z_target3,
-    #         Z_target4,
-    #         Z_target5,
-    #         Z_target6,
-    #         Z_target7,
-    #         Z_target8,
-    #         Z_target9,
-    #         # Z_target10,
-    #         # Z_target11,
-    #     ], x_key="m1", fixed_params={},
-    #     save_dir='./rsl/eigensolution',
-    # )
-    #
-    # from plot_3D.projects.MergingBICs.plot_thickband import main
-    #
-    # main(data_path)
-
-    # 暂时简单使用3D绘制数据
+    from core.process_multi_dim_params_space import extract_basic_analysis_fields, plot_advanced_surface
     import matplotlib.pyplot as plt
-    fs = 9
-    plt.rcParams.update({'font.size': fs})
+    from core.data_postprocess.momentum_space_toolkits import complete_C4_polarization, geom_complete
+    from core.plot_cls import MomentumSpaceEigenPolarizationPlotter
+    from core.plot_workflow import PlotConfig
+    from core.prepare_plot import prepare_plot_data
 
-    fig = plt.figure(figsize=(3, 4))
-    ax = fig.add_subplot(111, projection='3d')
-    m1_vals = new_coords['m1']
-    m2_vals = new_coords['m2']
+    band_index = 2
+    Z_target = Z_target3
 
-    target2_phi = np.zeros(((additional_Z_grouped.shape[0]), (additional_Z_grouped.shape[1])))
-    target2_tanchi = np.zeros(((additional_Z_grouped.shape[0]), (additional_Z_grouped.shape[1])))
-    target2_Qfactor_log = np.zeros(((additional_Z_grouped.shape[0]), (additional_Z_grouped.shape[1])))
-    # 把形状51,51的列表中的[1][3]数据提取出来
-    for i in range(additional_Z_grouped.shape[0]):
-        for j in range(additional_Z_grouped.shape[1]):
-            target2_phi[i][j] = additional_Z_grouped[i][j][1][3]
-            target2_tanchi[i][j] = additional_Z_grouped[i][j][1][2]
-            target2_Qfactor_log[i][j] = np.log10(additional_Z_grouped[i][j][1][1])
+    # 提取 band= 的附加场数据
+    phi, tanchi, qlog, freq_real = extract_basic_analysis_fields(additional_Z_grouped, z_keys=z_keys, band_index=band_index)
 
-    M1, M2 = np.meshgrid(m1_vals, m2_vals, indexing='ij')
-
-    # fig = plt.figure()
-    # plt.imshow(target2_phi)
-    # plt.colorbar()
-    # plt.show()
-
-    # 绘制多个 Z_target, 同时使用 Qfactor 作为颜色映射
-    # Z_targets = [Z_target1, Z_target2, Z_target3]
-    # additional_Zs = [target2_phi,]
-    additional_Zs = [target2_Qfactor_log,]
-    Z_targets = [Z_target2,]
-
-    from plot_3D.core.data_postprocess.momentum_space_toolkits import from_legacy_and_save
-
-    pkl_path = 'rsl/eigensolution/polar_fields.pkl'
-    from_legacy_and_save(
-        pkl_path=pkl_path,
-        m1=new_coords['m1'],
-        m2=new_coords['m2'],
-        Z_target_complex=Z_target2,  # 你的目标频带（复数也行，内部取 real 做等频线）
-        phi_Q1=target2_phi,  # 第一象限 φ
-        tanchi_Q1=target2_tanchi,  # 第一象限 tanchi
-        Q_Q1=target2_Qfactor_log,  # 第一象限 Q（自己按数据生成一个同shape数组）
-        do_complete=True,
+    full_coords, phi_f, tanchi_f = complete_C4_polarization(new_coords, phi, tanchi)
+    _, Z_f = geom_complete(new_coords, Z_target, mode='C4')
+    _, qlog_f = geom_complete(new_coords, qlog, mode='C4')
+    s1 = np.cos(2 * phi_f) * (1 - tanchi_f ** 2) / (1 + tanchi_f ** 2)
+    s2 = np.sin(2 * phi_f) * (1 - tanchi_f ** 2) / (1 + tanchi_f ** 2)
+    s3 = 2 * tanchi_f / (1 + tanchi_f ** 2)
+    dataset1 = {
+        'eigenfreq': Z_f,
+        's1': s1,
+        's2': s2,
+        's3': s3,
+        'qlog': qlog_f,
+    }
+    data_path = prepare_plot_data(
+        coords=full_coords, dataset_list=[dataset1], fixed_params={},
     )
 
-    for idx, Z_target in enumerate(Z_targets):
-        FREQ = np.empty(M1.shape)
-        Qfactor = np.empty(M1.shape)
-        Phi = np.empty(M1.shape)
-        tanchi = np.empty(M1.shape)
-        for i in range(M1.shape[0]):
-            for j in range(M1.shape[1]):
-                val = Z_target[i, j]
-                FREQ[i, j] = val.real
-                # Qfactor[i, j] = np.log10(val.real/val.imag/2 if val.imag != 0 else 0)
-                Qfactor[i, j] = np.log10(additional_Zs[idx][i, j])
-                # Phi[i, j] = additional_Zs[idx][i, j]
-                # tanchi[i, j] = additional_Z_grouped[i][j][1][2]
-                # tanchi[i, j] = additional_Zs[idx][i][j]
-        surf_color_data = Qfactor
-        # surf_color_data = np.mod(Phi, np.pi)
-        # surf_color_data = tanchi
-        # surf_colors = plt.cm.RdBu((surf_color_data - -1) / 2)
-        surf_colors = plt.cm.hot((surf_color_data - np.min(surf_color_data)) / (np.max(surf_color_data) - np.min(surf_color_data)))
-        # surf_colors = plt.cm.hot((surf_color_data - 2) / (6 - 2))
-        # surf_colors = plt.cm.hsv((surf_color_data - np.min(surf_color_data)) / (np.max(surf_color_data) - np.min(surf_color_data)))
-        # surf_colors = plt.cm.twilight((surf_color_data - np.min(surf_color_data)) / (np.max(surf_color_data) - np.min(surf_color_data)))
-        surf = ax.plot_surface(M1, M2, FREQ, facecolors=surf_colors, rstride=1, cstride=1, alpha=0.8, label=f'Band {idx+1}')
-    # 添加颜色条
-    mappable = plt.cm.ScalarMappable(cmap='twilight')
-    mappable.set_array(surf_color_data)
-    cbar = plt.colorbar(mappable, ax=ax)
-    ax.set_xlabel('m1')
-    ax.set_ylabel('m2')
-    ax.set_zlabel('Frequency (normalized)')
+    config = PlotConfig(
+        plot_params={},
+        annotations={},
+    )
+    config.figsize = (1.5, 3)
+    config.tick_direction = 'in'
+    plotter = MomentumSpaceEigenPolarizationPlotter(config=config, data_path=data_path)
+    plotter.load_data()
+    plotter.prepare_data()
 
-    # 调整视角
-    ax.view_init(elev=30, azim=45-20)
+    plotter.new_2d_fig()
+    plotter.plot_polarization_ellipses(index=0)
+    plotter.plot_isofreq_contours2D(index=0, levels=(0.509, 0.510, 0.511))
+    plotter.save_and_show()
 
-    # 设置比例
-    ax.set_box_aspect([1, 1, 1])  # 设置xyz轴的比例
+    plotter.new_2d_fig()
+    plotter.prepare_chi_phi_data()
+    plotter.plot_phi_families_regimes(index=0)
+    plotter.plot_phi_families_split(index=0)
+    plotter.add_annotations()
+    plotter.save_and_show()
 
-    plt.savefig('temp.svg', transparent=True)
-    plt.show()
-
-
-
-
-
-
-
+    plotter.new_3d_fig()
+    plotter.plot_3D_surface(index=0)
+    plotter.add_annotations()
+    plotter.save_and_show()

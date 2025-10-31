@@ -33,7 +33,7 @@ if __name__ == '__main__':
                               data_path=r'D:\DELL\Documents\myPlots\plot_3D\projects\SE\data\lowQ-BIC\sweep_NAs\PL_Analysis.json')
     plotter.load_data()
     plotter.prepare_data()
-    plotter.new_fig()
+    plotter.new_2d_fig()
 
     plotter.add_annotations()  # 注解
     plotter.save_and_show()  # 保存

@@ -53,8 +53,8 @@ def geom_complete(coords, Z, mode='xy'):
         Z_full = np.concatenate([np.flip(Z[:,1:], 1), Z], 1)
     elif mode == 'C4':
         x_full, y_full, Z_full = _axis_coords(x), _axis_coords(y), _mirror_xy_data(Z)
-        if Z_full.shape[0] == Z_full.shape[1]:
-            Z_full = 0.5*(Z_full + np.rot90(Z_full, 1))
+        # if Z_full.shape[0] == Z_full.shape[1]:
+        #     Z_full = 0.5*(Z_full + np.rot90(Z_full, 1))
     else:
         raise ValueError(f"未知 mode: {mode}")
 
@@ -105,32 +105,31 @@ def complete_C4_polarization(coords, phi_Q1, chi_Q1):
     phi_full = np.concatenate([phi_L, phi_R], 0)
     chi_full = np.concatenate([chi_L, chi_R], 0)
 
-    return kx_full, ky_full, _wrap_angle_pi(phi_full), chi_full
+    full_coords = {'m1': kx_full, 'm2': ky_full}
+    return full_coords, _wrap_angle_pi(phi_full), chi_full
 
-def complete_C2_polarization(kx, ky, phi_Q1, chi_Q1):
+def complete_C2_polarization(coords, phi_Q1, chi_Q1):
     """
-    由半平面 (phi, chi) 补全至全平面：
+    由第一象限 (phi, chi) 补全至全平面（对称轴 y 轴）：
     """
-    kx, ky = np.asarray(kx), np.asarray(ky)
+    keys = list(coords.keys())
+    xk, yk = ('kx', 'ky') if {'kx', 'ky'}.issubset(coords) else (keys[0], keys[1])
+    kx, ky = coords[xk], coords[yk]
     phi, chi = _wrap_angle_pi(np.asarray(phi_Q1)), np.asarray(chi_Q1)
 
-    assert kx.ndim==ky.ndim==1 and np.all(np.diff(kx)>0) and np.all(np.diff(ky)>0)
-    assert np.isclose(kx[0],0) and np.isclose(ky[0],0)
-    assert phi.shape[:2]==(kx.size,ky.size) and chi.shape[:2]==(kx.size,ky.size)
+    assert kx.ndim == ky.ndim == 1 and np.all(np.diff(kx) > 0) and np.all(np.diff(ky) > 0)
+    assert np.isclose(kx[0], 0) or np.isclose(ky[0], 0)
+    assert phi.shape[:2] == (kx.size, ky.size) and chi.shape[:2] == (kx.size, ky.size)
 
-    kx_full, ky_full = _axis_coords(kx), _axis_coords(ky)
+    kx_full, ky_full = _axis_coords(kx), ky
 
-    # 右半平面
-    phi_RB, chi_RB = _mirror_phi_chi_x(phi, chi)
-    chi_RB = _mirror_even_chi_x(chi)
-    phi_R = np.concatenate([phi_RB, phi], 1)
-    chi_R = np.concatenate([chi_RB, chi], 1)
-    # 左半平面
-    phi_L, chi_L = _mirror_phi_chi_y(phi_R, chi_R)
-    phi_full = np.concatenate([phi_L, phi_R], 0)
-    chi_full = np.concatenate([chi_L, chi_R], 0)
+    # 对称 y 轴
+    phi_L, chi_L = _mirror_phi_chi_y(phi, chi)
+    phi_full = np.concatenate([phi_L, phi], 0)
+    chi_full = np.concatenate([chi_L, chi], 0)
 
-    return kx_full, ky_full, _wrap_angle_pi(phi_full), chi_full
+    full_coords = {'m1': kx_full, 'm2': ky_full}
+    return full_coords, _wrap_angle_pi(phi_full), chi_full
 
 # =========================
 # 序列化

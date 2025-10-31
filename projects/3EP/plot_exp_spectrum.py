@@ -169,7 +169,7 @@ def batch_plot(data_dir: str, batch_mode: bool = True) -> None:
             # 执行绘图流程
             plotter.load_data()
             plotter.prepare_data()
-            plotter.new_fig()
+            plotter.new_2d_fig()
             plotter.plot()
             plotter.add_annotations()
             plotter.ax.invert_yaxis()
@@ -320,7 +320,7 @@ if __name__ == '__main__':
     # 单文件执行（注释掉以切换）
     single_plotter.load_data()
     single_plotter.prepare_data()
-    single_plotter.new_fig()
+    single_plotter.new_2d_fig()
     single_plotter.plot()
     single_plotter.add_annotations()
     single_plotter.ax.invert_yaxis()

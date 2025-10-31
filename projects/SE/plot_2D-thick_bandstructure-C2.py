@@ -105,7 +105,7 @@ if __name__ == '__main__':
         save_dir='./rsl/eigensolution',
     )
 
-    from plot_3D.projects.SE.plot_thickband import main
+    from projects.SE.plot_thickband import main
 
     main(data_path)
 

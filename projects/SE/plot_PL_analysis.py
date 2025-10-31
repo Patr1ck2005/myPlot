@@ -319,7 +319,7 @@ if __name__ == '__main__':
     plotter = MyScript1Plotter(config=config, data_path=r'D:\DELL\Documents\myPlots\projects\SE\data\lowQ-BIC\sweep_NAs\PL_Analysis.json')
     plotter.load_data()
     plotter.prepare_data()
-    plotter.new_fig()
+    plotter.new_2d_fig()
     plot_dataset_1 = plotter.compute_NA_max_line()  # 手动选场景
     plotter.plot_line(np.array(plot_dataset_1['na_list']), np.array(plot_dataset_1['y_max']), default_color='k')
     plotter.plot_scatter(
