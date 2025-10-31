@@ -156,14 +156,17 @@ class MomentumSpaceEigenPolarizationPlotter(BasePlotter, ABC):
             self.phi_list.append(phi % np.pi)
             self.tanchi_list.append(np.tan(chi))
 
-    def plot_polarization_ellipses(self, index) -> None:
+    def plot_polarization_ellipses(self, index, step=(5, 5)) -> None:
         self.ax = plot_polarization_ellipses(
             self.ax, self.Mx, self.My, self.s1_list[index], self.s2_list[index], self.s3_list[index],
-            step=(5, 5),  # 适当抽样，防止太密
+            step=step,  # 适当抽样，防止太密
             scale=1e-2,  # 自动用 0.8*min(dx,dy)
             cmap='RdBu',
             alpha=1, lw=1,
         )
+        # 重新设置画布的视角
+        self.ax.set_xlim(self.Mx.min(), self.Mx.max())
+        self.ax.set_ylim(self.My.min(), self.My.max())
 
     def plot_isofreq_contours2D(self, index, levels=(0.509, 0.510, 0.511)) -> None:
         self.ax = plot_isofreq_contours2D(
@@ -261,6 +264,8 @@ class MomentumSpaceEigenPolarizationPlotter(BasePlotter, ABC):
         nsk = skyrmion_density(
             self.s1_list[index], self.s2_list[index], self.s3_list[index]
         )
+        self.ax.imshow(nsk.T, extent=(self.m1.min(), self.m1.max(), self.m2.min(), self.m2.max()),
+                       origin='lower', cmap='bwr', aspect='equal')
         return nsk
 
 

@@ -90,7 +90,10 @@ def _ms_zero_isolines(xg, yg, F):
 
     # 串联
     tol = 1e-12
-    def key(pt): return (round(pt[0]/tol)*tol, round(pt[1]/tol)*tol)
+    def key(pt):
+        if pt[0] != np.nan and pt[1] != np.nan:
+            return pt
+        return round(pt[0]/tol)*tol, round(pt[1]/tol)*tol
     start_map, end_map = {}, {}
     for a,b in segs:
         start_map.setdefault(key(a), []).append((a,b))

@@ -1,9 +1,10 @@
 from core.data_postprocess.data_filter import advanced_filter_eigensolution
 from core.data_postprocess.data_grouper import *
-from core.plot_3D_params_space_plt import *
 from core.process_multi_dim_params_space import *
 
 import numpy as np
+
+from utils.functions import ellipse2stokes
 
 c_const = 299792458
 
@@ -17,7 +18,7 @@ if __name__ == '__main__':
         return complex(freq_str.replace('i', 'j'))
     def norm_freq(freq, period):
         return freq/(c_const/period)
-    period = 300
+    period = 550
     df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq, period=period*1e-9*1e12)
     df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period*1e-9)
     df_sample["phi (rad)"] = df_sample["phi (rad)"].apply(lambda x: x % np.pi)
@@ -43,7 +44,7 @@ if __name__ == '__main__':
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 1},  # 筛选
-            # "频率 (Hz)": {">": 0.0, "<": 0.530},  # 筛选
+            "频率 (Hz)": {">": 0.530},  # 筛选
         }
     )
 
@@ -120,33 +121,16 @@ if __name__ == '__main__':
 
     from core.process_multi_dim_params_space import extract_basic_analysis_fields, plot_advanced_surface
     import matplotlib.pyplot as plt
-    from core.data_postprocess.momentum_space_toolkits import complete_C2_polarization, geom_complete
     from core.plot_cls import MomentumSpaceEigenPolarizationPlotter
     from core.plot_workflow import PlotConfig
     from core.prepare_plot import prepare_plot_data
+    from core.data_postprocess.data_package import package_stad_C2_data
 
-    band_index = 3
-    Z_target = Z_target4
-
-    # 提取 band= 的附加场数据
-    phi, tanchi, qlog, freq_real = extract_basic_analysis_fields(additional_Z_grouped, z_keys=z_keys,
-                                                                 band_index=band_index)
-
-    full_coords, phi_f, tanchi_f = complete_C2_polarization(new_coords, phi, tanchi)
-    _, Z_f = geom_complete(new_coords, Z_target, mode='x')
-    _, qlog_f = geom_complete(new_coords, qlog, mode='x')
-    s1 = np.cos(2 * phi_f) * (1 - tanchi_f ** 2) / (1 + tanchi_f ** 2)
-    s2 = np.sin(2 * phi_f) * (1 - tanchi_f ** 2) / (1 + tanchi_f ** 2)
-    s3 = 2 * tanchi_f / (1 + tanchi_f ** 2)
-    dataset1 = {
-        'eigenfreq': Z_f,
-        's1': s1,
-        's2': s2,
-        's3': s3,
-        'qlog': qlog_f,
-    }
+    _, dataset1 = package_stad_C2_data(new_coords, 0, Z_target1, additional_Z_grouped, z_keys)
+    _, dataset2 = package_stad_C2_data(new_coords, 1, Z_target2, additional_Z_grouped, z_keys)
+    full_coords, dataset3 = package_stad_C2_data(new_coords, 1, Z_target3, additional_Z_grouped, z_keys)
     data_path = prepare_plot_data(
-        coords=full_coords, dataset_list=[dataset1], fixed_params={},
+        coords=full_coords, dataset_list=[dataset1, dataset2, dataset3], fixed_params={},
     )
 
     config = PlotConfig(
@@ -160,22 +144,28 @@ if __name__ == '__main__':
     plotter.prepare_data()
 
     plotter.new_2d_fig()
-    plotter.plot_polarization_ellipses(index=0)
+    plotter.plot_polarization_ellipses(index=2)
     # plotter.plot_isofreq_contours2D(index=0, levels=(0.509, 0.510, 0.511))
     plotter.save_and_show()
 
     plotter.new_3d_fig()
-    plotter.plot_on_poincare_sphere(index=0)
+    plotter.plot_on_poincare_sphere(index=2)
+    plotter.save_and_show()
+
+    plotter.new_2d_fig()
+    plotter.imshow_skyrmion_density(index=2)
     plotter.save_and_show()
 
     plotter.new_2d_fig()
     plotter.prepare_chi_phi_data()
-    plotter.plot_phi_families_regimes(index=0)
-    plotter.plot_phi_families_split(index=0)
+    plotter.plot_phi_families_regimes(index=2)
+    plotter.plot_phi_families_split(index=2)
     plotter.add_annotations()
     plotter.save_and_show()
 
     plotter.new_3d_fig()
+    plotter.plot_3D_surface(index=2)
+    plotter.plot_3D_surface(index=1)
     plotter.plot_3D_surface(index=0)
     plotter.add_annotations()
     plotter.save_and_show()

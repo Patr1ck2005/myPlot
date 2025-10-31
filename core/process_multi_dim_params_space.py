@@ -3,7 +3,6 @@ from typing import List
 import numpy as np
 import pandas as pd
 
-
 def create_data_grid(
         df: pd.DataFrame,
         param_keys: list,
@@ -270,6 +269,12 @@ def extract_basic_analysis_fields(
     for i in range(H):
         for j in range(W):
             band = additional_Z_grouped[i, j][band_index]
+            if band is None:
+                phi[i, j] = np.nan
+                tanchi[i, j] = np.nan
+                qlog[i, j] = np.nan
+                freq_real[i, j] = np.nan
+                continue
             freq = band[freq_idx]
             Q = band[q_idx]
             t = band[tanchi_idx]
@@ -279,6 +284,7 @@ def extract_basic_analysis_fields(
             qlog[i, j] = float(np.log10(Q)) if Q > 0 else 0.0
             freq_real[i, j] = float(freq.real if isinstance(freq, complex) else freq)
     return phi, tanchi, qlog, freq_real
+
 
 def _auto_norm(data: np.ndarray, vmin: Optional[float], vmax: Optional[float]) -> Normalize:
     """根据数据与可选的 vmin/vmax 生成 Normalize，自动忽略 NaN/inf。"""

@@ -11,9 +11,11 @@ def lorenz_func(delta_omega, gamma=1, gamma_nr=0.001):
         float: The calculated Lorenz function value.
     """
     # return (gamma ** 2) / ((delta_omega ** 2) + ((gamma+gamma_nr) ** 2))
-    return -(gamma) / (1j*(delta_omega) - ((gamma+gamma_nr)))
+    return -(gamma) / (1j * (delta_omega) - ((gamma + gamma_nr)))
 
-def VBG_single_resonance_converted(kx, ky, omega=1.499, omega_Gamma=1.5, a=-.3, Q_ref=0.1, gamma_slope=0.1*10, gamma_nr=0.00):
+
+def VBG_single_resonance_converted(kx, ky, omega=1.499, omega_Gamma=1.5, a=-.3, Q_ref=0.1, gamma_slope=0.1 * 10,
+                                   gamma_nr=0.00):
     """
     Calculate the converted beam of the VBG single resonance.
 
@@ -21,10 +23,10 @@ def VBG_single_resonance_converted(kx, ky, omega=1.499, omega_Gamma=1.5, a=-.3, 
         complex: The calculated converted amplitude.
     """
     kr = np.sqrt(kx ** 2 + ky ** 2)
-    omega_0 = omega_Gamma+a*kr**2
+    omega_0 = omega_Gamma + a * kr ** 2
     delta_omega = omega - omega_0
-    gamma = gamma_slope*kr**2/(gamma_slope*Q_ref*kr**2+1)
-    return np.abs(lorenz_func(delta_omega=delta_omega, gamma=gamma, gamma_nr=gamma_nr))**2
+    gamma = gamma_slope * kr ** 2 / (gamma_slope * Q_ref * kr ** 2 + 1)
+    return np.abs(lorenz_func(delta_omega=delta_omega, gamma=gamma, gamma_nr=gamma_nr)) ** 2
 
 
 def gaussian_profile(x, y, w=0.5, l=0):
@@ -71,22 +73,22 @@ def interpolate_2d(z, x_new, y_new):
     return z_new
 
 
-def skyrmion_density(S1, S2, S3):
+def skyrmion_density(s1, s2, s3):
     # ----------------------
     #    Compute skyrmion density n_sk = S · (∂x S × ∂y S)
     #    Use centered finite differences via np.gradient with physical spacings
     # ----------------------
     # gradients of each component w.r.t x and y
-    dS1dy, dS1dx = np.gradient(S1, 1, 1, edge_order=2)
-    dS2dy, dS2dx = np.gradient(S2, 1, 1, edge_order=2)
-    dS3dy, dS3dx = np.gradient(S3, 1, 1, edge_order=2)
+    dS1dy, dS1dx = np.gradient(s1, 1, 1, edge_order=2)
+    dS2dy, dS2dx = np.gradient(s2, 1, 1, edge_order=2)
+    dS3dy, dS3dx = np.gradient(s3, 1, 1, edge_order=2)
 
     # cross product ∂x S × ∂y S (component-wise formula)
     cx = dS2dx * dS3dy - dS3dx * dS2dy
     cy = dS3dx * dS1dy - dS1dx * dS3dy
     cz = dS1dx * dS2dy - dS2dx * dS1dy
 
-    nsk = S1 * cx + S2 * cy + S3 * cz  # skyrmion density
+    nsk = s1 * cx + s2 * cy + s3 * cz  # skyrmion density
     return nsk
 
 
@@ -103,7 +105,22 @@ def skyrmion_number(nsk, dx, dy, mask=None):
     return s
 
 
+def ellipse2stokes(phi, tanchi):
+    """
+    Convert ellipse parameters to Stokes parameters.
+    """
+    s1 = np.cos(2 * phi) * (1 - tanchi ** 2) / (1 + tanchi ** 2)
+    s2 = np.sin(2 * phi) * (1 - tanchi ** 2) / (1 + tanchi ** 2)
+    s3 = 2 * tanchi / (1 + tanchi ** 2)
+    return s1, s2, s3
+
+
+def stokes2ellipse(s1, s2, s3):
+    pass
+
+
 from scipy import ndimage
+
 
 def divide_regions_by_zero(z, X=None, Y=None, visualize=False):
     """
@@ -183,12 +200,13 @@ def divide_regions_by_zero(z, X=None, Y=None, visualize=False):
         'middle_mask': middle_mask
     }
 
+
 if __name__ == '__main__':
     # 示例使用：生成同心圆环数组并调用函数
     x = np.linspace(-3, 3, 100)
     y = np.linspace(-3, 3, 100)
     X, Y = np.meshgrid(x, y)
-    r = np.sqrt(X**2 + Y**2)
+    r = np.sqrt(X ** 2 + Y ** 2)
     z = (r - 1) * (r - 2)  # 示例数组
 
     result = divide_regions_by_zero(z, X=X, Y=Y, visualize=True)
@@ -199,4 +217,3 @@ if __name__ == '__main__':
     print(f"中间 mask 形状: {result['middle_mask'].shape if result['middle_mask'] is not None else 'None'}, "
           f"非零元素数: {np.sum(result['middle_mask']) if result['middle_mask'] is not None else 'N/A'}")
     print("所有 mask 已生成，可供选择（result['masks'] 列表）。")
-
