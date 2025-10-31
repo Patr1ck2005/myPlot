@@ -252,3 +252,18 @@ class HeatmapPlotter(BasePlotter):
         if y_vals is None:
             y_vals = np.arange(Z.shape[1])
         self.fig, self.ax = plot_2d_multiline(self.ax, x_vals, y_vals, Z, params)
+
+    def show_colorbar(self, **kwargs) -> None:
+        """自动读取ax的数据和颜色映射, 单独绘制一张颜色条"""
+        if self.ax and hasattr(self.ax, 'collections') and self.ax.collections:
+            mappable = self.ax.collections[0]
+        elif self.ax and hasattr(self.ax, 'images') and self.ax.images:
+            mappable = self.ax.images[0]
+        else:
+            raise ValueError("未找到可用于颜色条的映射对象！")
+
+        cbar = self.fig.colorbar(mappable, ax=self.ax, **kwargs)
+        cbar.ax.tick_params(labelsize=self.config.fs)
+
+
+

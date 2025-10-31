@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from utils.advanced_color_mapping import plot_S1S2S3_color
+from utils.advanced_color_mapping import map_s1s2s3_color
 
 # ----------------------
 # 1) Build a "standard" skyrmion texture on a square grid
@@ -84,7 +84,7 @@ plt.title('In-plane field (S1, S2)')
 plt.xlim(-L, L); plt.ylim(-L, L)
 plt.show()
 
-rgb = plot_S1S2S3_color(S1, S2, S3, s3_mode='-11', show=False, extent=[-L, L, -L, L])
+rgb = map_s1s2s3_color(S1, S2, S3, s3_mode='-11', show=False, extent=[-L, L, -L, L])
 fig = plt.figure(figsize=(3, 3), dpi=100)
 plt.imshow(rgb, origin='lower', extent=[-L, L, -L, L])
 plt.xlabel(r'$k_x (2\pi/a)$')

@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import hsv_to_rgb
 
-from utils.advanced_color_mapping import plot_S1S2S3_color
+from utils.advanced_color_mapping import map_s1s2s3_color
 from utils.functions import VBG_single_resonance_converted, skyrmion_density, skyrmion_number
 
 # --- Parameters ---
@@ -88,7 +88,7 @@ def binary_momentum_space_show(reals, title, max_abs=1, show=True, cmap='RdBu'):
         plt.show()
 
 # Plot all fields
-plot_S1S2S3_color(S1, S2, -S3, s3_mode='-11', show=True)
+map_s1s2s3_color(S1, S2, -S3, s3_mode='-11', show=True)
 # 计算斯格明子密度
 n_sk = skyrmion_density(S1, S2, S3)
 n_sk[S3_mask] = 0

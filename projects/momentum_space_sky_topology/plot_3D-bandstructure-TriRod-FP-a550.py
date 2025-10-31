@@ -128,7 +128,7 @@ if __name__ == '__main__':
 
     _, dataset1 = package_stad_C2_data(new_coords, 0, Z_target1, additional_Z_grouped, z_keys)
     _, dataset2 = package_stad_C2_data(new_coords, 1, Z_target2, additional_Z_grouped, z_keys)
-    full_coords, dataset3 = package_stad_C2_data(new_coords, 1, Z_target3, additional_Z_grouped, z_keys)
+    full_coords, dataset3 = package_stad_C2_data(new_coords, 2, Z_target3, additional_Z_grouped, z_keys)
     data_path = prepare_plot_data(
         coords=full_coords, dataset_list=[dataset1, dataset2, dataset3], fixed_params={},
     )
@@ -146,10 +146,6 @@ if __name__ == '__main__':
     plotter.new_2d_fig()
     plotter.plot_polarization_ellipses(index=2, step=(4, 4))
     # plotter.plot_isofreq_contours2D(index=0, levels=(0.509, 0.510, 0.511))
-    plotter.save_and_show()
-
-    plotter.new_3d_fig()
-    plotter.plot_on_poincare_sphere(index=2)
     plotter.save_and_show()
 
     plotter.new_2d_fig()

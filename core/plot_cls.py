@@ -1,11 +1,14 @@
 from abc import ABC
 
+import numpy as np
+
 from advance_plot_styles.polar_plot import *
 from core.data_postprocess.momentum_space_toolkits import plot_isofreq_contours2D, extract_isofreq_paths, \
     sample_fields_along_path
 from core.data_postprocess.polar_edges import plot_phi_families_split
 from core.plot_workflow import *
 from core.process_multi_dim_params_space import plot_advanced_surface
+from utils.advanced_color_mapping import map_s1s2s3_color
 from utils.functions import skyrmion_density
 
 
@@ -129,7 +132,7 @@ class BandPlotterOneDim(LinePlotter, ABC):
             self.plot_line(x, z1=y.real, z2=y.imag, z3=Qfactor_log, **params_line)  # 填充
 
 
-class MomentumSpaceEigenPolarizationPlotter(BasePlotter, ABC):
+class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
     """极化图骨架"""
 
     def prepare_data(self) -> None:  # 手动重写：NaN过滤
@@ -189,6 +192,16 @@ class MomentumSpaceEigenPolarizationPlotter(BasePlotter, ABC):
         self.ax.set_xlim(self.Mx.min(), self.Mx.max())
         self.ax.set_ylim(self.My.min(), self.My.max())
 
+    def get_advanced_color_mapping(self, index) -> np.ndarray:
+        rgb = map_s1s2s3_color(self.s1_list[index], self.s2_list[index], self.s3_list[index])
+        return rgb
+
+    def imshow_advanced_color_mapping(self, index) -> None:
+        rgb = self.get_advanced_color_mapping(index)
+        self.ax.imshow(np.transpose(rgb, (1, 0, 2)), extent=(self.m1.min(), self.m1.max(), self.m2.min(), self.m2.max()),
+                       origin='lower', aspect='equal')
+
+
     def plot_isofreq_contours2D(self, index, levels=(0.509, 0.510, 0.511)) -> None:
         self.ax = plot_isofreq_contours2D(
             self.ax, self.m1, self.m2, self.eigenfreq_list[index].T, levels=levels,
@@ -236,7 +249,7 @@ class MomentumSpaceEigenPolarizationPlotter(BasePlotter, ABC):
                        origin='lower', cmap='twilight',
                        aspect='equal')
 
-    def plot_3D_surface(self, index, mapping=None) -> None:
+    def plot_3D_surface(self, index, mapping=None, rbga=None, **kwargs) -> None:
         if mapping is None:
             mapping = {
                 'cmap': 'hot',
@@ -251,8 +264,9 @@ class MomentumSpaceEigenPolarizationPlotter(BasePlotter, ABC):
             mapping=mapping,
             z1=eigenfreq,
             z2=qlog,
-            elev=30, azim=25,
-            font_size=9,
+            rbga=rbga,
+            elev=45, azim=25,
+            **kwargs
         )
 
     def plot_skyrmion_quiver(self, index):
@@ -288,5 +302,3 @@ class MomentumSpaceEigenPolarizationPlotter(BasePlotter, ABC):
         self.ax.imshow(nsk.T, extent=(self.m1.min(), self.m1.max(), self.m2.min(), self.m2.max()),
                        origin='lower', cmap='bwr', aspect='equal')
         return nsk
-
-

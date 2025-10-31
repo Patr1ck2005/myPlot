@@ -314,16 +314,17 @@ def plot_advanced_surface(
     z1: np.ndarray,  # 高度
     z2: np.ndarray,  # 颜色值
     z3: Optional[np.ndarray] = None,  # 透明度值(可选；未给则全不透明)
+    rbga: Optional[np.ndarray] = None,  # 直接给出颜色映射
     *,
     mapping: Dict[str, Any],
     elev: float = 30,
     azim: float = 25,
-    font_size: int = 9,
     x_key: str = 'm1',
     y_key: str = 'm2',
     z_label: str = 'Frequency (normalized)',
     rstride: int = 1,
     cstride: int = 1,
+    **kwargs
 ) -> Tuple[plt.Axes, ScalarMappable]:
     """
     在同一张 3D 图上绘制一个带面：z1 控制高度，z2 控制颜色，z3 控制 alpha。
@@ -338,7 +339,6 @@ def plot_advanced_surface(
     ----
     (ax, mappable_for_colorbar)
     """
-    plt.rcParams.update({'font.size': font_size})
 
     # 网格，按 (i,j) 对齐
     Mx, My = np.meshgrid(mx, my, indexing='ij')
@@ -360,19 +360,23 @@ def plot_advanced_surface(
     else:
         alphas = np.ones_like(z2, dtype=float)
 
-    # 生成 RGBA Facecolors
-    colors = cmap(norm_z2(z2))
-    # 写入 alpha 通道（保留每个面的透明度）
-    colors = np.array(colors, copy=True)
-    colors[..., 3] = np.clip(alphas, 0.0, 1.0)
 
-    # 对无效数据设为全透明，避免出现杂乱三角面
-    invalid = ~np.isfinite(z1) | ~np.isfinite(z2) | (~np.isfinite(z3) if z3 is not None else False)
-    if invalid.any():
-        colors[invalid] = (0, 0, 0, 0)
+    if rbga is None:
+        # 生成 RGBA Facecolors
+        colors = cmap(norm_z2(z2))
+        # 写入 alpha 通道（保留每个面的透明度）
+        colors = np.array(colors, copy=True)
+        colors[..., 3] = np.clip(alphas, 0.0, 1.0)
+
+        # 对无效数据设为全透明，避免出现杂乱三角面
+        invalid = ~np.isfinite(z1) | ~np.isfinite(z2) | (~np.isfinite(z3) if z3 is not None else False)
+        if invalid.any():
+            colors[invalid] = (0, 0, 0, 0)
+    else:
+        colors = rbga
 
     # 绘制
-    ax.plot_surface(Mx, My, z1, rstride=rstride, cstride=cstride, facecolors=colors)
+    ax.plot_surface(Mx, My, z1, rstride=rstride, cstride=cstride, facecolors=colors, **kwargs)
 
     # 轴与视角
     ax.set_xlabel(x_key)

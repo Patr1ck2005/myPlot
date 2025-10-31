@@ -7,7 +7,7 @@ from core.process_multi_dim_params_space import *
 
 import numpy as np
 
-from utils.advanced_color_mapping import plot_S1S2S3_color, convert_complex2rbg
+from utils.advanced_color_mapping import map_s1s2s3_color, convert_complex2rbg
 from utils.functions import skyrmion_density, skyrmion_number, divide_regions_by_zero
 
 c_const = 299792458
@@ -249,7 +249,7 @@ if __name__ == '__main__':
     #
     # S3[S3_mask] = 0
 
-    rgb = plot_S1S2S3_color(S1, S2, S3, s3_mode='-11', show=False, extent=[m1_min, m1_max, m2_min, m2_max])
+    rgb = map_s1s2s3_color(S1, S2, S3, s3_mode='-11', show=False, extent=[m1_min, m1_max, m2_min, m2_max])
     default_momentum_space_show(rgb, save_tag=f'{global_save_pre}-S1S2S3')
 
 

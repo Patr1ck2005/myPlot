@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import hsv_to_rgb
 
 
-def plot_S1S2S3_color(
-        S1, S2, S3,
+def map_s1s2s3_color(
+        s1, s2, s3,
         title=None,
         s3_mode='auto',
         mask_eps=1e-12,
@@ -14,7 +14,7 @@ def plot_S1S2S3_color(
         dpi=100,
 ):
     """
-    可视化三通道场 S[...,0]=S1, S[...,1]=S2, S[...,2]=S3，使用 HSV 颜色映射：
+    可视化三通道场 S[...,0]=s1, S[...,1]=s2, S[...,2]=s3，使用 HSV 颜色映射：
       - Hue:   来自 angle = atan2(S2, S1)，映射到 [0,1]
       - Sat:   默认 1；在 sqrt(S1^2+S2^2) < mask_eps 处置 0（避免相位不定产生杂色）
       - Value: 由 S3 映射黑到白
@@ -24,7 +24,7 @@ def plot_S1S2S3_color(
     rgb : np.ndarray
         形状与 S[..., :3] 的空间维一致的 RGB 图，范围 [0,1]。
     """
-    S = np.stack([S1, S2, S3], axis=-1)
+    S = np.stack([s1, s2, s3], axis=-1)
     S = np.asarray(S)
     if S.shape[-1] != 3:
         raise ValueError("输入 S 的最后一维必须是 3，对应 (S1, S2, S3)。")
@@ -103,7 +103,7 @@ def make_angle_s3_test(width=1000, height=400):
     S2 = np.sin(T)
 
     # 画图（extent 标注物理坐标范围：横轴角度，纵轴 S3）
-    rgb = plot_S1S2S3_color(
+    rgb = map_s1s2s3_color(
         S1, S2, S3,
         title="Angle (long side) vs S3 (height)",
         s3_mode='-11',              # 明确告知 S3∈[-1,1]
