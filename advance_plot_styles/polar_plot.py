@@ -141,15 +141,14 @@ def plot_on_poincare_sphere(ax, s1, s2, s3, S0=None,
         Cp = PHI.ravel()
         sc = ax.scatter(Xp, Yp, Zp, s=s, c=Cp, cmap='twilight',
                         vmin=0.0, vmax=np.pi, alpha=alpha, depthshade=False)
-        cb = mpl.pyplot.colorbar(sc, ax=ax, shrink=0.8, label=r'$\phi$')
+        # cb = mpl.pyplot.colorbar(sc, ax=ax, shrink=0.8, label=r'$\phi$')
     else:
         Cp = np.clip(s3s, -1, 1).ravel()
         sc = ax.scatter(Xp, Yp, Zp, s=s, c=Cp, cmap=cmap,
                         vmin=clim[0], vmax=clim[1], alpha=alpha, depthshade=False)
-        cb = mpl.pyplot.colorbar(sc, ax=ax, shrink=0.8, label=r'$S_3/S_0$')
+        # cb = mpl.pyplot.colorbar(sc, ax=ax, shrink=0.8, label=r'$S_3/S_0$')
 
     ax.set_box_aspect([1,1,1])
     ax.set_xlabel('$S_1/S_0$'); ax.set_ylabel('$S_2/S_0$'); ax.set_zlabel('$S_3/S_0$')
-    ax.set_title('Points on Poincaré sphere')
     return ax
 

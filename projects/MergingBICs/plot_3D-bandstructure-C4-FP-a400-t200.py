@@ -7,7 +7,8 @@ import numpy as np
 c_const = 299792458
 
 if __name__ == '__main__':
-    data_path = 'data/FP_PhC-full-14eigens-400nmP-L211,212nm.csv'
+    # data_path = 'data/FP_PhC-full-14eigens-400nmP-L211,212nm.csv'
+    data_path = 'data/FP_PhC-full-14eigens-400P-L211.8nm.csv'
     # data_path = 'data/FP_PhC-full-14eigens-400nmP-L214nm.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
@@ -45,7 +46,7 @@ if __name__ == '__main__':
         z_keys=z_keys,
         fixed_params={
             # 'buffer (nm)': 214,
-            'buffer (nm)': 211,
+            'buffer (nm)': 211.8,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 1},  # 筛选

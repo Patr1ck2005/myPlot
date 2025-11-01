@@ -155,7 +155,7 @@ if __name__ == '__main__':
         annotations={},
     )
     config.figsize = (1.5, 3)
-    config.tick_direction = 'in'
+    config.update(tick_direction='in')
     plotter = MomentumSpaceEigenPolarizationPlotter(config=config, data_path=data_path)
     plotter.load_data()
     plotter.prepare_data()

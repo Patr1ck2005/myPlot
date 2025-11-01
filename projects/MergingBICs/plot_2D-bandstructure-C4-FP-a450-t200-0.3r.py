@@ -10,7 +10,9 @@ import numpy as np
 c_const = 299792458
 
 if __name__ == '__main__':
-    data_path = 'data/FP_PhC-diff_FP-detailed-14eigenband-400P-100T-0.4r-0.1k.csv'
+    # data_path = 'data/FP_PhC-diff_FP-thickT.csv'
+    # data_path = 'data/FP_PhC-diff_FP-thickT-detailed-14eigen.csv'
+    data_path = 'data/FP_PhC-StrB-14eigenband-detailed.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -40,7 +42,7 @@ if __name__ == '__main__':
         return sp_polar
 
 
-    period = 300
+    period = 450
     df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq, period=period*1e-9*1e12)
     df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period*1e-9)
     df_sample["k"] = df_sample["m1"]+df_sample["m2"]/2.414
@@ -66,12 +68,14 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            'buffer (nm)': 200,
+            # 'buffer (nm)': 200+20*3,  # 200-400, 20
+            'buffer (nm)': 250,
+            # 'buffer (nm)': 260+10,
             # "sp_polar_show": 1,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 1},  # 筛选
-            # "频率 (Hz)": {"<": 0.52, ">": 0},  # 筛选
+            "频率 (Hz)": {"<": 0.6, ">": 0.50},  # 筛选
         }
     )
 
@@ -107,7 +111,7 @@ if __name__ == '__main__':
         [Z_new], deltas3,
         value_weights=value_weights,
         deriv_weights=deriv_weights,
-        max_m=14
+        max_m=8
     )
 
     # 假设你已经得到了 grid_coords, Z
@@ -143,30 +147,23 @@ if __name__ == '__main__':
         new_coords, Z_grouped,
         freq_index=7  # 第n个频率
     )
-    new_coords, Z_target9 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=8  # 第n个频率
-    )
-    new_coords, Z_target10 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=9  # 第n个频率
-    )
-    new_coords, Z_target11 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=10  # 第n个频率
-    )
-    new_coords, Z_target12 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=11  # 第n个频率
-    )
-    new_coords, Z_target13 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=12  # 第n个频率
-    )
-    new_coords, Z_target14 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=13  # 第n个频率
-    )
+    # new_coords, Z_target9 = group_solution(
+    #     new_coords, Z_grouped,
+    #     freq_index=8  # 第n个频率
+    # )
+    # new_coords, Z_target10 = group_solution(
+    #     new_coords, Z_grouped,
+    #     freq_index=9  # 第n个频率
+    # )
+    # new_coords, Z_target11 = group_solution(
+    #     new_coords, Z_grouped,
+    #     freq_index=10  # 第n个频率
+    # )
+
+
+    print("去掉 bg_n 后的参数：")
+    for k, v in new_coords.items():
+        print(f"  {k}: {v}")
 
     dataset1 = {'eigenfreq': Z_target1}
     dataset2 = {'eigenfreq': Z_target2}
@@ -176,23 +173,23 @@ if __name__ == '__main__':
     dataset6 = {'eigenfreq': Z_target6}
     dataset7 = {'eigenfreq': Z_target7}
     dataset8 = {'eigenfreq': Z_target8}
-    dataset9 = {'eigenfreq': Z_target9}
-    dataset10 = {'eigenfreq': Z_target10}
-    dataset11 = {'eigenfreq': Z_target11}
-    dataset12 = {'eigenfreq': Z_target12}
-    dataset13 = {'eigenfreq': Z_target13}
-    dataset14 = {'eigenfreq': Z_target14}
+    # dataset9 = {'eigenfreq': Z_target9}
+    # dataset10 = {'eigenfreq': Z_target10}
+    # dataset11 = {'eigenfreq': Z_target11}
+    # dataset12 = {'eigenfreq': Z_target12}
+    # dataset13 = {'eigenfreq': Z_target13}
+    # dataset14 = {'eigenfreq': Z_target14}
 
 
     data_path = prepare_plot_data(
         new_coords, [
             dataset1, dataset2, dataset3, dataset4, dataset5, dataset6, dataset7,
-            dataset8, dataset9, dataset10, dataset11, dataset12, dataset13, dataset14,
+            dataset8,
         ], fixed_params={},
         save_dir='./rsl/eigensolution',
     )
 
-    from projects.MergingBICs.plot_thickband_3 import main
+    from projects.MergingBICs.plot_thickband import main
 
     main(data_path)
 

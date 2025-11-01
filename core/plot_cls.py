@@ -1,5 +1,6 @@
 from abc import ABC
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from advance_plot_styles.polar_plot import *
@@ -9,7 +10,7 @@ from core.data_postprocess.polar_edges import plot_phi_families_split
 from core.plot_workflow import *
 from core.process_multi_dim_params_space import plot_advanced_surface
 from utils.advanced_color_mapping import map_s1s2s3_color
-from utils.functions import skyrmion_density
+from utils.functions import skyrmion_density, skyrmion_number
 
 
 class BandPlotterOneDim(LinePlotter, ABC):
@@ -114,17 +115,18 @@ class BandPlotterOneDim(LinePlotter, ABC):
         self.ax.set_xlim(self.x_vals.min(), self.x_vals.max())
         self.ax.set_ylim(np.nanmin(y_mins) * 0.98, np.nanmax(y_maxs) * 1.02)
 
-    def plot_colored_line(self) -> None:  # 重写：整体+循环填充
+    def plot_colored_line(self, vmin=2, vmax=7, cmap='magma') -> None:  # 重写：整体+循环填充
         params_line = {
             'enable_fill': False,
             'gradient_fill': False,
             'enable_dynamic_color': True,
-            'cmap': 'hot',
+            'cmap': cmap,
             'add_colorbar': False,
-            'global_color_vmin': 1, 'global_color_vmax': 8,
+            'global_color_vmin': vmin, 'global_color_vmax': vmax,
             'default_color': 'gray', 'alpha_fill': 1,
             'linewidth_base': 2,
             'edge_color': 'none',
+            'alpha_line': 1
         }
         for i, (x, y) in enumerate(zip(self.x_vals_list, self.y_vals_list)):
             Qfactor = np.where(y.imag != 0, np.abs(y.real / (2 * y.imag)), 1e10)
@@ -163,6 +165,19 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
         self.plot_phi_families_split(index=0)
         plt.show()
 
+    def plot_skyrmion_analysis(self, index) -> None:
+        self.new_2d_fig()
+        nsk = self.imshow_skyrmion_density(index)
+        plt.show()
+
+        self.new_3d_fig()
+        self.plot_on_poincare_sphere(index)
+        plt.show()
+
+        self.new_2d_fig()
+        self.imshow_advanced_color_mapping(index=0)
+        plt.show()
+
     def prepare_chi_phi_data(self) -> None:
         # 通过s123计算phi, tanchi
         self.phi_list = []
@@ -180,11 +195,11 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
             self.phi_list.append(phi % np.pi)
             self.tanchi_list.append(np.tan(chi))
 
-    def plot_polarization_ellipses(self, index, step=(5, 5)) -> None:
+    def plot_polarization_ellipses(self, index, step=(5, 5), scale=1e-2) -> None:
         self.ax = plot_polarization_ellipses(
             self.ax, self.Mx, self.My, self.s1_list[index], self.s2_list[index], self.s3_list[index],
             step=step,  # 适当抽样，防止太密
-            scale=1e-2,  # 自动用 0.8*min(dx,dy)
+            scale=scale,  # 自动用 0.8*min(dx,dy)
             cmap='RdBu',
             alpha=1, lw=1,
         )
@@ -198,28 +213,35 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
 
     def imshow_advanced_color_mapping(self, index) -> None:
         rgb = self.get_advanced_color_mapping(index)
-        self.ax.imshow(np.transpose(rgb, (1, 0, 2)), extent=(self.m1.min(), self.m1.max(), self.m2.min(), self.m2.max()),
+        self.ax.imshow(np.transpose(rgb, (1, 0, 2)),
+                       extent=(self.m1.min(), self.m1.max(), self.m2.min(), self.m2.max()),
                        origin='lower', aspect='equal')
 
-
-    def plot_isofreq_contours2D(self, index, levels=(0.509, 0.510, 0.511)) -> None:
+    def plot_isofreq_contours2D(self, index, levels=(0.509, 0.510, 0.511), colors=('k', 'k', 'k'), cmap=None) -> None:
+        if cmap is not None:
+            # 使用 colormap 生成颜色列表
+            from matplotlib import cm
+            colormap = cm.get_cmap(cmap, len(levels))
+            colors = [colormap(i) for i in range(len(levels))]
         self.ax = plot_isofreq_contours2D(
             self.ax, self.m1, self.m2, self.eigenfreq_list[index].T, levels=levels,
-            colors=['k', 'k', 'k'],
+            colors=colors,
             linewidths=1.0
         )
 
     def plot_phi_families_regimes(self, index) -> None:
-        color_1 = 'lightgreen'
+        # color_1 = 'lightgreen'
+        color_1 = 'white'
         color_2 = 'lightcoral'
         # 绘制区域
-        self.ax.contourf(self.m1, self.m1, (np.sin(2 * self.phi_list[index].T) > 0), levels=[-0.5, 0.5],
+        self.ax.contourf(self.m1, self.m2, (np.sin(2 * self.phi_list[index].T) > 0), levels=[-0.5, 0.5, 1.5],
                          colors=[color_2, color_1], alpha=0.5)
 
     def plot_phi_families_split(self, index) -> None:
         self.ax = plot_phi_families_split(self.ax, self.m1, self.m2, self.phi_list[index], overlay=None, lw=1)
 
-    def sample_along_isofreq(self, index=0, level=0.510) -> None:
+    def sample_along_isofreq(self, index=0, level=None, show=False):
+        assert level is not None, "请提供等频线频率值 level"
         m1f, m2f = self.m1, self.m2
         phi_f, tanchi_f = self.phi_list[index], self.tanchi_list[index]
         Z_f = self.eigenfreq_list[index]
@@ -231,22 +253,33 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
         for p in paths:
             samp = sample_fields_along_path(m1f, m2f, fields, p, npts=400)
             samples_list.append(samp)
-        # 画曲线
-        fig, ax = plt.subplots(figsize=(3 / 2, 3 / 2))
-        ax.plot(samp['s'], samp['phi'])
-        fig, ax = plt.subplots(figsize=(3 / 2, 3 / 2))
-        ax.plot(samp['s'], samp['chi'])
-        fig, ax = plt.subplots(figsize=(3 / 2, 3 / 2))
-        ax.plot(samp['s'], samp['Q'])
-        plt.show()
+        if show:
+            # 画曲线
+            fig, ax = plt.subplots(figsize=(1.25, 1.25))
+            ax.plot(samp['s'], samp['phi'])
+            fig, ax = plt.subplots(figsize=(1.25, 1.25))
+            ax.plot(samp['s'], samp['chi'])
+            fig, ax = plt.subplots(figsize=(1.25, 1.25))
+            ax.plot(samp['s'], samp['Q'])
+            plt.show()
+        return samples_list
 
-    def imshow_qlog(self, index=0) -> None:
+    def imshow_qlog(self, index=0, **kwargs) -> None:
+        if 'cmap' not in kwargs:
+            kwargs['cmap'] = 'hot'
         self.ax.imshow(self.qlog_list[index].T, extent=(self.m1.min(), self.m1.max(), self.m2.min(), self.m2.max()),
-                       origin='lower', cmap='hot', aspect='equal')
+                       origin='lower', aspect='equal', **kwargs)
 
-    def imshow_phi(self, index=0) -> None:
+    def imshow_phi(self, index=0, **kwargs) -> None:
+        if 'cmap' not in kwargs:
+            kwargs['cmap'] = 'twilight'
         self.ax.imshow(self.phi_list[index].T, extent=(self.m1.min(), self.m1.max(), self.m2.min(), self.m2.max()),
-                       origin='lower', cmap='twilight',
+                       origin='lower',
+                       aspect='equal', **kwargs)
+
+    def imshow_s3(self, index=0) -> None:
+        self.ax.imshow(self.s3_list[index].T, extent=(self.m1.min(), self.m1.max(), self.m2.min(), self.m2.max()),
+                       origin='lower', cmap='RdBu',
                        aspect='equal')
 
     def plot_3D_surface(self, index, mapping=None, rbga=None, **kwargs) -> None:
@@ -301,4 +334,13 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
         )
         self.ax.imshow(nsk.T, extent=(self.m1.min(), self.m1.max(), self.m2.min(), self.m2.max()),
                        origin='lower', cmap='bwr', aspect='equal')
+
+        print(f"full-plane")
+        s = skyrmion_number(nsk, show=False)
+        left_half_mask = (self.Mx < 0)
+        print(f"left half-plane")
+        s_left = skyrmion_number(nsk, mask=left_half_mask, show=False)
+        left_round_mask = (self.Mx ** 2 + self.My ** 2 < 0.05 ** 2) * (self.Mx < 0)
+        print(f"left half-plane")
+        s_left_round = skyrmion_number(nsk, mask=left_round_mask, show=False)
         return nsk

@@ -92,7 +92,7 @@ def skyrmion_density(s1, s2, s3):
     return nsk
 
 
-def skyrmion_number(nsk, dx, dy, mask=None):
+def skyrmion_number(nsk, dx=1, dy=1, mask=None, show=False):
     # ----------------------
     #    Compute skyrmion number s = (∑_i nsk_i * dx * dy) / (4π)
     # ----------------------
@@ -101,6 +101,15 @@ def skyrmion_number(nsk, dx, dy, mask=None):
     s = (nsk[mask].sum() * dx * dy) / (4.0 * np.pi)
 
     print(f"Computed skyrmion number s ≈ {s:.6f}")
+    if show:
+        fig, ax = plt.subplots(figsize=(2, 2))
+        # 绘制遮罩后数据
+        im = ax.imshow(nsk.T * mask.T, origin='lower', extent=[-1, 1, -1, 1],
+                       cmap='viridis')
+        plt.colorbar(im, ax=ax, shrink=0.8, label='Skyrmion density')
+        ax.set_title(f'Skyrmion density, s ≈ {s:.6f}')
+        plt.show()
+        plt.close()
     # print(f"Grid: {N}x{N}, box size: [-{L}, {L}]^2, dx=dy={dx:.4f}, radius R={R}")
     return s
 

@@ -1,7 +1,7 @@
 import os
 import pickle
 import numpy as np
-from typing import Dict, Any, List, Optional, Union
+from typing import Dict, Any, List, Optional, Union, Tuple
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from matplotlib import pyplot as plt
@@ -13,15 +13,29 @@ from advance_plot_styles.scatter_plot import plot_scatter_advanced
 
 @dataclass
 class PlotConfig:
-    """配置类：统一参数管理"""
-    figsize: tuple = (2, 3)
-    fs: int = 9  # 字体大小
+    figsize: Tuple[float, float] = (2, 3)
+    fs: int = 9
     save_dir: str = './rsl'
     show: bool = True
-    plot_params: Dict[str, Any] = None  # e.g., {'cmap': 'magma', 'add_colorbar': True}
-    annotations: Dict[str, Any] = None  # e.g., {'xlabel': r'f (c/P)', 'ylabel': 'P'}
+    plot_params: Dict[str, Any] = None
+    annotations: Dict[str, Any] = None
     dpi: int = 300
-    tick_direction: str = 'out'  # 刻度线方向
+    tick_direction: str = 'out'
+
+    def __post_init__(self):
+        self.apply()
+
+    def apply(self):
+        plt.rcParams.update({'font.size': self.fs})
+        plt.rcParams['xtick.direction'] = self.tick_direction
+        plt.rcParams['ytick.direction'] = self.tick_direction
+
+    # 可选：一并更新并应用
+    def update(self, **kw):
+        for k, v in kw.items():
+            setattr(self, k, v)
+        if k in ['fs', 'tick_direction']:
+            self.apply()
 
 
 class BasePlotter(ABC):
@@ -46,9 +60,9 @@ class BasePlotter(ABC):
         self.zlim = None
         # self.y_vals: Optional[np.ndarray] = None
         # self.subs: Optional[List[np.ndarray]] = None
-        plt.rcParams.update({'font.size': config.fs})
-        plt.rcParams['xtick.direction'] = config.tick_direction  # 将x周的刻度线方向设置向内
-        plt.rcParams['ytick.direction'] = config.tick_direction  # 将y轴的刻度方向设置向内
+        # plt.rcParams.update({'font.size': config.fs})
+        # plt.rcParams['xtick.direction'] = config.tick_direction  # 将x周的刻度线方向设置向内
+        # plt.rcParams['ytick.direction'] = config.tick_direction  # 将y轴的刻度方向设置向内
 
     def re_initialized(self, config: Optional[Union[PlotConfig, Dict]] = None, data_path: Optional[str] = None) -> None:
         """优化：只重置config/data相关，不重置fig/ax，支持重叠绘图"""

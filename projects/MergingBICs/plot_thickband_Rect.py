@@ -15,7 +15,7 @@ def main(data_path):
         },
     )
     config.figsize = (1.5, 3)
-    config.tick_direction = 'in'
+    config.update(tick_direction='in')
     plotter = MyScriptPlotter(config=config, data_path=data_path)
     plotter.load_data()
     plotter.prepare_data()

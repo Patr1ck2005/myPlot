@@ -11,7 +11,7 @@ c_const = 299792458
 
 if __name__ == '__main__':
     # data_path = 'data/FP_PhC-diff_FP-14eigenband-400nmP-0.1k.csv'
-    data_path = 'data/FP_PhC-diff_FP-detailed-14eigenband-400nmP-0.1k.csv'
+    data_path = 'data/FP_PhC-diff_FP-detailed-14eigenband-400P-200T-0.3r-0.1k.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -67,12 +67,13 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            'buffer (nm)': 214,
+            'buffer (nm)': 210,
             # "sp_polar_show": 1,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 1},  # 筛选
-            "频率 (Hz)": {"<": 0.52, ">": 0},  # 筛选
+            # "频率 (Hz)": {"<": 0.52, ">": 0},  # 筛选
+            # "频率 (Hz)": {">": 0.52},  # 筛选
         }
     )
 
@@ -168,11 +169,6 @@ if __name__ == '__main__':
         new_coords, Z_grouped,
         freq_index=13  # 第n个频率
     )
-
-
-    print("去掉 bg_n 后的参数：")
-    for k, v in new_coords.items():
-        print(f"  {k}: {v}")
 
     dataset1 = {'eigenfreq': Z_target1}
     dataset2 = {'eigenfreq': Z_target2}

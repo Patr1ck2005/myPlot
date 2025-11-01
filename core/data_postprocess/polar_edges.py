@@ -248,15 +248,7 @@ def plot_phi_families_split(ax, xgrid, ygrid, phi, *,
         ax.plot(P[:,0], P[:,1], color=color_uncertain, lw=lw, ls='--', label='uncertain')
 
     ax.set_aspect('equal', adjustable='box')
-    ax.set_xticklabels([])
-    ax.set_yticklabels([])
-    # # 去重图例
-    # handles, labels = ax.get_legend_handles_labels()
-    # if handles:
-    #     uniq = {}
-    #     for h, l in zip(handles, labels):
-    #         if l not in uniq:
-    #             uniq[l] = h
-    #     ax.legend(uniq.values(), uniq.keys(), frameon=False)
+    # ax.set_xticklabels([])
+    # ax.set_yticklabels([])
 
     return ax

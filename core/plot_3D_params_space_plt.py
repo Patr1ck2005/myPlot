@@ -142,6 +142,8 @@ def add_annotations(ax, plot_params):
             ax.set_rlim(ylim[0], ylim[1])  # r 范围
         # 极坐标 r 标签位置
         ax.set_rlabel_position(rlabel_position)
+    elif isinstance(ax, Axes3D):
+        print("Warning: Z 轴范围设置在此函数中未实现。请在绘图时单独设置。")
     else:
         # 笛卡尔范围
         if xlim:

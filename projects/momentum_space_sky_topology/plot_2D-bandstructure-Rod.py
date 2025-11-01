@@ -10,7 +10,8 @@ import numpy as np
 c_const = 299792458
 
 if __name__ == '__main__':
-    data_path = 'data/FP_PhC-diff_FP-detailed-14eigenband-400P-100T-0.1k.csv'
+    # data_path = 'data/FP_Rod-14eigen-1dim-0.05asym.csv'
+    data_path = 'data/FP_Rod-14eigen-1dim-0.10asym.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -40,9 +41,10 @@ if __name__ == '__main__':
         return sp_polar
 
 
-    period = 400
-    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq, period=period*1e-9*1e12)
-    df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period*1e-9)
+    # period = 300
+    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex)
+    # df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq, period=period*1e-9*1e12)
+    # df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period*1e-9)
     df_sample["k"] = df_sample["m1"]+df_sample["m2"]/2.414
     # 识别s和p偏振
     df_sample["phi (rad)"] = df_sample["phi (rad)"].apply(lambda x: x % np.pi)
@@ -66,12 +68,12 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            'buffer (nm)': 250,
+            'buffer (nm)': 430,
             # "sp_polar_show": 1,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 1},  # 筛选
-            # "频率 (Hz)": {"<": 0.52, ">": 0},  # 筛选
+            # "频率 (Hz)": {">": 0.325},  # 筛选
         }
     )
 
@@ -168,11 +170,6 @@ if __name__ == '__main__':
         freq_index=13  # 第n个频率
     )
 
-
-    print("去掉 bg_n 后的参数：")
-    for k, v in new_coords.items():
-        print(f"  {k}: {v}")
-
     dataset1 = {'eigenfreq': Z_target1}
     dataset2 = {'eigenfreq': Z_target2}
     dataset3 = {'eigenfreq': Z_target3}
@@ -196,7 +193,8 @@ if __name__ == '__main__':
         ], fixed_params={},
         save_dir='./rsl/eigensolution',
     )
-    from projects.MergingBICs.plot_thickband_2 import main
+
+    from projects.MergingBICs.plot_thickband_3 import main
 
     main(data_path)
 

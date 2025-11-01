@@ -321,7 +321,7 @@ def plot_advanced_surface(
     azim: float = 25,
     x_key: str = 'm1',
     y_key: str = 'm2',
-    z_label: str = 'Frequency (normalized)',
+    z_label: str = 'f',
     rstride: int = 1,
     cstride: int = 1,
     **kwargs
@@ -357,6 +357,9 @@ def plot_advanced_surface(
         z3_cfg = mapping.get('z3', {})
         norm_z3 = _auto_norm(z3, z3_cfg.get('vmin'), z3_cfg.get('vmax'))
         alphas = norm_z3(z3)  # 0~1
+    elif 'alpha' in kwargs:
+        alpha_val = kwargs.pop('alpha')
+        alphas = np.full_like(z2, fill_value=alpha_val, dtype=float)
     else:
         alphas = np.ones_like(z2, dtype=float)
 
