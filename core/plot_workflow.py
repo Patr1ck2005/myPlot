@@ -32,6 +32,7 @@ class PlotConfig:
 
     # 可选：一并更新并应用
     def update(self, **kw):
+        k, v = '', None
         for k, v in kw.items():
             setattr(self, k, v)
         if k in ['fs', 'tick_direction']:
@@ -87,11 +88,11 @@ class BasePlotter(ABC):
         else:
             raise ValueError(f"不支持的文件类型: {self.data_path}")
         print(f"数据加载成功 📂")
-        
+
     def get_datasets(self) -> Any:
         """获取原始数据，便于外部访问"""
         return self.raw_datasets
-    
+
     def get_dataset(self, index):
         """获取单个数据集，便于外部访问"""
         return self.raw_datasets[index]
@@ -139,17 +140,20 @@ class BasePlotter(ABC):
         else:
             return self.ax
 
-    def new_2d_fig(self, projection: str = 'rectilinear') -> None:
+    def new_2d_fig(self, projection: str = 'rectilinear', **kwargs) -> None:
         """创建新fig/ax，支持polar。手动调用以控制新图"""
+        self.config.update(**kwargs)
         kwargs = {'figsize': self.config.figsize}
         if projection == 'polar':
             kwargs['subplot_kw'] = {'projection': 'polar'}
         self.fig, self.ax = plt.subplots(**kwargs)
 
-    def new_3d_fig(self) -> None:
+    def new_3d_fig(self, temp_figsize=None) -> None:
         """创建新3D fig/ax，手动调用以控制新图"""
         from mpl_toolkits.mplot3d import Axes3D
-        self.fig = plt.figure(figsize=self.config.figsize)
+        if temp_figsize is None:
+            temp_figsize = self.config.figsize
+        self.fig = plt.figure(figsize=temp_figsize)
         self.ax = self.fig.add_subplot(111, projection='3d')
 
     def add_annotations(self) -> None:
@@ -278,6 +282,3 @@ class HeatmapPlotter(BasePlotter):
 
         cbar = self.fig.colorbar(mappable, ax=self.ax, **kwargs)
         cbar.ax.tick_params(labelsize=self.config.fs)
-
-
-

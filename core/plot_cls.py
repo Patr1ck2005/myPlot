@@ -166,16 +166,27 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
         plt.show()
 
     def plot_skyrmion_analysis(self, index) -> None:
-        self.new_2d_fig()
-        nsk = self.imshow_skyrmion_density(index)
-        plt.show()
+        self.prepare_chi_phi_data()
 
         self.new_3d_fig()
         self.plot_on_poincare_sphere(index)
         plt.show()
 
         self.new_2d_fig()
+        self.plot_polarization_ellipses(index)
+        plt.show()
+
+        self.new_2d_fig()
+        self.plot_phi_families_regimes(index)
+        self.plot_phi_families_split(index)
+        plt.show()
+
+        self.new_2d_fig()
         self.imshow_advanced_color_mapping(index=0)
+        plt.show()
+
+        self.new_2d_fig()
+        nsk = self.imshow_skyrmion_density(index)
         plt.show()
 
     def prepare_chi_phi_data(self) -> None:
@@ -248,7 +259,7 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
         qlog_f = np.log10(np.where(Z_f.imag != 0, np.abs(Z_f.real / (2 * Z_f.imag)), 1e10))
         paths = extract_isofreq_paths(m1f, m1f, Z_f, level=level)
         # 沿每条等频线插值采样
-        fields = {'phi': phi_f, 'chi': tanchi_f, 'Q': qlog_f, 'freq': Z_f.real}
+        fields = {'phi': phi_f, 'tanchi': tanchi_f, 'qlog': qlog_f, 'freq': Z_f.real}
         samples_list = []
         for p in paths:
             samp = sample_fields_along_path(m1f, m2f, fields, p, npts=400)
@@ -258,9 +269,9 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
             fig, ax = plt.subplots(figsize=(1.25, 1.25))
             ax.plot(samp['s'], samp['phi'])
             fig, ax = plt.subplots(figsize=(1.25, 1.25))
-            ax.plot(samp['s'], samp['chi'])
+            ax.plot(samp['s'], samp['tanchi'])
             fig, ax = plt.subplots(figsize=(1.25, 1.25))
-            ax.plot(samp['s'], samp['Q'])
+            ax.plot(samp['s'], samp['qlog'])
             plt.show()
         return samples_list
 
@@ -282,11 +293,11 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
                        origin='lower', cmap='RdBu',
                        aspect='equal')
 
-    def plot_3D_surface(self, index, mapping=None, rbga=None, **kwargs) -> None:
+    def plot_3D_surface(self, index, mapping=None, rbga=None, shade=True, **kwargs) -> None:
         if mapping is None:
             mapping = {
                 'cmap': 'hot',
-                # 'z2': {'vmin': a, 'vmax': b},  # 可选；未给则自动取数据范围
+                'z2': {'vmin': 2, 'vmax': 7},  # 可选；未给则自动取数据范围
                 # 'z3': {'vmin': c, 'vmax': d},  # 可选；仅当传入 z3 时有意义；未给则自动 [min,max]
             }
         m1f, m2f = self.m1, self.m2
@@ -298,15 +309,15 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
             z1=eigenfreq,
             z2=qlog,
             rbga=rbga,
-            elev=45, azim=25,
+            elev=45, azim=25, shade=shade,
             **kwargs
         )
 
-    def plot_skyrmion_quiver(self, index):
+    def plot_skyrmion_quiver(self, index, step=(6, 6)) -> None:
         self.ax = plot_skyrmion_quiver(
             self.ax, self.Mx, self.My,
             self.s1_list[index], self.s2_list[index], self.s3_list[index],
-            step=(6, 6),
+            step=step,
             normalize=True,
             cmap='RdBu',
             clim=(-1, 1),

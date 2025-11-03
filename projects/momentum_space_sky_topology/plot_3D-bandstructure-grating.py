@@ -14,7 +14,8 @@ if __name__ == '__main__':
     # data_path = 'data/grating-full-7eigen.csv'
     # data_path = 'data/grating-diff_h-full-7eigen-rough.csv'
     # data_path = 'data/grating-diff_h-full-7eigen-rough2.csv'
-    data_path = 'data/grating-diff_h-full-7eigen-detailed.csv'
+    data_path = 'data/grating-diff_h-full-7eigen-rough3.csv'
+    # data_path = 'data/grating-diff_h-full-7eigen-detailed.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
 
@@ -36,7 +37,7 @@ if __name__ == '__main__':
     df_sample = df_sample[df_sample["m1"] <= 0.2]
     df_sample = df_sample[df_sample["m2"] <= 0.2]
     # 指定用于构造网格的参数以及目标数据列
-    param_keys = ["m1", "m2", "h_grating (nm)"]
+    param_keys = ["m1", "m2", "h_grating (nm)", "fill"]
     z_keys = ["特征频率 (THz)", "品质因子 (1)", "up_tanchi (1)", "up_phi (rad)", "fake_factor (1)", "频率 (Hz)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
@@ -51,7 +52,8 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            "h_grating (nm)": 500,
+            "h_grating (nm)": 550,
+            "fill": 0.6,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 1},  # 筛选
@@ -121,8 +123,8 @@ if __name__ == '__main__':
     from core.prepare_plot import prepare_plot_data
     from core.data_postprocess.data_package import package_stad_C4_data
 
-    band_index = 0
-    Z_target = Z_target1
+    band_index = 2
+    Z_target = Z_target3
     plt.imshow(Z_target.real.T)
     plt.colorbar()
     plt.show()

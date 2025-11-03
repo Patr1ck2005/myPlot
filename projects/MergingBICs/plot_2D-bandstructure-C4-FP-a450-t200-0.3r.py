@@ -160,11 +160,6 @@ if __name__ == '__main__':
     #     freq_index=10  # 第n个频率
     # )
 
-
-    print("去掉 bg_n 后的参数：")
-    for k, v in new_coords.items():
-        print(f"  {k}: {v}")
-
     dataset1 = {'eigenfreq': Z_target1}
     dataset2 = {'eigenfreq': Z_target2}
     dataset3 = {'eigenfreq': Z_target3}

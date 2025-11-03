@@ -65,21 +65,33 @@ def geom_complete(coords, Z, mode='xy'):
 # =========================
 # 偏振补全（φ, χ）
 # =========================
-def _mirror_phi_chi_x(phi, chi):
+
+def _mirror_phi_x(phi):
     """ky→-ky 镜像：φ 用 2φ→π-2φ；χ 取反；列翻转对齐。"""
-    return _angle_mirror(np.flip(phi[:,1:], 1)), -np.flip(chi[:,1:], 1)
+    return _angle_mirror(np.flip(phi[:,1:], 1))
+
+def _mirror_phi_y(phi):
+    return _angle_mirror(np.flip(phi[1:], 0))
 
 def _mirror_even_chi_x(chi):
-    """ky→-ky 镜像：χ 不取反；列翻转对齐。"""
-    return _angle_mirror(np.flip(chi[:,1:], 1))
+    return np.flip(chi[:,1:], 1)
+
+def _mirror_odd_chi_x(chi):
+    return -np.flip(chi[:,1:], 1)
 
 def _mirror_even_chi_y(chi):
-    """kx→-kx 镜像：χ 不取反；列翻转对齐。"""
-    return _angle_mirror(np.flip(chi[:,1:], 1))
+    return np.flip(chi[1:], 0)
+
+def _mirror_odd_chi_y(chi):
+    return -np.flip(chi[1:], 0)
+
+def _mirror_phi_chi_x(phi, chi):
+    """ky→-ky 镜像：φ 用 2φ→π-2φ；χ 取反；列翻转对齐。"""
+    return _mirror_phi_x(phi), -np.flip(chi[:,1:], 1)
 
 def _mirror_phi_chi_y(phiR, chiR):
     """kx→-kx 镜像：φ 用 2φ→π-2φ；χ 取反；行翻转对齐。"""
-    return _angle_mirror(np.flip(phiR[1:], 0)), -np.flip(chiR[1:], 0)
+    return _mirror_phi_y(phiR), -np.flip(chiR[1:], 0)
 
 def complete_C4_polarization(coords, phi_Q1, chi_Q1):
     """
@@ -108,9 +120,38 @@ def complete_C4_polarization(coords, phi_Q1, chi_Q1):
     full_coords = {'m1': kx_full, 'm2': ky_full}
     return full_coords, _wrap_angle_pi(phi_full), chi_full
 
+def complete_C6_polarization(coords, phi_Q1, chi_Q1):
+    """
+    由第一象限 (phi, chi) 补全至全平面：
+    """
+    keys = list(coords.keys())
+    xk, yk = ('kx','ky') if {'kx','ky'}.issubset(coords) else (keys[0], keys[1])
+    kx, ky = coords[xk], coords[yk]
+    phi, chi = _wrap_angle_pi(np.asarray(phi_Q1)), np.asarray(chi_Q1)
+
+    assert kx.ndim==ky.ndim==1 and np.all(np.diff(kx)>0) and np.all(np.diff(ky)>0)
+    assert np.isclose(kx[0],0) and np.isclose(ky[0],0)
+    assert phi.shape[:2]==(kx.size,ky.size) and chi.shape[:2]==(kx.size,ky.size)
+
+    kx_full, ky_full = _axis_coords(kx), _axis_coords(ky)
+
+    # 右半平面
+    phi_RB = _mirror_phi_x(phi)
+    chi_RB = _mirror_even_chi_x(chi)
+    phi_R = np.concatenate([phi_RB, phi], 1)
+    chi_R = np.concatenate([chi_RB, chi], 1)
+    # 左半平面
+    phi_L = _mirror_phi_y(phi_R)
+    chi_L = _mirror_odd_chi_y(chi_R)
+    phi_full = np.concatenate([phi_L, phi_R], 0)
+    chi_full = np.concatenate([chi_L, chi_R], 0)
+
+    full_coords = {'m1': kx_full, 'm2': ky_full}
+    return full_coords, _wrap_angle_pi(phi_full), chi_full
+
 def complete_C2_polarization(coords, phi_Q1, chi_Q1):
     """
-    由第一象限 (phi, chi) 补全至全平面（对称轴 y 轴）：
+    由第一/四象限 (phi, chi) 补全至全平面（对称轴 y 轴）：
     """
     keys = list(coords.keys())
     xk, yk = ('kx', 'ky') if {'kx', 'ky'}.issubset(coords) else (keys[0], keys[1])
@@ -293,7 +334,7 @@ from matplotlib.patches import Ellipse
 from matplotlib.collections import PatchCollection
 
 def plot_isofreq_contours2D(ax, xgrid, ygrid, FREQ, levels,
-                            colors=None, linewidths=1.8, linestyles='-',
+                            colors=None, linewidths=1, linestyles='-',
                             return_paths=True, **contour_kwargs):
     """
     在给定 2D Axes 上绘制等频线，并（可选）返回由各 level 提取的 paths。

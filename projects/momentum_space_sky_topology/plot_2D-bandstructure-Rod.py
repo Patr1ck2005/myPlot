@@ -10,8 +10,7 @@ import numpy as np
 c_const = 299792458
 
 if __name__ == '__main__':
-    # data_path = 'data/FP_Rod-14eigen-1dim-0.05asym.csv'
-    data_path = 'data/FP_Rod-14eigen-1dim-0.10asym.csv'
+    data_path = 'data/Rod_14eigen-diff_geo-rough.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -52,8 +51,7 @@ if __name__ == '__main__':
     # # 筛选m1<0.1的成分
     # df_sample = df_sample[df_sample["m1"] < 0.3]
     # 指定用于构造网格的参数以及目标数据列
-    # param_keys = ["k", "buffer (nm)", "sp_polar_show"]
-    param_keys = ["k", "buffer (nm)"]
+    param_keys = ["k", "slab_factor", "rot_angle (deg)", "tri_factor", "t_tot (nm)", "P (nm)", "r1 (nm)"]
     z_keys = ["特征频率 (THz)", "品质因子 (1)", "tanchi (1)", "phi (rad)", "fake_factor (1)", "频率 (Hz)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
@@ -68,8 +66,12 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            'buffer (nm)': 430,
-            # "sp_polar_show": 1,
+            "slab_factor": 0.1,
+            "rot_angle (deg)": 0,
+            "tri_factor": 0.1,
+            "t_tot (nm)": 200,
+            "P (nm)": 500,
+            "r1 (nm)": 200,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 1},  # 筛选
@@ -194,7 +196,7 @@ if __name__ == '__main__':
         save_dir='./rsl/eigensolution',
     )
 
-    from projects.MergingBICs.plot_thickband_3 import main
+    from projects.momentum_space_sky_topology.plot_thickband import main
 
     main(data_path)
 

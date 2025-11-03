@@ -10,8 +10,7 @@ if __name__ == '__main__':
         plot_params={},
         annotations={},
     )
-    config.figsize = (1.5, 3)
-    config.tick_direction = 'in'
+    config.update(figsize=(1.25, 1.25), tick_direction='in')
     plotter = MomentumSpaceEigenPolarizationPlotter(config=config, data_path=data_path)
     plotter.load_data()
     plotter.prepare_data()
@@ -21,6 +20,10 @@ if __name__ == '__main__':
     plotter.new_2d_fig()
     plotter.plot_polarization_ellipses(index=band_index, step=(5, 5))
     plotter.plot_isofreq_contours2D(index=band_index, levels=(0.509, 0.510, 0.511))
+    plotter.save_and_show()
+
+    plotter.new_2d_fig()
+    plotter.plot_skyrmion_quiver(index=band_index, step=(5, 5))
     plotter.save_and_show()
 
     plotter.new_2d_fig()
@@ -35,7 +38,7 @@ if __name__ == '__main__':
     plotter.add_annotations()
     plotter.save_and_show()
 
-    plotter.new_3d_fig()
+    plotter.new_3d_fig(temp_figsize=(3, 3))
     plotter.plot_on_poincare_sphere(index=band_index)
     plotter.save_and_show()
 
@@ -54,7 +57,7 @@ if __name__ == '__main__':
     plotter.add_annotations()
     plotter.save_and_show()
 
-    plotter.new_3d_fig()
+    plotter.new_3d_fig(temp_figsize=(3, 3))
     rgba = plotter.get_advanced_color_mapping(index=band_index)
     # plotter.plot_3D_surface(index=0, shade=False)
     # plotter.plot_3D_surface(index=1, shade=False)
