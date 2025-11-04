@@ -98,7 +98,7 @@ def plot_skyrmion_quiver(ax, x, y, s1, s2, s3, S0=None,
                   angles='xy', scale_units='xy', scale=quiver_scale, width=width)
     ax.set_aspect('equal', adjustable='box')
     ax.set_xlabel(r'$k_x$'); ax.set_ylabel(r'$k_y$')
-    ax.set_title('Skyrmion-like texture: $(S_1,S_2)$ arrows, color by $S_3/S_0$')
+    ax.set_title('Skyrmion-like texture')
     cb = plt.colorbar(q, ax=ax, shrink=0.8, label=r'$S_3/S_0$')
     return ax
 

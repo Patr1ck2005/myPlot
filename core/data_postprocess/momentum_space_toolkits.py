@@ -172,6 +172,94 @@ def complete_C2_polarization(coords, phi_Q1, chi_Q1):
     full_coords = {'m1': kx_full, 'm2': ky_full}
     return full_coords, _wrap_angle_pi(phi_full), chi_full
 
+import numpy as np
+
+import numpy as np
+
+def complete_C4_spectrum(coords, complex_amplitude, eps=1e-9):
+    """
+    简单规则：Q1 旋转 90° 后相位整体 +π（乘 -1）；
+             180° => (+1)，270° => (-1)。
+    返回: {xk: ax, yk: ay}, AF (shape=(len(ay), len(ax)))
+    """
+    keys = list(coords.keys())
+    xk, yk = ('kx','ky') if {'kx','ky'}.issubset(coords) else (keys[0], keys[1])
+    kx, ky = np.asarray(coords[xk]), np.asarray(coords[yk])
+    A = np.asarray(complex_amplitude)
+
+    # 统一为 2D 网格
+    if kx.ndim==1 and ky.ndim==1:
+        KX, KY = np.meshgrid(kx, ky, indexing='xy')
+        if A.shape != KX.shape: A = A.reshape(KX.shape)
+    elif kx.ndim==2 and ky.ndim==2:
+        KX, KY = kx, ky
+        if A.shape != KX.shape: A = A.reshape(KX.shape)
+    else:
+        raise ValueError("kx, ky 必须同为 1D 或同为 2D。")
+
+    # Q1 数据并钳零，避免轴丢失
+    m = (KX >= -1e-12) & (KY >= -1e-12)
+    X, Y, V = KX[m].ravel(), KY[m].ravel(), A[m].ravel()
+    X = np.where(np.abs(X) < eps, 0.0, X)
+    Y = np.where(np.abs(Y) < eps, 0.0, Y)
+
+    # 生成四次旋转后的坐标与相位（90°:+pi => 乘 -1）
+    R0 = ( X,  Y,  V)
+    R1 = (-Y,  X, -V)
+    R2 = (-X, -Y,  V)
+    R3 = ( Y, -X, -V)
+
+    # 收集所有旋转后的坐标以构建 1D 轴（并强制包含 0）
+    def clamp0(arr):
+        arr = np.asarray(arr); arr[np.abs(arr) < eps] = 0.0; return np.round(arr, 12)
+    all_x = np.concatenate([clamp0(r[0]) for r in (R0,R1,R2,R3)])
+    all_y = np.concatenate([clamp0(r[1]) for r in (R0,R1,R2,R3)])
+    ax = np.unique(all_x); ay = np.unique(all_y)
+    if ax.size==0 or ax[0] > 0: ax = np.insert(ax, 0, 0.0)
+    if ay.size==0 or ay[0] > 0: ay = np.insert(ay, 0, 0.0)
+    ax.sort(); ay.sort()
+
+    AF = np.full((ay.size, ax.size), np.nan+1j*np.nan, dtype=np.complex128)
+    filled = np.zeros_like(AF, dtype=bool)
+
+    # 容差：步长的 1/4
+    dx = np.min(np.diff(ax)) if ax.size>1 else 1e-9
+    dy = np.min(np.diff(ay)) if ay.size>1 else 1e-9
+    tx, ty = 0.25*dx, 0.25*dy
+
+    def place(x, y, v):
+        x = clamp0(x); y = clamp0(y); v = np.asarray(v).ravel()
+        ix = np.clip(np.searchsorted(ax, x), 0, ax.size-1).astype(int)
+        iy = np.clip(np.searchsorted(ay, y), 0, ay.size-1).astype(int)
+        for xi, yi, val, xv, yv in zip(ix, iy, v, x, y):
+            xv = float(xv); yv = float(yv)
+            if abs(float(ax[xi]) - xv) <= tx and abs(float(ay[yi]) - yv) <= ty:
+                AF[yi, xi] = 0.5*(AF[yi, xi] + val) if filled[yi, xi] else val
+                filled[yi, xi] = True
+
+    # 填充四象限（R1/R3 已经整体 +π）
+    place(*R0); place(*R1); place(*R2); place(*R3)
+
+    # 保障轴上有值：对 x=0 列与 y=0 行做单侧填补
+    j0 = int(np.where(np.isclose(ax, 0.0, atol=eps))[0][0])
+    i0 = int(np.where(np.isclose(ay, 0.0, atol=eps))[0][0])
+    # x=0 列
+    for i in range(AF.shape[0]):
+        if np.isnan(AF[i, j0]):
+            # 优先取正侧
+            right = next((j for j in range(j0+1, AF.shape[1]) if not np.isnan(AF[i, j])), None)
+            left  = next((j for j in range(j0-1, -1, -1)        if not np.isnan(AF[i, j])), None)
+            AF[i, j0] = AF[i, right] if right is not None else (AF[i, left] if left is not None else AF[i, j0])
+    # y=0 行
+    for j in range(AF.shape[1]):
+        if np.isnan(AF[i0, j]):
+            up   = next((i for i in range(i0+1, AF.shape[0]) if not np.isnan(AF[i, j])), None)
+            down = next((i for i in range(i0-1, -1, -1)      if not np.isnan(AF[i, j])), None)
+            AF[i0, j] = AF[up, j] if up is not None else (AF[down, j] if down is not None else AF[i0, j])
+
+    return {xk: ax, yk: ay}, AF
+
+
 # =========================
 # 序列化
 # =========================

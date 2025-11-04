@@ -101,7 +101,7 @@ if __name__ == '__main__':
         print(f"  {k}: {v}")
 
     data_path = prepare_plot_data(
-        new_coords, [Z_target1, Z_target2], x_key="m1", fixed_params={},
+        new_coords, data_class='Eigensolution', dataset_list=[Z_target1, Z_target2], x_key="m1", fixed_params={},
         save_dir='./rsl/eigensolution',
     )
 

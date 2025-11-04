@@ -82,7 +82,8 @@ def map_s1s2s3_color(
         plt.axis('off')
         plt.show()
 
-    return rgb
+    # return rgb
+    return np.transpose(rgb, (1, 0, 2))
 
 
 def make_angle_s3_test(width=1000, height=400):
@@ -113,7 +114,7 @@ def make_angle_s3_test(width=1000, height=400):
     )
     return rgb
 
-def convert_complex2rbg(field, title=None, show=False):
+def map_complex2rbg(field, title=None, show=False):
     amp = np.abs(field)
     phase = np.angle(field)
     amp_norm = amp / amp.max()
@@ -126,7 +127,7 @@ def convert_complex2rbg(field, title=None, show=False):
         plt.title(title)
         plt.axis('off')
         plt.show()
-    return rgb
+    return np.transpose(rgb, (1, 0, 2))
 
 if __name__ == '__main__':
 

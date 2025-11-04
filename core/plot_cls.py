@@ -9,7 +9,7 @@ from core.data_postprocess.momentum_space_toolkits import plot_isofreq_contours2
 from core.data_postprocess.polar_edges import plot_phi_families_split
 from core.plot_workflow import *
 from core.process_multi_dim_params_space import plot_advanced_surface
-from utils.advanced_color_mapping import map_s1s2s3_color
+from utils.advanced_color_mapping import map_s1s2s3_color, map_complex2rbg
 from utils.functions import skyrmion_density, skyrmion_number
 
 
@@ -355,3 +355,55 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
         print(f"left half-plane")
         s_left_round = skyrmion_number(nsk, mask=left_round_mask, show=False)
         return nsk
+
+
+class MomentumSpaceSpectrumPlotter(HeatmapPlotter, ABC):
+    """光谱图骨架"""
+    def prepare_data(self) -> None:  # 手动重写：NaN过滤
+        self.m1 = self.coordinates['m1']
+        self.m2 = self.coordinates['m2']
+        self.Mx, self.My = np.meshgrid(self.m1, self.m2, indexing='ij')
+        self.data_list = self.raw_datasets["data_list"]
+        self.s11_list = [self.data_list[i]['s11'] for i in range(self.data_num)]
+        self.s21_list = [self.data_list[i]['s21'] for i in range(self.data_num)]
+
+    def prepare_helical_basis(self) -> None:
+        pass
+
+    def plot(self) -> None:
+        pass
+
+    def plot_skyrmion_analysis(self, index) -> None:
+        pass
+
+    def get_advanced_color_mapping(self, index) -> np.ndarray:
+        rgb = map_s1s2s3_color(self.s1_list[index], self.s2_list[index], self.s3_list[index])
+        return rgb
+
+    def imshow_advanced_color_mapping(self, index) -> None:
+        rgb = self.get_advanced_color_mapping(index)
+        self.ax.imshow(np.transpose(rgb, (1, 0, 2)),
+                       extent=(self.m1.min(), self.m1.max(), self.m2.min(), self.m2.max()),
+                       origin='lower', aspect='equal')
+
+    def imshow_s11(self, index=0, **kwargs) -> None:
+        # if 'cmap' not in kwargs:
+        #     kwargs['cmap'] = 'RdBu'
+        rgb = map_complex2rbg(self.s11_list[index])
+        self.ax.imshow(rgb, extent=(self.m1.min(), self.m1.max(), self.m2.min(), self.m2.max()),
+                       origin='lower', aspect='equal', **kwargs)
+
+    def imshow_s21(self, index=0, **kwargs) -> None:
+        if 'cmap' not in kwargs:
+            kwargs['cmap'] = 'RdBu'
+        rgb = map_complex2rbg(self.s21_list[index])
+        self.ax.imshow(rgb, extent=(self.m1.min(), self.m1.max(), self.m2.min(), self.m2.max()),
+                       origin='lower', aspect='equal', **kwargs)
+
+
+class MomentumSpacePropagationPlotter(HeatmapPlotter, ABC):
+    def prepare_data(self, U) -> None:  # 手动重写：NaN过滤
+        self.m1 = self.coordinates['m1']
+        self.m2 = self.coordinates['m2']
+        self.Mx, self.My = np.meshgrid(self.m1, self.m2, indexing='ij')
+        self.U = U

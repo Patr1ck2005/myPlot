@@ -93,7 +93,7 @@ if __name__ == '__main__':
     print("Z 形状：", Z_target1.shape)
 
     data_path = prepare_plot_data(
-        new_coords, [Z_target1, Z_target2], x_key="w_delta_factor", fixed_params={},
+        new_coords, data_class='Eigensolution', dataset_list=[Z_target1, Z_target2], x_key="w_delta_factor", fixed_params={},
         save_dir='./rsl/eigensolution',
     )
 

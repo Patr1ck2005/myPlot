@@ -2,6 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from advance_plot_styles.polar_plot import *
+from utils.advanced_color_mapping import map_s1s2s3_color
 # 可选：你已有的工具
 from utils.functions import skyrmion_density, skyrmion_number
 
@@ -84,31 +85,44 @@ if __name__ == "__main__":
     s1, s2, s3 = S1/(S0 + 1e-12), S2/(S0 + 1e-12), S3/(S0 + 1e-12)
 
     # 1) 椭圆贴片（独立成图）
-    fig1, ax1 = plt.subplots(figsize=(6, 5))
-    plot_polarization_ellipses(ax1, kx, ky, s1, s2, s3, S0=S0, step=(6,6), scale=0.15)
+    fig1, ax1 = plt.subplots(figsize=(3, 3))
+    plot_polarization_ellipses(ax1, kx, ky, s1, s2, s3, S0=S0, step=(10,10), scale=0.15)
     ax1.plot([+kxc, -kxc], [kyc, kyc], 'k.', ms=6)  # 标记 C 点
-    fig1.tight_layout()
+    ax1.set_title('Polarization ellipses')
+    plt.savefig("temp.svg", bbox_inches='tight', transparent=True)
+    plt.show()
+
+    #
+    fig1, ax1 = plt.subplots(figsize=(3, 3))
+    rbg = map_s1s2s3_color(s1, s2, s3)
+    ax1.imshow(rbg, origin='lower', extent=extent)
+    ax1.set_title('Hyper colormap')
+    plt.savefig("temp.svg", bbox_inches='tight', transparent=True)
+    plt.show()
 
     # 2) phi 的 imshow（独立成图）
-    fig2, ax2 = plt.subplots(figsize=(6, 5))
+    fig2, ax2 = plt.subplots(figsize=(3, 3))
     imshow_phi(ax2, phi, extent=extent, interpolation='nearest', cmap='hsv')
     ax2.plot([+kxc, -kxc], [kyc, kyc], 'k.', ms=6)
-    fig2.tight_layout()
+    plt.savefig("temp.svg", bbox_inches='tight', transparent=True)
+    plt.show()
 
     # 3) S3/S0 的 imshow（独立成图）
-    fig3, ax3 = plt.subplots(figsize=(6, 5))
+    fig3, ax3 = plt.subplots(figsize=(3, 3))
     imshow_s3(ax3, s3, S0=S0, extent=extent, interpolation='nearest', cmap='RdBu')
     ax3.plot([+kxc, -kxc], [kyc, kyc], 'k.', ms=6)
-    fig3.tight_layout()
+    plt.savefig("temp.svg", bbox_inches='tight', transparent=True)
+    plt.show()
 
     # 4) 斯格明子纹理（箭头）（独立成图）
-    fig4, ax4 = plt.subplots(figsize=(6, 5))
-    plot_skyrmion_quiver(ax4, kx, ky, s1, s2, s3, S0=S0, step=(6,6),
+    fig4, ax4 = plt.subplots(figsize=(3, 3))
+    plot_skyrmion_quiver(ax4, kx, ky, s1, s2, s3, S0=S0, step=(10,10),
                          normalize=True, cmap='RdBu', clim=(-1,1),
-                         quiver_scale=None, width=0.006)
+                         quiver_scale=None, width=0.010)
     ax4.set_xlim(extent[0], extent[1]); ax4.set_ylim(extent[2], extent[3])
     ax4.plot([+kxc, -kxc], [kyc, kyc], 'k.', ms=6)
-    fig4.tight_layout()
+    plt.savefig("temp.svg", bbox_inches='tight', transparent=True)
+    plt.show()
 
     # 5) 投到 Poincaré 球面（独立成图）
     fig5 = plt.figure(figsize=(6, 6))
@@ -116,7 +130,8 @@ if __name__ == "__main__":
     plot_on_poincare_sphere(ax5, s1, s2, s3, S0=S0, step=(1,1),
                             c_by='s3', cmap='RdBu', clim=(-1,1),
                             s=8, alpha=0.9, sphere_style='wire')
-    fig5.tight_layout()
+    plt.savefig("temp.svg", bbox_inches='tight', transparent=True)
+    plt.show()
 
     # 6) 斯格明子密度/数（示例：左半平面），独立成图
     left_mask = (kx < 0)
@@ -128,7 +143,8 @@ if __name__ == "__main__":
     plt.colorbar(im, ax=ax6, shrink=0.8, label='Skyrmion density')
     ax6.set_title('Skyrmion density (left half-plane)')
     ax6.set_xlabel(r'$k_x$'); ax6.set_ylabel(r'$k_y$')
-    fig6.tight_layout()
+    plt.savefig("temp.svg", bbox_inches='tight', transparent=True)
+    plt.show()
 
     print("Sum of n_sk (left):", float(nsk_left.sum()))
     # 这里的格点间距在 skyrmion_number 中由你自定义的函数内部处理；

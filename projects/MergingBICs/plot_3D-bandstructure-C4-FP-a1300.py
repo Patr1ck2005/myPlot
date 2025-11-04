@@ -148,7 +148,7 @@ if __name__ == '__main__':
         'qlog': qlog_f,
     }
     data_path = prepare_plot_data(
-        coords=full_coords, dataset_list=[dataset1], fixed_params={},
+        coords=full_coords, data_class='Eigensolution', dataset_list=[dataset1], fixed_params={},
     )
 
     config = PlotConfig(

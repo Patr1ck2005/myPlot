@@ -81,7 +81,7 @@ if __name__ == '__main__':
 
     # 集成保存
     data_path = prepare_plot_data(
-        new_coords, [Z_target1, Z_target11], x_key="频率 (Hz)", y_key="w_delta_factor", fixed_params={},
+        new_coords, data_class='Eigensolution', dataset_list=[Z_target1, Z_target11], x_key="频率 (Hz)", y_key="w_delta_factor", fixed_params={},
         save_dir='./rsl/delta_space',
     )
 

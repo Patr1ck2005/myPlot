@@ -178,7 +178,7 @@ if __name__ == '__main__':
     # dataset14 = {'eigenfreq': Z_target14}
 
     data_path = prepare_plot_data(
-        new_coords, [
+        new_coords, data_class='Eigensolution', dataset_list=[
             dataset1, dataset2, dataset3, dataset4, dataset5, dataset6, dataset7,
             dataset8, dataset9, dataset10
         ], fixed_params={},

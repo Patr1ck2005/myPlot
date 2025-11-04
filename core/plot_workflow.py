@@ -119,7 +119,7 @@ class BasePlotter(ABC):
         print(f"Pickle基础提取: {self.raw_datasets.keys} 🔍")
 
     @abstractmethod
-    def prepare_data(self) -> None:
+    def prepare_data(self, **kwargs) -> None:
         """抽象：最灵活部分！用户手动重写：提取键、过滤NaN、计算衍生"""
         pass
 

@@ -167,7 +167,7 @@ if __name__ == '__main__':
     _, dataset8 = package_stad_C6_data(new_coords, 7, Z_target8, additional_Z_grouped, z_keys)
     full_coords, dataset9 = package_stad_C6_data(new_coords, 8, Z_target9, additional_Z_grouped, z_keys)
     data_path = prepare_plot_data(
-        coords=full_coords, dataset_list=[dataset1, dataset2, dataset3, dataset4, dataset5,
+        coords=full_coords, data_class='Eigensolution', dataset_list=[dataset1, dataset2, dataset3, dataset4, dataset5,
                                           dataset6, dataset7, dataset8, dataset9], fixed_params={},
     )
 
