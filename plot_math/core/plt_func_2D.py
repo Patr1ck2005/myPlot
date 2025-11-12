@@ -36,7 +36,7 @@ def plot_2d_function(f, x_range, y_range, cmap_name, filename='function_plot.png
 
     vortex_pattern = (2*(np.atan(Y / X))+np.pi)/np.pi/2
     # 获取颜色映射
-    cmap = plt.get_cmap('magma')
+    cmap = plt.get_cmap(cmap_name)
     # cmap = plt.get_cmap('twilight')
     # cmap = plt.get_cmap('hsv')
 

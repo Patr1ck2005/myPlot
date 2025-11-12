@@ -11,10 +11,12 @@ def lorenz_func(delta_omega, gamma=1, gamma_nr=0.001):
         float: The calculated Lorenz function value.
     """
     # return (gamma ** 2) / ((delta_omega ** 2) + ((gamma+gamma_nr) ** 2))
-    return -(gamma) / (1j * (delta_omega) - ((gamma + gamma_nr)))
+    return -(gamma) / ((gamma + gamma_nr) - 1j * delta_omega)
 
 
-def VBG_single_resonance_converted(kx, ky, omega=1.499, omega_Gamma=1.5, a=-.3, Q_ref=0.1, gamma_slope=0.1 * 10,
+# def VBG_single_resonance_converted(kx, ky, omega=1.499, omega_Gamma=1.5, a=-.3, Q_ref=0.1, gamma_slope=0.1 * 10,
+#                                    gamma_nr=0.00):
+def VBG_single_resonance_converted(kx, ky, omega=1.4, omega_Gamma=1.5, a=-1, Q_ref=1, gamma_slope=0.1,
                                    gamma_nr=0.00):
     """
     Calculate the converted beam of the VBG single resonance.
@@ -26,7 +28,7 @@ def VBG_single_resonance_converted(kx, ky, omega=1.499, omega_Gamma=1.5, a=-.3, 
     omega_0 = omega_Gamma + a * kr ** 2
     delta_omega = omega - omega_0
     gamma = gamma_slope * kr ** 2 / (gamma_slope * Q_ref * kr ** 2 + 1)
-    return np.abs(lorenz_func(delta_omega=delta_omega, gamma=gamma, gamma_nr=gamma_nr)) ** 2
+    return lorenz_func(delta_omega=delta_omega, gamma=gamma, gamma_nr=gamma_nr)
 
 
 def gaussian_profile(x, y, w=0.5, l=0):

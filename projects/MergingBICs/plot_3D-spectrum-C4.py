@@ -121,19 +121,27 @@ if __name__ == '__main__':
     config.update(figsize=(1.25, 1.25), tick_direction='out')
     # 例：取第0个数据的 s21 做传播
     m1, m2 = plotter.m1, plotter.m2  # 你的坐标轴（-0.1~0.1）
-    A0 = plotter.s21_list[0]  # 初始角谱（复振幅）
+    U0 = plotter.s21_list[0]  # 初始角谱（复振幅）
+    fig, ax = plt.subplots(figsize=(1.25, 1.25))
+    real_U0 = np.real(U0)
+    from matplotlib.colors import SymLogNorm
+    im = ax.imshow(real_U0.T, origin='lower', extent=(m1[0], m1[-1], m2[0], m2[-1]),
+                   cmap='RdBu', norm=SymLogNorm(linthresh=1e-1, vmin=-1, vmax=1))
+    cbar = fig.colorbar(im, ax=ax)
+    plt.savefig('temp.svg', bbox_inches='tight', transparent=True, dpi=1000)
+    plt.show()
     # 做圆形裁剪. 按照比例radius_prop保留中心区域
     radius_prop = 0.4
     m_radius = radius_prop * np.min([np.max(m1) - np.min(m1), np.max(m2) - np.min(m2)])
     M1, M2 = np.meshgrid(m1, m2, indexing='xy')
     mask_circle = M1 ** 2 + M2 ** 2 <= m_radius ** 2
-    A0 = A0 * mask_circle
+    U0 = U0 * mask_circle
     # 做0填充
     pad_m1 = 2
     pad_m2 = 2
     pad_m1 = int(pad_m1 * len(m1))
     pad_m2 = int(pad_m2 * len(m2))
-    A0 = np.pad(A0, ((pad_m1, pad_m1), (pad_m2, pad_m2)), mode='constant', constant_values=0)
+    U0 = np.pad(U0, ((pad_m1, pad_m1), (pad_m2, pad_m2)), mode='constant', constant_values=0)
     # 更新 m1, m2
     m1 = np.linspace(np.min(m1) - pad_m1 * (m1[1] - m1[0]),
                      np.max(m1) + pad_m1 * (m1[1] - m1[0]), len(m1) + 2 * pad_m1)
@@ -154,13 +162,13 @@ if __name__ == '__main__':
     norm_m2 = m2 / norm_f
     # 可视化：np.abs(Exy) 或 np.angle(Exy)
     fig, ax = plt.subplots(figsize=(1.25, 1.25), dpi=200)
-    im = ax.imshow(np.abs(A0).T ** 2, origin='lower', extent=(norm_m1[0], norm_m1[-1], norm_m2[0], norm_m2[-1]),
+    im = ax.imshow(np.abs(U0).T ** 2, origin='lower', extent=(norm_m1[0], norm_m1[-1], norm_m2[0], norm_m2[-1]),
                    cmap='magma')
     cbar = fig.colorbar(im, ax=ax)
     ax.set_xlabel('norm m1 ($k_0$)')
     ax.set_ylabel('norm m2 ($k_0$)')
     plt.show()
-    Az, (x, y, Exy) = angular_spectrum_propagate(norm_m1, norm_m2, A0, z, k0=1)
+    Az, (x, y, Exy) = angular_spectrum_propagate(norm_m1, norm_m2, U0, z, k0=1)
     # 可视化：np.abs(Exy) 或 np.angle(Exy)
     fig, ax = plt.subplots(figsize=(1.25, 1.25))
     # im = ax.imshow(np.abs(Exy).T**2, origin='lower', extent=(x[0], x[-1], y[0], y[-1]),
@@ -171,15 +179,16 @@ if __name__ == '__main__':
     # im = ax.imshow(rgb, origin='lower', extent=(x[0], x[-1], y[0], y[-1]))
     ax.set_xlim(-100, 100)
     ax.set_ylim(-100, 100)
-    plt.savefig('temp.svg', bbox_inches='tight', transparent=True)
+    plt.savefig('temp.svg', bbox_inches='tight', transparent=True, dpi=1000)
     plt.show()
 
     # 2) XZ 纵截面（y=0 切片）
-    z_list = np.linspace(0, 5e3, 200)  # 0~1 cm
-    x, z, Exz = angular_spectrum_xz_slice(m1, m2, A0, z_list, k0=1, y0=0.0)
+    z_list = np.linspace(0, 1e4, 100)
+    x, z, Exz = angular_spectrum_xz_slice(m1, m2, U0, z_list, k0=1, y0=0.0, time_sign=1)
     # 可视化：np.abs(Exz) 或 np.angle(Exz)
     fig, ax = plt.subplots(figsize=(4, 1.25))
-    im = ax.imshow(np.abs(Exz).T, origin='lower', extent=(z[0], z[-1], x[0], x[-1]),
+    im = ax.imshow(np.abs(Exz).T**2, origin='lower', extent=(z[0], z[-1], x[0], x[-1]),
                    aspect='auto', cmap='magma')
-    plt.savefig('temp.svg', bbox_inches='tight', transparent=True)
+    ax.set_ylim(-1.5e3, 1.5e3)
+    plt.savefig('temp.svg', bbox_inches='tight', transparent=True, dpi=1000)
     plt.show()

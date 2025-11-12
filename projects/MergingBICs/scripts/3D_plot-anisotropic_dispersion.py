@@ -34,12 +34,27 @@ from typing import Callable, Dict, Tuple, List, Optional
 # S3_aniso_strength = 0.0  # S3 fourfold anisotropy strength for cos(4θ)
 # S3_energy_shift = -1.0  # S3 energy offset for the surface
 
-S1_energy_level = -0.6  # S1 reference plane energy (imaginary helper)
-S2_iso_coeff = -0.7  # S2 isotropic coefficient for k^2 term
-S2_aniso_strength = -0.0  # S2 fourfold anisotropy strength for cos(4θ)
-S3_iso_coeff = -0.3  # S3 isotropic coefficient for k^2 term
-S3_aniso_strength = 0.8  # S3 fourfold anisotropy strength for cos(4θ)
-S3_energy_shift = 0.2-0.5*0  # S3 energy offset for the surface
+# S1_energy_level = -0.6  # S1 reference plane energy (imaginary helper)
+# S2_iso_coeff = -0.7  # S2 isotropic coefficient for k^2 term
+# S2_aniso_strength = -0.0  # S2 fourfold anisotropy strength for cos(4θ)
+# S3_iso_coeff = -0.3  # S3 isotropic coefficient for k^2 term
+# S3_aniso_strength = 0.8  # S3 fourfold anisotropy strength for cos(4θ)
+# S3_energy_shift = 0.2-0.5*0  # S3 energy offset for the surface
+
+S1_energy_level = -0.4  # S1 reference plane energy (imaginary helper)
+S2_iso_coeff = -1.0  # S2 isotropic coefficient for k^2 term
+S2_aniso_strength = -0.6  # S2 fourfold anisotropy strength for cos(4θ)
+S3_iso_coeff = 1  # S3 isotropic coefficient for k^2 term
+S3_aniso_strength = 0.0  # S3 fourfold anisotropy strength for cos(4θ)
+S3_energy_shift = -1.0  # S3 energy offset for the surface
+
+# S1_energy_level = -0.6  # S1 reference plane energy (imaginary helper)
+# S2_iso_coeff = -0.7  # S2 isotropic coefficient for k^2 term
+# S2_aniso_strength = -0.0  # S2 fourfold anisotropy strength for cos(4θ)
+# S3_iso_coeff = -0.3  # S3 isotropic coefficient for k^2 term
+# S3_aniso_strength = 0.8  # S3 fourfold anisotropy strength for cos(4θ)
+# S3_energy_shift = 0.2-0.5*0  # S3 energy offset for the surface
+
 S3_phase_shift = np.pi  # S3 energy offset for the surface
 
 # k-space sampling

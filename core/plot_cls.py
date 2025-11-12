@@ -10,7 +10,7 @@ from core.data_postprocess.polar_edges import plot_phi_families_split
 from core.plot_workflow import *
 from core.process_multi_dim_params_space import plot_advanced_surface
 from utils.advanced_color_mapping import map_s1s2s3_color, map_complex2rbg
-from utils.functions import skyrmion_density, skyrmion_number
+from utils.functions import skyrmion_density, skyrmion_number, lorenz_func
 
 
 class BandPlotterOneDim(LinePlotter, ABC):
@@ -133,6 +133,15 @@ class BandPlotterOneDim(LinePlotter, ABC):
             Qfactor_log = np.log10(Qfactor)
             self.plot_line(x, z1=y.real, z2=y.imag, z3=Qfactor_log, **params_line)  # 填充
 
+    def plot_diffraction_cone(self, env_n=1):
+        # 绘制衍射锥线
+        kx = self.x_vals
+        c = 1  # 光速归一化
+        diffraction_cone = (1 - c * np.abs(kx)) / env_n
+        # 填充衍射极限以上的区域
+        self.ax.fill_between(kx, diffraction_cone, self.ylim[1], color='lightgreen', alpha=0.2)
+
+
 
 class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
     """极化图骨架"""
@@ -147,6 +156,27 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
         self.s2_list = [self.data_list[i]['s2'] for i in range(self.data_num)]
         self.s3_list = [self.data_list[i]['s3'] for i in range(self.data_num)]
         self.qlog_list = [self.data_list[i]['qlog'] for i in range(self.data_num)]
+
+    def interpolate_data(self, factor=2) -> None:
+        # 对所有数据进行插值
+        from scipy.ndimage import zoom
+        self.m1 = self.coordinates['m1']
+        self.m2 = self.coordinates['m2']
+        self.Mx, self.My = np.meshgrid(self.m1, self.m2, indexing='ij')
+        new_m1 = np.linspace(self.m1.min(), self.m1.max(), len(self.m1) * factor)
+        new_m2 = np.linspace(self.m2.min(), self.m2.max(), len(self.m2) * factor)
+        self.m1 = new_m1
+        self.m2 = new_m2
+        self.Mx, self.My = np.meshgrid(self.m1, self.m2, indexing='ij')
+
+        def interp_field(field):
+            return zoom(field, zoom=factor, order=3)
+
+        self.eigenfreq_list = [interp_field(self.data_list[i]['eigenfreq']) for i in range(len(self.data_list))]
+        self.s1_list = [interp_field(self.data_list[i]['s1']) for i in range(self.data_num)]
+        self.s2_list = [interp_field(self.data_list[i]['s2']) for i in range(self.data_num)]
+        self.s3_list = [interp_field(self.data_list[i]['s3']) for i in range(self.data_num)]
+        self.qlog_list = [interp_field(self.data_list[i]['qlog']) for i in range(self.data_num)]
 
     def plot(self) -> None:
         self.new_2d_fig()
@@ -355,6 +385,12 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
         print(f"left half-plane")
         s_left_round = skyrmion_number(nsk, mask=left_round_mask, show=False)
         return nsk
+
+    def compute_cross_polarization_conversion(self, index=0, freq=None):
+        cross_conversion = np.exp(-2j*self.phi_list[index])*lorenz_func(delta_omega=(freq-self.eigenfreq_list[index].real), gamma=self.eigenfreq_list[index].imag, gamma_nr=0)
+        self.cross_conversion = cross_conversion
+        # self.ax.imshow(np.real(cross_conversion).T, extent=(self.m1.min(), self.m1.max(), self.m2.min(), self.m2.max()),
+        #                   origin='lower', cmap='RdBu', aspect='equal')
 
 
 class MomentumSpaceSpectrumPlotter(HeatmapPlotter, ABC):
