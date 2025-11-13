@@ -11,7 +11,7 @@ def main(data_path):
         plot_params={'scale': 1},
         annotations={
             'xlabel': 'k (2$\pi$/P)', 'ylabel': 'f (c/P)', 'show_axis_labels': True, 'show_tick_labels': True,
-            # 'ylim': (0.6, 0.66),
+            'ylim': (0.6, 0.67),
         },
     )
     config.figsize = (1.25, 2)
@@ -22,7 +22,7 @@ def main(data_path):
     plotter.new_2d_fig()
     plotter.plot_thick_bg()
     plotter.plot_colored_line(vmin=2, vmax=7, cmap='magma')
-    plotter.plot_diffraction_cone(env_n=1.45)
+    plotter.plot_diffraction_cone(env_n=1.38)
     plotter.adjust_view_2dim()
     plotter.add_annotations()
     plotter.save_and_show()

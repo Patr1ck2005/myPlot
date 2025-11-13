@@ -139,7 +139,7 @@ class BandPlotterOneDim(LinePlotter, ABC):
         c = 1  # 光速归一化
         diffraction_cone = (1 - c * np.abs(kx)) / env_n
         # 填充衍射极限以上的区域
-        self.ax.fill_between(kx, diffraction_cone, self.ylim[1], color='lightgreen', alpha=0.2)
+        self.ax.fill_between(kx, diffraction_cone, self.ylim[1]*1.5, color='lightgreen', alpha=0.2)
 
 
 

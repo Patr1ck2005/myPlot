@@ -10,7 +10,9 @@ import numpy as np
 c_const = 299792458
 
 if __name__ == '__main__':
-    data_path = 'data/Rect-II-rectHole-diff_geo.csv'
+    # data_path = 'data/Rect-II-rectRod-diff_geo.csv'
+    # data_path = 'data/FP_Rect-II-detailed-rectRod-diff_geo.csv'
+    data_path = 'data/Rect-II-rectRod-diff_geo.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -51,7 +53,7 @@ if __name__ == '__main__':
     # # 筛选m1<0.1的成分
     # df_sample = df_sample[df_sample["m1"] < 0.3]
     # 指定用于构造网格的参数以及目标数据列
-    param_keys = ["k", "rot_angle (deg)", "rect_factor", "t_tot (nm)", "P (nm)", "r1 (nm)", "r2 (nm)", "buffer (nm)"]
+    param_keys = ["k", "rot_angle (deg)", "rect_factor", "t_tot (nm)", "P (nm)", "r1 (nm)", "r2 (nm)"]
     z_keys = ["特征频率 (THz)", "品质因子 (1)", "tanchi (1)", "phi (rad)", "fake_factor (1)", "频率 (Hz)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
@@ -66,13 +68,12 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            "rot_angle (deg)": 0,
+            "rot_angle (deg)": 45,
             "rect_factor": 0.2,
             "t_tot (nm)": 200,
             "P (nm)": 550,
             "r1 (nm)": 110,
             "r2 (nm)": 110,
-            "buffer (nm)": 300,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 1},  # 筛选
@@ -96,6 +97,7 @@ if __name__ == '__main__':
     for i in range(Z_filtered.shape[0]):
         Z_new[i] = Z_filtered[i][0]  # 提取每个 lst_ij 的第 b 列
 
+    fig, ax = plt.subplots(figsize=(6, 10))
     # 通过散点的方式绘制出来，看看效果
     for i in range(Z_new.shape[0]):
         z_vals = Z_new[i]
