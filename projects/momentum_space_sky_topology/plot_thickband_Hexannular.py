@@ -1,3 +1,5 @@
+import numpy as np
+
 from core.plot_cls import BandPlotterOneDim
 from core.plot_workflow import PlotConfig, LinePlotter
 
@@ -22,7 +24,7 @@ def main(data_path):
     plotter.new_2d_fig()
     plotter.plot_thick_bg()
     plotter.plot_colored_line(vmin=2, vmax=7, cmap='magma')
-    plotter.plot_diffraction_cone(env_n=1.45)
+    plotter.plot_diffraction_cone(env_n=1.45, scale=2/np.sqrt(3))
     plotter.adjust_view_2dim()
     plotter.add_annotations()
     plotter.save_and_show()

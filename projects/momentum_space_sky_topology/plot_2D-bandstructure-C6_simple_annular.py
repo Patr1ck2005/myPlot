@@ -10,8 +10,7 @@ import numpy as np
 c_const = 299792458
 
 if __name__ == '__main__':
-    # data_path = 'data/Rect-Annular-GeCaF2-diff_geo.csv'
-    data_path = 'data/Rect-SlabAnnular-GaAs_NOV-diff_geo-0.005k.csv'
+    data_path = 'data/Hex-simple_Annular-SiSiO2-diff_geo.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -22,19 +21,18 @@ if __name__ == '__main__':
         return freq/(c_const/period)
 
 
-    period = 412
+    period = 500*np.sqrt(3)/2
+    # period = 500
     # df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex)
     df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq, period=period*1e-9*1e12)
     # df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period*1e-9)
-    # df_sample["k"] = df_sample["m1"]+df_sample["m2"]/2.414
-    df_sample["k"] = df_sample.apply(lambda row: row["k_r"] if row["k_azimu"] == 0 else -row["k_r"], axis=1)
-    # df_sample["t_tot (nm)"] = df_sample["t_1 (nm)"]
+    df_sample["k"] = df_sample["m1"]-df_sample["m2"]
     # 识别s和p偏振
     df_sample["phi (rad)"] = df_sample["phi (rad)"].apply(lambda x: x % np.pi)
     # # 筛选m1<0.1的成分
     # df_sample = df_sample[df_sample["m1"] < 0.3]
     # 指定用于构造网格的参数以及目标数据列
-    param_keys = ["k", "t_tot (nm)", "P (nm)", "r1 (nm)", "r2 (nm)", "r3 (nm)"]
+    param_keys = ["k", "t_tot (nm)", "P (nm)", "r1 (nm)", "r2 (nm)"]
     z_keys = ["特征频率 (THz)", "品质因子 (1)", "tanchi (1)", "phi (rad)", "fake_factor (1)", "频率 (Hz)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
@@ -49,11 +47,10 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            "t_tot (nm)": 100,
-            "P (nm)": 412,
-            "r1 (nm)": 80,
-            "r2 (nm)": 135,
-            "r3 (nm)": 185,
+            "t_tot (nm)": 200,
+            "P (nm)": 500,
+            "r1 (nm)": 100,
+            "r2 (nm)": 175,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 1},  # 筛选
@@ -178,7 +175,7 @@ if __name__ == '__main__':
         save_dir='./rsl/eigensolution',
     )
 
-    from projects.momentum_space_sky_topology.plot_thickband_annular import main
+    from projects.momentum_space_sky_topology.plot_thickband_Hexannular import main
 
     main(data_path)
 

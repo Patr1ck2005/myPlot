@@ -133,13 +133,13 @@ class BandPlotterOneDim(LinePlotter, ABC):
             Qfactor_log = np.log10(Qfactor)
             self.plot_line(x, z1=y.real, z2=y.imag, z3=Qfactor_log, **params_line)  # 填充
 
-    def plot_diffraction_cone(self, env_n=1):
+    def plot_diffraction_cone(self, env_n=1, scale=1):
         # 绘制衍射锥线
         kx = self.x_vals
         c = 1  # 光速归一化
         diffraction_cone = (1 - c * np.abs(kx)) / env_n
         # 填充衍射极限以上的区域
-        self.ax.fill_between(kx, diffraction_cone, self.ylim[1]*1.5, color='lightgreen', alpha=0.2)
+        self.ax.fill_between(kx, diffraction_cone*scale, self.ylim[1]*1.5, color='lightgreen', alpha=0.2)
 
 
 
