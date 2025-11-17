@@ -10,7 +10,15 @@ import numpy as np
 c_const = 299792458
 
 if __name__ == '__main__':
-    data_path = 'data/Hex-simple_Annular-SiSiO2-diff_geo.csv'
+    # data_path = 'data/Hex-simple_Annular-SiSiO2-geo1.csv'
+    # data_path = 'data/Hex-simple_Annular-SiSiO2-geo2.csv'
+    # data_path = 'data/Hex-simple_Annular-SiSiO2-QBIC-geo1.csv'
+    # data_path = 'data/Hex-simple_Annular-SiSiO2-QBIC-geo2.csv'
+    # data_path = 'data/Hex-simple_Annular-SiSiO2-QBIC-geo3.csv'
+    # data_path = 'data/Hex-simple_Annular-SiSiO2-diff_geo.csv'
+    # data_path = 'data/Hex-simple_Annular-SiSiO2-diff_r2.csv'
+    # data_path = 'data/Hex-simple_Annular-SiSiO2-0.95xscale-geo1.csv'
+    data_path = 'data/Hex-simple_Annular-SiSiO2-geo1-full_BZ.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -21,10 +29,10 @@ if __name__ == '__main__':
         return freq/(c_const/period)
 
 
-    period = 500*np.sqrt(3)/2
-    # period = 500
-    # df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex)
-    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq, period=period*1e-9*1e12)
+    # period = 500*np.sqrt(3)/2
+    period = 500
+    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex)
+    # df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq, period=period*1e-9*1e12)
     # df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period*1e-9)
     df_sample["k"] = df_sample["m1"]-df_sample["m2"]
     # 识别s和p偏振
