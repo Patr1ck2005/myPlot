@@ -31,8 +31,8 @@ if __name__ == '__main__':
 
     # period = 500*np.sqrt(3)/2
     period = 500
-    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex)
-    # df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq, period=period*1e-9*1e12)
+    # df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex)
+    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq, period=period*1e-9*1e12)
     # df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period*1e-9)
     df_sample["k"] = df_sample["m1"]-df_sample["m2"]
     # 识别s和p偏振
@@ -82,12 +82,13 @@ if __name__ == '__main__':
     for i in range(Z_filtered.shape[0]):
         Z_new[i] = Z_filtered[i][0]  # 提取每个 lst_ij 的第 b 列
 
+    fig, ax = plt.subplots(figsize=(8, 8))
     # 通过散点的方式绘制出来，看看效果
     for i in range(Z_new.shape[0]):
         z_vals = Z_new[i]
         for val in z_vals:
             if val is not None:
-                plt.scatter(new_coords['k'][i], np.real(val), color='blue', s=10)
+                plt.scatter(new_coords['k'][i], np.real(val), color='black', s=10)
     plt.xlabel('k')
     plt.ylabel('Re(eigenfreq) (THz)')
     plt.title('Filtered Eigenfrequencies before Grouping')
