@@ -17,7 +17,10 @@ if __name__ == '__main__':
     # data_path = 'data/Rect-simple_Annular-SiSiO2-geo4.csv'
     # data_path = 'data/Rect-simple_Annular-SiSiO2-geo5.csv'
     # data_path = 'data/Rect-simple_Annular-SiSiO2-QBIC-diff_geo.csv'
-    data_path = 'data/Rect-simple_round_Annular-SiSiO2-diff_geo.csv'
+    # data_path = 'data/Rect-simple_round_Annular-SiSiO2-diff_r1r2.csv'
+    # data_path = 'data/Rect-simple_round_Annular-SiSiO2-diff_geo1.csv'
+    # data_path = 'data/Rect-simple_round_Annular-SiSiO2-diff_r1r2-round_flat.csv'
+    data_path = 'data/Rect-simple_round_Annular-SiSiO2-diff_r1r2-around_flat2.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -57,8 +60,8 @@ if __name__ == '__main__':
         fixed_params={
             "t_tot (nm)": 200,
             "P (nm)": 500,
-            "r1 (nm)": 110,
-            "r2 (nm)": 225,
+            "r1 (nm)": 110.,
+            "r2 (nm)": 197.5,
             "pattern_n": 3.5,
         },  # 固定
         filter_conditions={
@@ -83,12 +86,13 @@ if __name__ == '__main__':
     for i in range(Z_filtered.shape[0]):
         Z_new[i] = Z_filtered[i][0]  # 提取每个 lst_ij 的第 b 列
 
+    fig, ax = plt.subplots(figsize=(8, 8))
     # 通过散点的方式绘制出来，看看效果
     for i in range(Z_new.shape[0]):
         z_vals = Z_new[i]
         for val in z_vals:
             if val is not None:
-                plt.scatter(new_coords['k'][i], np.real(val), color='blue', s=10)
+                plt.scatter(new_coords['k'][i], np.real(val), color='black', s=10)
     plt.xlabel('k')
     plt.ylabel('Re(eigenfreq) (THz)')
     plt.title('Filtered Eigenfrequencies before Grouping')

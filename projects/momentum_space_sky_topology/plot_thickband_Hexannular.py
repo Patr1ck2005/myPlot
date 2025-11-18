@@ -13,7 +13,7 @@ def main(data_path):
         plot_params={'scale': 1},
         annotations={
             # 'xlabel': 'k (2$\pi$/P)', 'ylabel': 'f (c/P)', 'show_axis_labels': True, 'show_tick_labels': True,
-            'xlabel': 'k (2$\pi$/L)', 'ylabel': 'f (c/P)', 'show_axis_labels': True, 'show_tick_labels': True,
+            'xlabel': 'k (2$\pi$/a)', 'ylabel': 'f (c/a)', 'show_axis_labels': True, 'show_tick_labels': True,
             # 'ylim': (0.6, 0.67),
         },
     )

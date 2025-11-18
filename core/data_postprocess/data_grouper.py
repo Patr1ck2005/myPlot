@@ -412,120 +412,117 @@ def group_vectors_one_sided_hungarian(
             additional_grouped[idx] = ordered_ad
         assigned[idx] = True
 
-        # --------------------------------------------------------------
-        # 【新增】后处理：每条流自动再拆分（基于内部连续性统计）
-        # --------------------------------------------------------------
+    # --------------------------------------------------------------
+    # 【彻底修复版】后处理：每条流自动拆分（适用于任意维度网格）
+    # --------------------------------------------------------------
     if auto_split_streams:
-        # 辅助：获取格点的所有曼哈顿邻点（后向 + 前向，用于 diffs 计算）
-        def get_neighbors(idx):
-            nbrs = []
-            for d in range(n_dims):
-                if idx[d] > 0:
-                    nb = list(idx);
-                    nb[d] -= 1;
-                    nb = tuple(nb)
-                    nbrs.append(nb)
-                if idx[d] + 1 < dims[d]:
-                    nb = list(idx);
-                    nb[d] += 1;
-                    nb = tuple(nb)
-                    nbrs.append(nb)
-            return nbrs
-
-        # 为每条流收集数据：list of (idx, vector, ad)
-        stream_data = [[] for _ in range(m)]
-        idx_to_pos = {idx: i for i, idx in enumerate(np.ndindex(*dims))}  # 字典序位置
-
+        # 1. 收集每条流的所有非 NaN 点
+        stream_points = [[] for _ in range(m)]
         for idx in np.ndindex(*dims):
-            if not assigned[idx]:
-                continue
             for s in range(m):
+                if Zg_out[idx] is None:
+                    continue
                 vec = Zg_out[idx][s]
-                if np.all([_is_nan_scalar(v) for v in vec]):
+                if vec is None or np.all([_is_nan_scalar(v) for v in vec]):
                     continue
                 ad = additional_grouped[idx][s] if additional_grouped is not None else None
-                stream_data[s].append((idx, vec.copy(), ad))
+                stream_points[s].append((idx, vec.copy(), ad))
 
-        # 对每条流处理
+        # 2. 对每条流单独处理
         for s in range(m):
-            points = stream_data[s]
-            if len(points) < 2:
-                continue  # 太短，无需拆
+            points = stream_points[s]
+            if len(points) < 3:  # 太少直接跳过
+                continue
 
-            # 排序沿字典序（已按 np.ndindex 收集，但保险起见）
-            points.sort(key=lambda p: idx_to_pos[p[0]])
-
-            # 计算相邻 diffs（只限相邻格点）
+            # 计算该流内部所有“物理相邻”点的差值（不依赖字典序！）
             diffs = []
-            valid_pairs = []
-            for i in range(len(points) - 1):
-                idx1, vec1, _ = points[i]
-                idx2, vec2, _ = points[i + 1]
-                # 检查是否网格相邻
-                dist = sum(abs(a - b) for a, b in zip(idx1, idx2))
-                if dist == 1:  # 曼哈顿距离=1
-                    diff = np.linalg.norm(vec1 - vec2)
-                    diffs.append(diff)
-                    valid_pairs.append((i, i + 1))
+            for i, (idx1, vec1, _) in enumerate(points):
+                for j in range(i + 1, len(points)):
+                    idx2 = points[j][0]
+                    dist = sum(abs(a - b) for a, b in zip(idx1, idx2))
+                    if dist == 1:  # 真实网格邻居
+                        diff = np.linalg.norm(vec1 - points[j][1])
+                        diffs.append(diff)
 
             if len(diffs) == 0:
                 continue
 
             diffs = np.array(diffs)
             median_diff = np.median(diffs)
-            mad_diff = median_abs_deviation(diffs) if len(diffs) > 1 else 0.0
-            if mad_diff == 0:
-                mad_diff = 1e-12  # 避免除0
+            mad = median_abs_deviation(diffs, scale='normal')  # scale='normal' ≈ 1.4826 * MAD
+            if mad < 1e-12:
+                mad = 1e-12
 
-            # 找到断点
-            break_indices = []  # 在 points 中的分割点（after this index）
-            for pair_idx, (i1, i2) in enumerate(valid_pairs):
-                if diffs[pair_idx] > median_diff + mad_multiplier * mad_diff:
-                    break_indices.append(i2)  # 从 i2 开始新段
+            threshold = median_diff + mad_multiplier * mad  # 自适应阈值
 
-            if not break_indices:
-                continue  # 无大跳跃
+            # 3. 构建该流的连通分量（真正的“连续段”）
+            from collections import defaultdict
+            graph = defaultdict(list)
+            pos_to_i = {points[i][0]: i for i in range(len(points))}
 
-            # 拆分成子段
+            for i, (idx1, vec1, _) in enumerate(points):
+                for d in range(n_dims):
+                    for direction in [-1, 1]:
+                        nidx_list = list(idx1)
+                        if 0 <= idx1[d] + direction < dims[d]:
+                            nidx_list[d] += direction
+                            nidx = tuple(nidx_list)
+                            if nidx in pos_to_i:
+                                j = pos_to_i[nidx]
+                                diff = np.linalg.norm(vec1 - points[j][1])
+                                if diff <= threshold:  # 小于阈值才连边
+                                    graph[i].append(j)
+                                    graph[j].append(i)
+
+            # 4. DFS 提取所有连通分量（子段）
+            visited = [False] * len(points)
             segments = []
-            start = 0
-            for br in break_indices:
-                segments.append(points[start:br])
-                start = br
-            segments.append(points[start:])
+            for i in range(len(points)):
+                if not visited[i]:
+                    component = []
+                    stack = [i]
+                    visited[i] = True
+                    while stack:
+                        node = stack.pop()
+                        component.append(node)
+                        for nb in graph[node]:
+                            if not visited[nb]:
+                                visited[nb] = True
+                                stack.append(nb)
+                    segments.append([points[k] for k in component])
 
-            # 清理原流 s
+            # 5. 清空原流
             for idx, _, _ in points:
                 Zg_out[idx][s] = np.full(num_vector_dims, np.nan, dtype=output_dtype)
                 if additional_grouped is not None:
                     additional_grouped[idx][s] = None
 
-            # 将长子段放回（优先放回原 s，其余找空槽或新 m）
-            target_s = s
+            # 6. 把足够长的子段放回去（按长度降序，最长的一段优先占原 s）
+            segments = [seg for seg in segments if len(seg) >= min_segment_points]
+            segments.sort(key=len, reverse=True)
+
+            target_stream = s
             for seg in segments:
-                if len(seg) < min_segment_points:
-                    continue  # 剔除零散子段
-                # 找可用流槽（从 target_s 开始，找全 NaN 的流）
-                while target_s < m:
-                    # 检查该槽是否空（本流所有点是否 NaN）
-                    is_empty = True
-                    for g_idx in np.ndindex(*dims):
-                        if assigned[g_idx] and not np.all([_is_nan_scalar(v) for v in Zg_out[g_idx][target_s]]):
-                            is_empty = False
-                            break
-                    if is_empty:
+                while target_stream < m:
+                    # 检查该流是否完全空
+                    empty = all(
+                        Zg_out[idx][target_stream] is None or
+                        np.all([_is_nan_scalar(v) for v in Zg_out[idx][target_stream]])
+                        for idx in np.ndindex(*dims)
+                    )
+                    if empty:
+                        for idx, vec, ad in seg:
+                            Zg_out[idx][target_stream] = vec
+                            if additional_grouped is not None:
+                                additional_grouped[idx][target_stream] = ad
+                        print(f"[Split] Stream {s} → new stream {target_stream} (length {len(seg)})")
+                        target_stream += 1
                         break
-                    target_s += 1
-                if target_s >= m:
-                    break  # 无空槽，丢弃（或可扩展 m）
-
-                # 放回
-                for idx, vec, ad in seg:
-                    Zg_out[idx][target_s] = vec
-                    if additional_grouped is not None:
-                        additional_grouped[idx][target_s] = ad
-
-        # --------------------------------------------------------------
+                    target_stream += 1
+                else:
+                    print(f"[Discard] Segment of length {len(seg)} discarded (no empty stream slot)")
+                    break
+    # --------------------------------------------------------------
 
     if additional_grouped is None:
         return Zg_out

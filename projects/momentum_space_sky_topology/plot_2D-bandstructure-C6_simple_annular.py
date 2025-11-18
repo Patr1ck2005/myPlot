@@ -29,8 +29,8 @@ if __name__ == '__main__':
         return freq/(c_const/period)
 
 
-    # period = 500*np.sqrt(3)/2
-    period = 500
+    period = 500*np.sqrt(3)/2
+    # period = 500
     # df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex)
     df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq, period=period*1e-9*1e12)
     # df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period*1e-9)
