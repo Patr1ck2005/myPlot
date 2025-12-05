@@ -10,14 +10,7 @@ import numpy as np
 c_const = 299792458
 
 if __name__ == '__main__':
-    # data_path = 'data/2fold-TE-eigen.csv'
-    # data_path = 'data/SE/2fold-TE-k_loss0-eigen.csv'
-    # data_path = 'data/SE/3fold-TE-delta0.1-k_loss0-eigen.csv'
-    data_path = './data/3fold-TE-delta0.2-eigen.csv'
-    # data_path = 'data/3fold-TE-delta_spcae-eigen.csv'
-    # data_path = './data/1fold-TM-k_loss0-eigen.csv'
-    # data_path = 'data/1fold_weak-TM-eigen.csv'
-    # data_path = './data/1fold-TM-eigen.csv'
+    data_path = 'data/3fold-TE-DC_space-S_space-eigen.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -54,10 +47,9 @@ if __name__ == '__main__':
             # "m1": 0,
             "m2": 0,
             "loss_k": 0,
-            "w1 (nm)": 200,
-            # "w1 (nm)": 236+8*-1,  # 0.4 S
+            "w1 (nm)": 236+8*-1,  # 0.4 S
             # "w1 (nm)": 252+8*1,  # 0.2 S
-            "w_delta_factor": 0.2,
+            "w_delta_factor": 0.4,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 1.0},  # 筛选

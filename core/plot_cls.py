@@ -6,7 +6,7 @@ import numpy as np
 from advance_plot_styles.polar_plot import *
 from core.data_postprocess.momentum_space_toolkits import plot_isofreq_contours2D, extract_isofreq_paths, \
     sample_fields_along_path
-from core.data_postprocess.polar_edges import plot_phi_families_split
+from core.data_postprocess.polar_graph_analysis import plot_phi_families_split
 from core.plot_workflow import *
 from core.process_multi_dim_params_space import plot_advanced_surface
 from utils.advanced_color_mapping import map_s1s2s3_color, map_complex2rbg
@@ -94,15 +94,15 @@ class BandPlotterOneDim(LinePlotter, ABC):
         self.xlim = (self.x_vals.min(), self.x_vals.max())
         self.ylim = (np.nanmin(y_mins) * 0.98, np.nanmax(y_maxs) * 1.02)
 
-    def plot_colored_bg(self) -> None:  # 重写：整体+循环填充
+    def plot_colored_bg(self, vmin=0, vmax=5e-3, alpha=1, y_margin=0.02) -> None:  # 重写：整体+循环填充
         params = {
             'enable_fill': True,
             'gradient_fill': True,
             # 'cmap': 'magma',
             'cmap': 'magma',
             'add_colorbar': False,
-            'global_color_vmin': 0, 'global_color_vmax': 5e-3,
-            'default_color': 'gray', 'alpha_fill': 1,
+            'global_color_vmin': vmin, 'global_color_vmax': vmax,
+            'default_color': 'gray', 'alpha_fill': alpha,
             'edge_color': 'none',
             'gradient_direction': 'z3',
         }
@@ -112,10 +112,10 @@ class BandPlotterOneDim(LinePlotter, ABC):
             widths = np.abs(y.imag)
             y_mins.append(np.min(y.real - widths))
             y_maxs.append(np.max(y.real + widths))
-        self.ax.set_xlim(self.x_vals.min(), self.x_vals.max())
-        self.ax.set_ylim(np.nanmin(y_mins) * 0.98, np.nanmax(y_maxs) * 1.02)
+        self.xlim = (self.x_vals.min(), self.x_vals.max())
+        self.ylim = (np.nanmin(y_mins) * (1-y_margin), np.nanmax(y_maxs) * (1+y_margin))
 
-    def plot_colored_line(self, vmin=2, vmax=7, cmap='magma') -> None:  # 重写：整体+循环填充
+    def plot_colored_line(self, vmin=2, vmax=7, cmap='magma', y_margin=0.02) -> None:  # 重写：整体+循环填充
         params_line = {
             'enable_fill': False,
             'gradient_fill': False,
@@ -128,18 +128,24 @@ class BandPlotterOneDim(LinePlotter, ABC):
             'edge_color': 'none',
             'alpha_line': 1
         }
+        y_mins, y_maxs = [], []
         for i, (x, y) in enumerate(zip(self.x_vals_list, self.y_vals_list)):
             Qfactor = np.where(y.imag != 0, np.abs(y.real / (2 * y.imag)), 1e10)
             Qfactor_log = np.log10(Qfactor)
             self.plot_line(x, z1=y.real, z2=y.imag, z3=Qfactor_log, **params_line)  # 填充
+            y_mins.append(np.min(y.real))
+            y_maxs.append(np.max(y.real))
+        self.xlim = (self.x_vals.min(), self.x_vals.max())
+        self.ylim = (np.nanmin(y_mins) * (1-y_margin), np.nanmax(y_maxs) * (1+y_margin))
 
-    def plot_diffraction_cone(self, env_n=1, scale=1):
+
+    def plot_diffraction_cone(self, env_n=1, scale=1, upper_limit=1, color='lightgreen', alpha=0.2) -> None:
         # 绘制衍射锥线
         kx = self.x_vals
         c = 1  # 光速归一化
         diffraction_cone = (1 - c * np.abs(kx)) / env_n
         # 填充衍射极限以上的区域
-        self.ax.fill_between(kx, diffraction_cone*scale, self.ylim[1]*1.5, color='lightgreen', alpha=0.2)
+        self.ax.fill_between(kx, diffraction_cone*scale, upper_limit, color=color, alpha=alpha, edgecolor='none', zorder=0)
 
 
 
@@ -198,7 +204,7 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
     def plot_skyrmion_analysis(self, index) -> None:
         self.prepare_chi_phi_data()
 
-        self.new_3d_fig()
+        self.new_3d_fig(temp_figsize=(3, 3))
         self.plot_on_poincare_sphere(index)
         plt.show()
 
@@ -212,7 +218,7 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
         plt.show()
 
         self.new_2d_fig()
-        self.imshow_advanced_color_mapping(index=0)
+        self.imshow_advanced_color_mapping(index)
         plt.show()
 
         self.new_2d_fig()
@@ -236,7 +242,7 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
             self.phi_list.append(phi % np.pi)
             self.tanchi_list.append(np.tan(chi))
 
-    def plot_polarization_ellipses(self, index, step=(5, 5), scale=1e-2) -> None:
+    def plot_polarization_ellipses(self, index, step=(1, 1), scale=1e-2) -> None:
         self.ax = plot_polarization_ellipses(
             self.ax, self.Mx, self.My, self.s1_list[index], self.s2_list[index], self.s3_list[index],
             step=step,  # 适当抽样，防止太密

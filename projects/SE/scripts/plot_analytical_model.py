@@ -19,7 +19,7 @@ from scipy.integrate import quad
 from dataclasses import dataclass
 from typing import Callable, Tuple
 
-from plot_3D.advance_plot_styles.line_plot import plot_line_advanced
+from advance_plot_styles.line_plot import plot_line_advanced
 
 # ===================== 1) 参数与模式 =====================
 
@@ -386,7 +386,7 @@ def plot_figure_3(mode: str,
 
     # # 根据曲线的gamma_value为其赋色
     cmap = plt.get_cmap(pp.cmap_lines)
-    norm = plt.Normalize(-max(omega_values)*2, max(omega_values))
+    norm = plt.Normalize(max(omega_values)-(max(omega_values)-min(omega_values))*2, max(omega_values))
     cmap = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
 
     fig, ax = plt.subplots(figsize=(2, 3))
@@ -399,12 +399,122 @@ def plot_figure_3(mode: str,
             y = integrate_over_k(power_fn, gamma_value, sp, pp, [omega])
             y_list.append(y[0]/k_range/2)  # 平均到k_range
         ax.plot(k_range_values, y_list, '-', label=rf'$\omega$ = {omega}', color=cmap.to_rgba(omega))
+    max_k = np.sqrt(sp.gamma0*(gamma_value+sp.gamma0))/0.6
+    ax.axvline(x=max_k, color='k', linestyle='--', alpha=1)
+    ax.plot()
 
     if show:
         # plt.legend()
         plt.savefig('temp3.svg', transparent=True, bbox_inches='tight')
         plt.show()
     return fig, ax
+
+def plot_figure_4(mode: str,
+                  sp: SystemParams,
+                  pp: PlotParams,
+                  omega_values,
+                  gamma_value=0.1,  # 这里固定一个 gamma
+                  show: bool = True):
+    """
+    最简版图4:
+    - 横轴: k
+    - 纵轴: 外量子效率 eta = P_rad / P_tot
+    - 对给定的多个 omega, 画出:
+        实线: BIC
+        虚线: QGM
+    颜色使用和 plot_figure_3 相同的 colormap 逻辑:
+        color = cmap.to_rgba(omega)
+    """
+
+    # k 网格 (可以按需要修改范围 / 分辨率)
+    k_min, k_max = -1.0, 1.0
+    k_samples = 512
+    k_vals = np.linspace(k_min, k_max, k_samples)
+
+    # BIC: 用一个“横向”偶极, 比如 d=(1,0)
+    sp_bic = SystemParams(
+        omega0=sp.omega0,
+        delta=sp.delta,
+        gamma0=sp.gamma0,
+        d1=1.0,
+        d2=0.0
+    )
+    # QGM: 就用传入的 sp (例如主程序里 d=(0,1))
+    sp_qgm = SystemParams(
+        omega0=sp.omega0,
+        delta=sp.delta,
+        gamma0=sp.gamma0,
+        d1=0.0,
+        d2=1.0
+    )
+
+    fig, ax = plt.subplots(figsize=(5.5, 2))
+
+    # ===== 颜色映射: 完全照你给的逻辑 =====
+    cmap_red = plt.get_cmap('Reds')
+    cmap_blue = plt.get_cmap('Blues')
+    norm = plt.Normalize(max(omega_values)-(max(omega_values)-min(omega_values))*2, max(omega_values))
+    cmap_red = plt.cm.ScalarMappable(cmap=cmap_red, norm=norm)
+    cmap_blue = plt.cm.ScalarMappable(cmap=cmap_blue, norm=norm)
+
+    for omega in omega_values:
+        eta_bic_list = []
+        eta_qgm_list = []
+
+        for k in k_vals:
+            # --- BIC ---
+            Ptot_bic = calculate_Ptot(omega, k, gamma_value, sp_bic)
+            Prad_bic = calculate_Prad(omega, k, gamma_value, sp_bic)
+            if Ptot_bic > 0:
+                eta_bic = Prad_bic / Ptot_bic
+            else:
+                eta_bic = np.nan
+            eta_bic_list.append(eta_bic)
+
+            # --- QGM ---
+            Ptot_qgm = calculate_Ptot(omega, k, gamma_value, sp_qgm)
+            Prad_qgm = calculate_Prad(omega, k, gamma_value, sp_qgm)
+            if Ptot_qgm > 0:
+                eta_qgm = Prad_qgm / Ptot_qgm
+            else:
+                eta_qgm = np.nan
+            eta_qgm_list.append(eta_qgm)
+
+        eta_bic_arr = np.array(eta_bic_list)
+        eta_qgm_arr = np.array(eta_qgm_list)
+
+        # 颜色由当前 omega 决定
+        color_red = cmap_red.to_rgba(omega)
+        color_blue = cmap_blue.to_rgba(omega)
+
+        # BIC: 实线
+        ax.plot(k_vals, eta_bic_arr, '-', color=color_red, alpha=1)
+        # QGM: 虚线
+        ax.plot(k_vals, eta_qgm_arr, '-', color=color_blue, alpha=1)
+
+        eta_limit = gamma_value/(sp.gamma0 + gamma_value)
+        ax.plot(k_vals, eta_limit*np.ones_like(k_vals), '--', color='k', alpha=0.3)
+
+    ax.set_xlim(k_min, k_max)
+    ax.set_ylim(0.0, 1.1)
+
+    # 如果需要标签可以打开：
+    # ax.set_xlabel("k")
+    # ax.set_ylabel(r"$P_{\rm rad}/P_{\rm tot}$")
+
+    # 如果想区分 BIC/QGM，可以加个“示意”图例：
+    # ax.plot([], [], '-', color='k', label='BIC')
+    # ax.plot([], [], '--', color='k', label='QGM')
+    # ax.legend()
+
+    if show:
+        plt.savefig('temp4.svg', transparent=True, bbox_inches='tight')
+        plt.show()
+
+    return fig, ax
+
+
+
 
 
 # ===================== 6) 主程序（可直接运行） =====================
@@ -414,10 +524,17 @@ if __name__ == "__main__":
     sp = SystemParams(
         omega0=0.0,
         delta=0.0,
-        gamma0=1e-3,
-        d1=0.0,
-        d2=1.0
+        gamma0=1e-2,
+        d1=1.0,
+        d2=0.0
     )
+    # sp = SystemParams(
+    #     omega0=0.0,
+    #     delta=0.2,
+    #     gamma0=1e-2,
+    #     d1=1.0,
+    #     d2=0.0
+    # )
 
     # --- 绘图控制参数 ---
     pp = PlotParams(
@@ -439,13 +556,13 @@ if __name__ == "__main__":
         # 色图
         cmap_density="magma",
         # cmap_lines   = "viridis",
-        # cmap_lines="Reds",
-        cmap_lines   = "Blues",
+        cmap_lines="Reds",
+        # cmap_lines="Blues",
     )
 
     # 选择模式：MODE_PTOT 或 MODE_PRAD
-    mode = MODE_PTOT  # 改成 MODE_PRAD 即可切换
-    # mode = MODE_PRAD  # 改成 MODE_PRAD 即可切换
+    # mode = MODE_PTOT  # 改成 MODE_PRAD 即可切换
+    mode = MODE_PRAD  # 改成 MODE_PRAD 即可切换
 
     # 图1：右半密度所用 gamma
     # gamma_for_density = 0.5
@@ -455,15 +572,17 @@ if __name__ == "__main__":
     # gamma_values = [0.01, 0.1, 0.5, 1.0, 2.0]
     gamma_values = [0.5]
 
-    # 图3：多条曲线的 k 列表
-    k_range_values = [0.01, 0.1, 0.5, 1.0, 2.0]
+    # # 图3：多条曲线的 k 列表
+    # k_range_values = [0.01, 0.1, 0.5, 1.0, 2.0]
 
     # 图3：多条曲线的 omega 列表
-    omega_values = [-0.4, -0.2, 0.4]
+    # omega_values = [-0.4, -0.2, 0.4]
+    omega_values = [0, 0.1, 0.2]
 
     # --- 绘制图 ---
     # plot_band(mode, sp, pp, gamma_for_density, show=True)
     # plot_spectrum(mode, sp, pp, gamma_for_density, show=True)
     # plot_figure_1(mode, sp, pp, gamma_for_density, show=True)
-    plot_figure_2(mode, sp, pp, gamma_values, show=True)
-    # plot_figure_3(mode, sp, pp, omega_values, show=True)
+    # plot_figure_2(mode, sp, pp, gamma_values, show=True)
+    plot_figure_3(mode, sp, pp, omega_values, show=True)
+    # plot_figure_4(mode, sp, pp, omega_values, gamma_value=0.1, show=True)

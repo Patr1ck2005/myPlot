@@ -10,14 +10,7 @@ import numpy as np
 c_const = 299792458
 
 if __name__ == '__main__':
-    # data_path = 'data/2fold-TE-eigen.csv'
-    # data_path = 'data/SE/2fold-TE-k_loss0-eigen.csv'
-    # data_path = 'data/SE/3fold-TE-delta0.1-k_loss0-eigen.csv'
-    data_path = './data/3fold-TE-delta0.2-eigen.csv'
-    # data_path = 'data/3fold-TE-delta_spcae-eigen.csv'
-    # data_path = './data/1fold-TM-k_loss0-eigen.csv'
-    # data_path = 'data/1fold_weak-TM-eigen.csv'
-    # data_path = './data/1fold-TM-eigen.csv'
+    data_path = 'data/1fold-TM-sweep_nlow-eigen1.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -33,10 +26,7 @@ if __name__ == '__main__':
     df_sample = df_sample[df_sample["m1"] < 0.3]
 
     # 指定用于构造网格的参数以及目标数据列
-    param_keys = ["m1", "m2", "loss_k", "w_delta_factor", "w1 (nm)"]
-    # param_keys = ["m1", "m2", "loss_k", "w_delta_factor"]
-    # param_keys = ["m1", "m2", "loss_k"]
-    # z_keys = ["特征频率 (THz)", "品质因子 (1)", "tanchi (1)", "phi (rad)", "fake_factor (1)", "频率 (Hz)"]
+    param_keys = ["m1", "m2", "loss_k", "w1 (nm)", "low_n"]
     z_keys = ["特征频率 (THz)", "品质因子 (1)", "fake_factor (1)", "频率 (Hz)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
@@ -54,15 +44,16 @@ if __name__ == '__main__':
             # "m1": 0,
             "m2": 0,
             "loss_k": 0,
-            "w1 (nm)": 200,
-            # "w1 (nm)": 236+8*-1,  # 0.4 S
-            # "w1 (nm)": 252+8*1,  # 0.2 S
-            "w_delta_factor": 0.2,
+            "w1 (nm)": 600,
+            "low_n": 1,
         },  # 固定
         filter_conditions={
-            "fake_factor (1)": {"<": 1.0},  # 筛选
+            "fake_factor (1)": {"<": 100.0},  # 筛选
             # "m1": {"<": .1},  # 筛选
-            "频率 (Hz)": {">": 0.0, "<": 1.0},  # 筛选
+            # "频率 (Hz)": {">": 0.43, "<": 0.68},  # 筛选
+            # "频率 (Hz)": {">": 0.43, "<": 0.64},  # for low_n=3.0
+            "频率 (Hz)": {">": 0.43, "<": 0.8},  # for low_n=1.0, 2.0, 3.0
+            # "频率 (Hz)": {">": 0.43, "<": 1},  # 筛选
         }
     )
 
@@ -116,29 +107,39 @@ if __name__ == '__main__':
         new_coords, Z_grouped,
         freq_index=1  # 第n个频率
     )
-    # new_coords, Z_target3 = group_solution(
-    #     new_coords, Z_grouped,
-    #     freq_index=3  # 第n个频率
-    # )
-    # new_coords, Z_target4 = group_solution(
-    #     new_coords, Z_grouped,
-    #     freq_index=4  # 第n个频率
-    # )
+    new_coords, Z_target3 = group_solution(
+        new_coords, Z_grouped,
+        freq_index=2  # 第n个频率
+    )
+    new_coords, Z_target4 = group_solution(
+        new_coords, Z_grouped,
+        freq_index=3  # 第n个频率
+    )
+    new_coords, Z_target5 = group_solution(
+        new_coords, Z_grouped,
+        freq_index=4  # 第n个频率
+    )
 
     dataset1 = {'eigenfreq': Z_target1}
     dataset2 = {'eigenfreq': Z_target2}
-    # dataset3 = {'eigenfreq': Z_target3}
-    # dataset4 = {'eigenfreq': Z_target4}
+    dataset3 = {'eigenfreq': Z_target3}
+    dataset4 = {'eigenfreq': Z_target4}
+    dataset5 = {'eigenfreq': Z_target5}
 
     data_path = prepare_plot_data(
         new_coords, data_class='Eigensolution', dataset_list=[
-            dataset1, dataset2,
-            # dataset3, dataset4
+            dataset2,
+            dataset3,
+            dataset5,
+
+            # dataset1,
+            # dataset3,
+            # dataset2,
         ], fixed_params={},
         save_dir='./rsl/eigensolution',
     )
 
-    from projects.SE.plot_thickband import main
+    from projects.SE.plot_thickband_1fold_evolution import main
 
     main(data_path)
 

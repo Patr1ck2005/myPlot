@@ -47,7 +47,7 @@ if __name__ == '__main__':
     # 识别s和p偏振
     df_sample["phi (rad)"] = df_sample["phi (rad)"].apply(lambda x: x % np.pi)
     df_sample["sp_polar_show"] = recognize_sp(df_sample["phi (rad)"], df_sample["m1"], df_sample["m2"])
-    # # 筛选m1<0.1的成分
+    # 筛选m1<0.1的成分
     # df_sample = df_sample[df_sample["m1"] < 0.3]
     # 指定用于构造网格的参数以及目标数据列
     # param_keys = ["k", "buffer (nm)", "sp_polar_show"]
@@ -66,7 +66,7 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            'buffer (nm)': 240,
+            'buffer (nm)': 180,
             # "sp_polar_show": 1,
         },  # 固定
         filter_conditions={
@@ -91,12 +91,13 @@ if __name__ == '__main__':
     for i in range(Z_filtered.shape[0]):
         Z_new[i] = Z_filtered[i][0]  # 提取每个 lst_ij 的第 b 列
 
+    fig, ax = plt.subplots(figsize=(8, 8))
     # 通过散点的方式绘制出来，看看效果
     for i in range(Z_new.shape[0]):
         z_vals = Z_new[i]
         for val in z_vals:
             if val is not None:
-                plt.scatter(new_coords['k'][i], np.real(val), color='blue', s=10)
+                plt.scatter(new_coords['k'][i], np.real(val), color='black', s=10)
     plt.xlabel('k')
     plt.ylabel('Re(eigenfreq) (THz)')
     plt.title('Filtered Eigenfrequencies before Grouping')
@@ -107,6 +108,7 @@ if __name__ == '__main__':
         [Z_new], deltas3,
         value_weights=value_weights,
         deriv_weights=deriv_weights,
+        auto_split_streams=False,
         max_m=14
     )
 
@@ -190,9 +192,37 @@ if __name__ == '__main__':
 
 
     data_path = prepare_plot_data(
-        new_coords, [
-            dataset1, dataset2, dataset3, dataset4, dataset5, dataset6, dataset7,
-            dataset8, dataset9, dataset10, dataset11, dataset12, dataset13, dataset14,
+        new_coords, data_class='Eigensolution', dataset_list=[
+            # dataset1,
+            # dataset2,
+            # dataset3,
+            # dataset4,
+            # dataset5,
+            # dataset6,  # s BIC
+            # dataset7,  # p DP
+            # dataset8,  # s DP
+            # dataset9,
+            # dataset10,
+            # dataset11,
+            # dataset12,
+            # dataset13,
+            # dataset14, # p BIC
+
+            # 180 nm buffer
+            # dataset1,
+            # dataset2,
+            # dataset3,
+            # dataset4,
+            # dataset5,
+            # dataset6,  # s BIC
+            # dataset7,  # s DP
+            dataset8,  # p DP
+            # dataset9,
+            # dataset10,
+            # dataset11,
+            # dataset12,
+            dataset13,  # p BIC
+            dataset14, # p DP
         ], fixed_params={},
         save_dir='./rsl/eigensolution',
     )

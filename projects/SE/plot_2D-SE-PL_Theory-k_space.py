@@ -37,9 +37,9 @@ def group_eigensolution(grid_coords, Z, freq_index=1):
 if __name__ == '__main__':
     # data_path = 'data/1fold-TM-loc_0.25w-SE.csv'
     # data_path = 'data/3fold-TE-loc_0-SE.csv'
-    data_path = 'data/3fold-TE-loc_BIC-SE.csv'
+    # data_path = 'data/3fold-TE-loc_BIC-SE.csv'
     # data_path = 'data/1fold_weak-TM-mid-SE.csv'
-    # data_path = 'data/1fold_weak-TM-right_0.2P-SE.csv'
+    data_path = 'data/1fold_weak-TM-right_0.2P-SE.csv'
     df_sample = pd.read_csv(data_path, sep='\t', comment='%')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -73,7 +73,7 @@ if __name__ == '__main__':
     new_coords, Z_filtered, min_lens = advanced_filter_eigensolution(
         grid_coords, Z,
         z_keys=z_keys,
-        fixed_params={"m2": 0, "loss_k": 1e-3*0},  # 固定
+        fixed_params={"m2": 0, "loss_k": 1e-3*1},  # 固定
         # fixed_params={"m1": 0, "m2": 0, "loss_k": 1e-3},  # 固定
         filter_conditions={
         }
@@ -103,7 +103,7 @@ if __name__ == '__main__':
 
     # 集成保存
     data_path = prepare_plot_data(
-        new_coords, data_class='Eigensolution', dataset_list=[Z_target1], x_key="m1", y_key="频率 (Hz)", fixed_params={},
+        new_coords, data_class='Spectrum', dataset_list=[Z_target1], fixed_params={},
         save_dir='./rsl/k_space',
     )
 

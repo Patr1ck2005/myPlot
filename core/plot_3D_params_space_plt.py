@@ -274,6 +274,7 @@ def plot_2d_heatmap(ax, x_vals, y_vals, Z, plot_params):
     imshow_aspect = plot_params.get('imshow_aspect', 'auto')
     plot_imaginary = plot_params.get('imag', False)
     add_colorbar = plot_params.get('add_colorbar', False)
+    title_colorbar = plot_params.get('title_colorbar', '')
 
     global_color_vmax = plot_params.get('global_color_vmax', None)
     global_color_vmin = plot_params.get('global_color_vmin', None)
@@ -300,7 +301,7 @@ def plot_2d_heatmap(ax, x_vals, y_vals, Z, plot_params):
     )
 
     if add_colorbar:
-        ax.get_figure().colorbar(surf1, ax=ax)
+        ax.get_figure().colorbar(surf1, ax=ax, label=title_colorbar)
 
     return ax.get_figure(), ax
 

@@ -14,8 +14,7 @@ def main(data_path):
             # 'ylim': (0.6, 0.67),
         },
     )
-    config.figsize = (1.25, 2*3)
-    config.update(tick_direction='in')
+    config.update(figsize=(1.25, 2*3), tick_direction='in')
     plotter = MyScriptPlotter(config=config, data_path=data_path)
     plotter.load_data()
     plotter.prepare_data()

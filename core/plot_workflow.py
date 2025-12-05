@@ -13,7 +13,7 @@ from advance_plot_styles.scatter_plot import plot_scatter_advanced
 
 @dataclass
 class PlotConfig:
-    figsize: Tuple[float, float] = (2, 3)
+    figsize: Tuple[float, float] = (4, 6)
     fs: int = 9
     save_dir: str = './rsl'
     show: bool = True
@@ -199,7 +199,8 @@ class BasePlotter(ABC):
             plt.savefig(image_path + f'.{save_type}', dpi=self.config.dpi, bbox_inches="tight", transparent=True)
             print(f"图像已保存为：{image_path} 🎨")
             plt.savefig('temp_output.svg', dpi=self.config.dpi, bbox_inches="tight", transparent=True)
-            print("Temp figure saved as 'temp_output.svg'.")
+            plt.savefig('temp_output.png', dpi=self.config.dpi, bbox_inches="tight", transparent=True)
+            print("Temp figure saved as 'temp_output'.")
         if self.config.show:
             plt.show()
 

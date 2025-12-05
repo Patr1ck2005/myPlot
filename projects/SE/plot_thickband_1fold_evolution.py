@@ -62,16 +62,21 @@ def main(data_path):
         plot_params={'scale': 1},
         annotations={
             'xlabel': 'k (2$\pi$/P)', 'ylabel': 'f (c/P)', 'show_axis_labels': True, 'show_tick_labels': True,
-            # 'ylim': (0.51, 0.57),
+            # 'enable_tight_layout': True,
+            # 'ylim': (0.45-0.0175, 0.65+0.028),
+            'ylim': (0.40, 0.9),
         },
     )
-    config.update(figsize=(3, 2), tick_direction='out')
+    config.update(figsize=(2, 3), tick_direction='out')
+    # config.update(figsize=(2.20, 2.9), tick_direction='out')
     plotter = MyScriptPlotter(config=config, data_path=data_path)
     plotter.load_data()
     plotter.prepare_data()
     plotter.new_2d_fig()
-    # plotter.plot_colored_bg(vmax=5e-3)
-    plotter.plot_colored_line(vmin=2, vmax=7, y_margin=0)
+    plotter.plot_diffraction_cone(alpha=0.5, color='gray')
+    plotter.plot_colored_bg(vmax=6e-2, alpha=0.8)
+    # plotter.plot_colored_bg(vmax=5e-3, alpha=1)
+    # plotter.plot_colored_bg(vmax=4e-2, alpha=1)
     plotter.adjust_view_2dim()
     plotter.add_annotations()
     plotter.save_and_show()

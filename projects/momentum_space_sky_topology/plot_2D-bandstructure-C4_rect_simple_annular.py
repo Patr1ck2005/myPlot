@@ -20,7 +20,8 @@ if __name__ == '__main__':
     # data_path = 'data/Rect-simple_round_Annular-SiSiO2-diff_r1r2.csv'
     # data_path = 'data/Rect-simple_round_Annular-SiSiO2-diff_geo1.csv'
     # data_path = 'data/Rect-simple_round_Annular-SiSiO2-diff_r1r2-round_flat.csv'
-    data_path = 'data/Rect-simple_round_Annular-SiSiO2-diff_r1r2-around_flat2.csv'
+    # data_path = 'data/Rect-simple_round_Annular-SiSiO2-diff_r1r2-around_flat2.csv'
+    data_path = 'data/Rect-simple_round_Annular-SiSiO2-diff_r1r2-around_flat3.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -58,10 +59,10 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            "t_tot (nm)": 200,
+            "t_tot (nm)": 250,
             "P (nm)": 500,
-            "r1 (nm)": 110.,
-            "r2 (nm)": 197.5,
+            "r1 (nm)": 90,
+            "r2 (nm)": 200,
             "pattern_n": 3.5,
         },  # 固定
         filter_conditions={

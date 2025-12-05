@@ -170,8 +170,7 @@ if __name__ == '__main__':
         plot_params={},
         annotations={},
     )
-    config.figsize = (1.5, 3)
-    config.tick_direction = 'in'
+    config.update(figsize=(1.25, 1.25), tick_direction='in')
     plotter = MomentumSpaceEigenPolarizationPlotter(config=config, data_path=data_path)
     plotter.load_data()
     plotter.prepare_data()
@@ -192,7 +191,7 @@ if __name__ == '__main__':
     plotter.add_annotations()
     plotter.save_and_show()
 
-    plotter.new_3d_fig()
+    plotter.new_3d_fig(temp_figsize=(3, 3))
     plotter.plot_3D_surface(index=2)
     plotter.plot_3D_surface(index=1)
     plotter.plot_3D_surface(index=0)
