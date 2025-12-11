@@ -10,9 +10,7 @@ import numpy as np
 c_const = 299792458
 
 if __name__ == '__main__':
-    # data_path = 'data/FP_PhC-diff_FP-detailed-14eigenband-400P-200T-0.4r-0.1k.csv'
-    # data_path = 'data/FP_PhC-diff_FP-14eigenband-400P-200T-0.4r-0.1k.csv'
-    data_path = 'data/FP_PhC-diff_FP-detailed-14eigenband-strA.csv'
+    data_path = 'data/FP_PCS_WS2_Au-14eigen-diff_L-diff_t.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -42,9 +40,10 @@ if __name__ == '__main__':
         return sp_polar
 
 
-    period = 400
-    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq, period=period*1e-9*1e12)
-    df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period*1e-9)
+    # period = 300
+    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex)
+    # df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq, period=period*1e-9*1e12)
+    # df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period*1e-9)
     df_sample["k"] = df_sample["m1"]+df_sample["m2"]/2.414
     # 识别s和p偏振
     df_sample["phi (rad)"] = df_sample["phi (rad)"].apply(lambda x: x % np.pi)
@@ -52,8 +51,7 @@ if __name__ == '__main__':
     # # 筛选m1<0.1的成分
     # df_sample = df_sample[df_sample["m1"] < 0.3]
     # 指定用于构造网格的参数以及目标数据列
-    # param_keys = ["k", "buffer (nm)", "sp_polar_show"]
-    param_keys = ["k", "buffer (nm)"]
+    param_keys = ["k", "t_tot (nm)", "P (nm)", "r1 (nm)", "buffer (nm)"]
     z_keys = ["特征频率 (THz)", "品质因子 (1)", "tanchi (1)", "phi (rad)", "fake_factor (1)", "频率 (Hz)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
@@ -68,12 +66,14 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            'buffer (nm)': 250,
-            # "sp_polar_show": 0,
+            "t_tot (nm)": 180,
+            "P (nm)": 1000,
+            "r1 (nm)": 300,
+            "buffer (nm)": 780,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 1},  # 筛选
-            "频率 (Hz)": {">": 0.42},  # 筛选
+            # "频率 (Hz)": {">": 0.325},  # 筛选
         }
     )
 
@@ -99,7 +99,7 @@ if __name__ == '__main__':
         z_vals = Z_new[i]
         for val in z_vals:
             if val is not None:
-                plt.scatter(new_coords['k'][i], np.real(val), color='black', s=10)
+                plt.scatter(new_coords['k'][i], np.real(val), color='blue', s=10)
     plt.xlabel('k')
     plt.ylabel('Re(eigenfreq) (THz)')
     plt.title('Filtered Eigenfrequencies before Grouping')
@@ -195,7 +195,7 @@ if __name__ == '__main__':
         save_dir='./rsl/eigensolution',
     )
 
-    from projects.MergingBICs.plot_thickband_3 import main
+    from projects.momentum_space_sky_topology.plot_thickband_StrongCoupling import main
 
     main(data_path)
 

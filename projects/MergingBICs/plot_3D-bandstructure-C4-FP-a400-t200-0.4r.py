@@ -10,7 +10,6 @@ if __name__ == '__main__':
     data_path = 'data/FP_PhC-full-diff_FP-detailed-14eigenband-400P-200T-0.4r-250L-0.1k.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
-
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
     def convert_complex(freq_str):
         return complex(freq_str.replace('i', 'j'))
@@ -21,11 +20,10 @@ if __name__ == '__main__':
 
 
     period = 400
-    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq,
-                                                                                           period=period * 1e-9 * 1e12)
+    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq, period=period * 1e-9 * 1e12)
     df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period * 1e-9)
     df_sample["phi (rad)"] = df_sample["phi (rad)"].apply(lambda x: x % np.pi)
-    # # 筛选m1<0.1的成分
+    # # 筛选 m1<0.1 的成分
     # df_sample = df_sample[df_sample["m1"] < 0.05]
     # 指定用于构造网格的参数以及目标数据列
     param_keys = ["m1", "m2", "buffer (nm)"]
@@ -69,7 +67,7 @@ if __name__ == '__main__':
                 colors.append(freq.imag)
     sc = ax.scatter(xs, ys, zs, c=colors, cmap='viridis', marker='o', alpha=0.8, s=1)
     # set aspect
-    ax.set_box_aspect([1,1,3])
+    ax.set_box_aspect([1, 1, 3])
     # set view angle
     ax.view_init(elev=15, azim=45)
     plt.colorbar(sc, label='Imaginary Part of Frequency (THz)')
@@ -161,7 +159,8 @@ if __name__ == '__main__':
     Z_target = Z_target3
 
     # 提取 band= 的附加场数据
-    phi, tanchi, qlog, freq_real = extract_basic_analysis_fields(additional_Z_grouped, z_keys=z_keys, band_index=band_index)
+    phi, tanchi, qlog, freq_real = extract_basic_analysis_fields(additional_Z_grouped, z_keys=z_keys,
+                                                                 band_index=band_index)
 
     full_coords, phi_f, tanchi_f = complete_C4_polarization(new_coords, phi, tanchi)
     _, Z_f = geom_complete(new_coords, Z_target, mode='C4')
@@ -205,5 +204,3 @@ if __name__ == '__main__':
     plotter.plot_3D_surface(index=0)
     plotter.add_annotations()
     plotter.save_and_show()
-
-

@@ -41,7 +41,7 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            'buffer (nm)': 585,
+            'buffer (nm)': 584.5,
             # 'buffer (nm)': 600,
         },  # 固定
         filter_conditions={

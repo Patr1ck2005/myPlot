@@ -41,6 +41,6 @@ if __name__ == '__main__':
     # main(r'D:\DELL\Documents\MCM\CM2025\imag\P2')
     # main(r'D:\DELL\Documents\MCM\CM2025\imag\P3')
     # main(r'D:\DELL\Documents\MCM\CM2025\imag\diagram')
-    main(r'D:\DELL\Documents\Research\2025-SE_Theory')
-    # main(r'D:\DELL\Documents\Research\2025-merging_BICs-highTC')
+    # main(r'D:\DELL\Documents\Research\2025-SE_Theory')
+    main(r'D:\DELL\Documents\Research\2025-merging_BICs-highTC')
 

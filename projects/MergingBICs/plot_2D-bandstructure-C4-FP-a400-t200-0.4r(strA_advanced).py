@@ -10,8 +10,6 @@ import numpy as np
 c_const = 299792458
 
 if __name__ == '__main__':
-    # data_path = 'data/FP_PhC-diff_FP-detailed-14eigenband-400P-200T-0.4r-0.1k.csv'
-    # data_path = 'data/FP_PhC-diff_FP-14eigenband-400P-200T-0.4r-0.1k.csv'
     data_path = 'data/FP_PhC-diff_FP-detailed-14eigenband-strA.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
@@ -68,12 +66,12 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            'buffer (nm)': 250,
+            'buffer (nm)': 260,
             # "sp_polar_show": 0,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 1},  # 筛选
-            "频率 (Hz)": {">": 0.42},  # 筛选
+            "频率 (Hz)": {">": 0.42, "<": 0.52},  # 筛选
         }
     )
 
@@ -93,6 +91,7 @@ if __name__ == '__main__':
     for i in range(Z_filtered.shape[0]):
         Z_new[i] = Z_filtered[i][0]  # 提取每个 lst_ij 的第 b 列
 
+
     fig, ax = plt.subplots(figsize=(6, 10))
     # 通过散点的方式绘制出来，看看效果
     for i in range(Z_new.shape[0]):
@@ -110,7 +109,7 @@ if __name__ == '__main__':
         [Z_new], deltas3,
         value_weights=value_weights,
         deriv_weights=deriv_weights,
-        max_m=14
+        max_m=6
     )
 
     # 假设你已经得到了 grid_coords, Z
@@ -118,6 +117,22 @@ if __name__ == '__main__':
         new_coords, Z_grouped,
         freq_index=0  # 第n个频率
     )
+
+    # advanced analysis
+    # extract BIC modes
+    BIC_Q_threshold = 1e5
+    # find peaks in Z_target1's Qfactor
+    Qfactors = Z_target1.real/Z_target1.imag/2
+    from scipy.signal import find_peaks
+    peaks, _ = find_peaks(Qfactors, height=BIC_Q_threshold)
+    print(f"Found {len(peaks)} BIC modes with Q > {BIC_Q_threshold}")
+    # locate and print BIC modes' coordinates and frequencies
+    for peak in peaks:
+        coord = {key: new_coords[key][peak] for key in new_coords}
+        freq = Z_target1[peak]
+        Qfactor = Qfactors[peak]
+        print(f"BIC mode at {coord}, frequency: {freq}, Qfactor: {Qfactor}")
+
     new_coords, Z_target2 = group_solution(
         new_coords, Z_grouped,
         freq_index=1  # 第n个频率
@@ -138,38 +153,6 @@ if __name__ == '__main__':
         new_coords, Z_grouped,
         freq_index=5  # 第n个频率
     )
-    new_coords, Z_target7 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=6  # 第n个频率
-    )
-    new_coords, Z_target8 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=7  # 第n个频率
-    )
-    new_coords, Z_target9 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=8  # 第n个频率
-    )
-    new_coords, Z_target10 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=9  # 第n个频率
-    )
-    new_coords, Z_target11 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=10  # 第n个频率
-    )
-    new_coords, Z_target12 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=11  # 第n个频率
-    )
-    new_coords, Z_target13 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=12  # 第n个频率
-    )
-    new_coords, Z_target14 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=13  # 第n个频率
-    )
 
     dataset1 = {'eigenfreq': Z_target1}
     dataset2 = {'eigenfreq': Z_target2}
@@ -177,20 +160,11 @@ if __name__ == '__main__':
     dataset4 = {'eigenfreq': Z_target4}
     dataset5 = {'eigenfreq': Z_target5}
     dataset6 = {'eigenfreq': Z_target6}
-    dataset7 = {'eigenfreq': Z_target7}
-    dataset8 = {'eigenfreq': Z_target8}
-    dataset9 = {'eigenfreq': Z_target9}
-    dataset10 = {'eigenfreq': Z_target10}
-    dataset11 = {'eigenfreq': Z_target11}
-    dataset12 = {'eigenfreq': Z_target12}
-    dataset13 = {'eigenfreq': Z_target13}
-    dataset14 = {'eigenfreq': Z_target14}
 
 
     data_path = prepare_plot_data(
         new_coords, data_class='Eigensolution', dataset_list=[
-            dataset1, dataset2, dataset3, dataset4, dataset5, dataset6, dataset7,
-            dataset8, dataset9, dataset10, dataset11, dataset12, dataset13, dataset14,
+            dataset1,
         ], fixed_params={},
         save_dir='./rsl/eigensolution',
     )
