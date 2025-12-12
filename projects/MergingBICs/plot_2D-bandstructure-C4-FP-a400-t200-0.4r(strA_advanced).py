@@ -1,175 +1,387 @@
-from core.data_postprocess.data_filter import advanced_filter_eigensolution
-from core.data_postprocess.data_grouper import *
-from core.plot_3D_params_space_plt import *
-from core.plot_3D_params_space_pv import plot_Z_diff_pyvista
-from core.prepare_plot import prepare_plot_data
-from core.process_multi_dim_params_space import *
-
+# bic_buffer_scan.py
 import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from scipy.signal import find_peaks
+from scipy.optimize import linear_sum_assignment
+from collections import defaultdict
+import os
 
+# ---- 请确保下面这些模块路径在你的 PYTHONPATH 中 ----
+from core.data_postprocess.data_filter import advanced_filter_eigensolution
+from core.process_multi_dim_params_space import *
+from core.data_postprocess.data_grouper import group_vectors_one_sided_hungarian
+
+# 如果你的包里函数名或位置不同，请相应修改导入
+# -------------------------------------------------------
+
+# ---- 用户可调整参数 ----
+data_path = 'data/FP_PhC-diff_FP-detailed-14eigenband-strA.csv'
+period = 400  # nm
+BIC_Q_threshold = 1e5  # Q 阈值
+min_peak_prominence = None  # 可根据需要调整 find_peaks 的参数
+max_match_k_distance = 0.02  # 匹配阈值（k的单位与网格相同），超出则认为无法匹配
+output_dir = './rsl/bic_scan'
+os.makedirs(output_dir, exist_ok=True)
+
+# 给定的 buffer 值数组（使用你提供的）
+buffer_values = np.array([242.5, 243. , 243.5, 244. , 244.5, 245. ,
+                          245.5, 246. , 246.5, 247. , 247.5, 248. , 248.5, 249. , 249.5, 250. , 250.5,
+                          251. , 251.5, 252. , 252.5, 253. , 253.5, 254. , 254.5, 255. , 255.5, 256. ,
+                          256.5, 257. , 257.5, 258. , 258.5, 259. , 259.5, 260. ])
+# buffer_values = np.array([242.5, 243. , 243.5, 244. , 244.5, 245. ,
+#                           245.5, 246. ,])
+# buffer_values = np.array([245., 250., 255., 260.])
+
+# 加载数据并进行与原脚本一致的预处理
+df = pd.read_csv(data_path, sep='\t')
+
+# helper: convert and normalize (与你的原脚本保持一致)
 c_const = 299792458
 
-if __name__ == '__main__':
-    data_path = 'data/FP_PhC-diff_FP-detailed-14eigenband-strA.csv'
-    df_sample = pd.read_csv(data_path, sep='\t')
 
-    # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
-    def convert_complex(freq_str):
-        return complex(freq_str.replace('i', 'j'))
-
-    def norm_freq(freq, period):
-        return freq/(c_const/period)
-
-    def recognize_sp(phi_arr, kx_arr, ky_arr):
-        # 对于 ky=0 的情况，phi=π/2 为 s 偏振, phi=0 为 p 偏振
-        # 对于 ky=kx 的情况，phi=π/4 为 s 偏振，phi=3*π/4 为 p 偏振
-        sp_polar = []
-        for phi, kx, ky in zip(phi_arr, kx_arr, ky_arr):
-            if np.isclose(ky, 0):
-                if np.isclose(phi, np.pi/2, atol=1e-1):
-                    sp_polar.append(1)
-                else:
-                    sp_polar.append(0)
-            elif np.isclose(ky, kx):
-                if np.isclose(phi, np.pi/4, atol=1e-1):
-                    sp_polar.append(1)
-                else:
-                    sp_polar.append(0)
-            else:
-                sp_polar.append(-1)
-        return sp_polar
+def convert_complex(freq_str):
+    return complex(freq_str.replace('i', 'j'))
 
 
-    period = 400
-    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq, period=period*1e-9*1e12)
-    df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period*1e-9)
-    df_sample["k"] = df_sample["m1"]+df_sample["m2"]/2.414
-    # 识别s和p偏振
-    df_sample["phi (rad)"] = df_sample["phi (rad)"].apply(lambda x: x % np.pi)
-    df_sample["sp_polar_show"] = recognize_sp(df_sample["phi (rad)"], df_sample["m1"], df_sample["m2"])
-    # # 筛选m1<0.1的成分
-    # df_sample = df_sample[df_sample["m1"] < 0.3]
-    # 指定用于构造网格的参数以及目标数据列
-    # param_keys = ["k", "buffer (nm)", "sp_polar_show"]
-    param_keys = ["k", "buffer (nm)"]
-    z_keys = ["特征频率 (THz)", "品质因子 (1)", "tanchi (1)", "phi (rad)", "fake_factor (1)", "频率 (Hz)"]
-
-    # 构造数据网格，此处不进行聚合，每个单元格保存列表
-    grid_coords, Z = create_data_grid(df_sample, param_keys, z_keys, deduplication=False)
-    print("网格参数：")
-    for key, arr in grid_coords.items():
-        print(f"  {key}: {arr}")
-    print("数据网格 Z 的形状：", Z.shape)
-
-    # 假设已得到grid_coords, Z
-    new_coords, Z_filtered, min_lens = advanced_filter_eigensolution(
-        grid_coords, Z,
-        z_keys=z_keys,
-        fixed_params={
-            'buffer (nm)': 260,
-            # "sp_polar_show": 0,
-        },  # 固定
-        filter_conditions={
-            "fake_factor (1)": {"<": 1},  # 筛选
-            "频率 (Hz)": {">": 0.42, "<": 0.52},  # 筛选
-        }
-    )
-
-    deltas3 = (1e-3,)  # n个维度的网格间距
-    # 当沿维度 d 生长时，值差权重矩阵（n×n）
-    # 例如：value_weights[d, j] = 在 grow_dir=d 时，对维度 j 的值差权重
-    value_weights = np.array([
-        [1,],   # 沿维度生长时
-    ])
-    # 当沿维度 d 生长时，导数不连续权重矩阵（n×n）
-    deriv_weights = np.array([
-        [1,],
-    ])
-    # 创建一个新的数组，用于存储更新后的结果
-    Z_new = np.empty_like(Z_filtered, dtype=object)
-    # 使用直接的循环来更新 Z_new
-    for i in range(Z_filtered.shape[0]):
-        Z_new[i] = Z_filtered[i][0]  # 提取每个 lst_ij 的第 b 列
+def norm_freq(freq, period_multiplier):
+    # freq can be complex or float
+    return freq / (c_const / period_multiplier)
 
 
-    fig, ax = plt.subplots(figsize=(6, 10))
-    # 通过散点的方式绘制出来，看看效果
-    for i in range(Z_new.shape[0]):
-        z_vals = Z_new[i]
-        for val in z_vals:
-            if val is not None:
-                plt.scatter(new_coords['k'][i], np.real(val), color='black', s=10)
-    plt.xlabel('k')
-    plt.ylabel('Re(eigenfreq) (THz)')
-    plt.title('Filtered Eigenfrequencies before Grouping')
+# 处理列（保持你原脚本做法）
+df["特征频率 (THz)"] = df["特征频率 (THz)"].apply(convert_complex).apply(lambda f: norm_freq(f, period * 1e-9 * 1e12))
+df["频率 (Hz)"] = df["频率 (Hz)"].apply(lambda f: norm_freq(f, period * 1e-9) if not pd.isna(f) else f)
+df["k"] = df["m1"] + df["m2"] / 2.414
+df["phi (rad)"] = df["phi (rad)"].apply(lambda x: x % np.pi)
+
+# 如果你需要 sp/p 识别函数，复制你原本的那段（此处略去，假定无须）
+# df["sp_polar_show"] = recognize_sp(...)
+
+# 准备输出结构
+results_by_buffer = {}  # buffer -> list of dicts: {'k':..., 'freq':..., 'Q':..., 'peak_idx':...}
+all_buffer_kgrid = None  # 保存 grid coords for last run（可选）
+
+# 扫描每个 buffer
+for buf in buffer_values:
+    print(f"Processing buffer = {buf} nm ...")
+    try:
+        # create grid (注意：create_data_grid 需要的参数要与项目一致)
+        param_keys = ["k", "buffer (nm)"]
+        z_keys = ["特征频率 (THz)", "品质因子 (1)", "tanchi (1)", "phi (rad)", "fake_factor (1)", "频率 (Hz)"]
+        grid_coords, Z = create_data_grid(df, param_keys, z_keys, deduplication=False)
+
+        # filter by buffer
+        new_coords, Z_filtered, min_lens = advanced_filter_eigensolution(
+            grid_coords, Z,
+            z_keys=z_keys,
+            fixed_params={'buffer (nm)': float(buf)},
+            filter_conditions={
+                "fake_factor (1)": {"<": 1},
+                "频率 (Hz)": {">": 0.42, "<": 0.52},
+            }
+        )
+
+        # 根据你的处理方式提取 Z_new（与你原脚本一致）
+        # 你原代码里 Z_filtered 是一个 shape=(N,...) 的 object array，并把第一个元素取出
+        Z_new = np.empty_like(Z_filtered, dtype=object)
+        for i in range(Z_filtered.shape[0]):
+            Z_new[i] = Z_filtered[i][0]  # 取第一个列表元素（如你的脚本）
+
+        # 可视检查：不绘制图以节省时间
+        # 现在做 grouping（使用和你原脚本一致的参数）
+        deltas3 = (1e-3,)
+        value_weights = np.array([[1, ]])
+        deriv_weights = np.array([[1, ]])
+        Z_grouped = group_vectors_one_sided_hungarian(
+            [Z_new], deltas3,
+            value_weights=value_weights,
+            deriv_weights=deriv_weights,
+            max_m=6
+        )
+
+        # 得到第 0 个频带
+        new_coords_after_group, Z_target1 = group_solution(new_coords, Z_grouped, freq_index=0)
+        # Z_target1 是复数组，每个位置有一个复数（或 nan/None）
+
+        # 计算 Qfactors（与原脚本一致）
+        # 注意：如果 Im=0，可能导致 inf；先屏蔽掉 nan/inf
+        Z_arr = np.array(Z_target1, dtype=complex)
+        re = np.real(Z_arr)
+        im = np.imag(Z_arr)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            Qfactors = np.where(im != 0, re / (2 * im), np.nan)
+
+        # find peaks on Qfactors
+        # convert to 1D numeric array; get indices where Q > 0 (or finite)
+        qvals_for_peaks = np.nan_to_num(Qfactors, nan=-np.inf, posinf=np.inf, neginf=-np.inf)
+        # find_peaks requires 1D; ensure qvals_for_peaks is 1D
+        peaks, props = find_peaks(qvals_for_peaks, height=BIC_Q_threshold)
+        peaks = np.asarray(peaks)
+
+        # store found peaks: k, freq, Q
+        found = []
+        for p in peaks:
+            k_val = new_coords_after_group['k'][p]
+            freq_val = Z_arr[p] if p < len(Z_arr) else np.nan
+            Qval = Qfactors[p] if p < len(Qfactors) else np.nan
+            found.append({'k': float(k_val), 'freq': complex(freq_val), 'Q': float(Qval), 'index': int(p)})
+        results_by_buffer[float(buf)] = found
+        all_buffer_kgrid = new_coords_after_group['k']  # 保存最后一次用于参考
+    except Exception as e:
+        print(f"  ERROR processing buffer {buf}: {e}")
+        results_by_buffer[float(buf)] = []
+
+# 将每个 buffer 的结果写成 CSV（方便检查）
+rows = []
+for buf, found in results_by_buffer.items():
+    if len(found) == 0:
+        rows.append(
+            {'buffer': buf, 'peak_index': None, 'k': np.nan, 'freq_real': np.nan, 'freq_imag': np.nan, 'Q': np.nan})
+    else:
+        for f in found:
+            rows.append({'buffer': buf, 'peak_index': f['index'], 'k': f['k'], 'freq_real': np.real(f['freq']),
+                         'freq_imag': np.imag(f['freq']), 'Q': f['Q']})
+df_peaks = pd.DataFrame(rows).sort_values(['buffer', 'k'])
+df_peaks.to_csv(os.path.join(output_dir, 'bic_peaks_raw.csv'), index=False)
+print("Saved raw peaks to:", os.path.join(output_dir, 'bic_peaks_raw.csv'))
+
+# ------------------------------
+# 跨-buffer 追踪（tracking）
+# ------------------------------
+# 我们把每个 buffer 的峰视作一帧，用匈牙利算法在相邻帧间匹配（最小化 k 距离）
+buffers_sorted = np.sort(np.array(list(results_by_buffer.keys())))
+tracks = []  # 每个 track 是 dict: {'buffers':[], 'ks':[], 'freqs':[], 'Qs':[]}
+
+# 初始化第一帧的 tracks
+first_buf = buffers_sorted[0]
+first_peaks = results_by_buffer[float(first_buf)]
+for p in first_peaks:
+    tracks.append({'buffers': [first_buf], 'ks': [p['k']], 'freqs': [p['freq']], 'Qs': [p['Q']]})
+
+# 遍历后续帧
+for i in range(1, len(buffers_sorted)):
+    cur_buf = buffers_sorted[i]
+    prev_buf = buffers_sorted[i - 1]
+    cur_peaks = results_by_buffer[float(cur_buf)]
+    prev_peaks = results_by_buffer[float(prev_buf)]
+
+    if len(cur_peaks) == 0:
+        # 这一帧没有峰：所有现有轨迹加入空值占位（表示该轨迹在此处消失）
+        for tr in tracks:
+            tr['buffers'].append(cur_buf)
+            tr['ks'].append(np.nan)
+            tr['freqs'].append(np.nan)
+            tr['Qs'].append(np.nan)
+        continue
+
+    # 构造距离矩阵：以当前已有轨迹的最新已知 k（从最后非 nan 值取）为行，cur_peaks 的 k 为列
+    # 若 tracks 为空（例如第一帧无 peaks），直接把 cur_peaks 新建为 tracks
+    if len(tracks) == 0:
+        for p in cur_peaks:
+            tracks.append({'buffers': [cur_buf], 'ks': [p['k']], 'freqs': [p['freq']], 'Qs': [p['Q']]})
+        continue
+
+    # 获取 tracks 当前参考 k（最后一个非 nan 值）
+    track_ref_ks = []
+    for tr in tracks:
+        # 找到最后一个非 nan k
+        kvals = np.array(tr['ks'])
+        if np.all(np.isnan(kvals)):
+            refk = np.nan
+        else:
+            refk = float(kvals[~np.isnan(kvals)][-1])
+        track_ref_ks.append(refk)
+
+    cur_ks = np.array([p['k'] for p in cur_peaks])
+    # 对于无法匹配（refk nan），我们设置一个大值距离
+    distance = np.full((len(track_ref_ks), len(cur_ks)), fill_value=1e6, dtype=float)
+    for r, refk in enumerate(track_ref_ks):
+        if np.isnan(refk):
+            continue
+        for c, ck in enumerate(cur_ks):
+            distance[r, c] = abs(refk - ck)
+
+    # 使用 Hungarian 最优分配
+    row_idx, col_idx = linear_sum_assignment(distance)
+    assigned_cols = set()
+    for r, c in zip(row_idx, col_idx):
+        if distance[r, c] <= max_match_k_distance:
+            # assign this cur peak to track r
+            p = cur_peaks[c]
+            tracks[r]['buffers'].append(cur_buf)
+            tracks[r]['ks'].append(p['k'])
+            tracks[r]['freqs'].append(p['freq'])
+            tracks[r]['Qs'].append(p['Q'])
+            assigned_cols.add(c)
+        else:
+            # cannot match -> append nan to that track
+            tracks[r]['buffers'].append(cur_buf)
+            tracks[r]['ks'].append(np.nan)
+            tracks[r]['freqs'].append(np.nan)
+            tracks[r]['Qs'].append(np.nan)
+
+    # any unassigned current peaks -> create new tracks
+    for c_idx, p in enumerate(cur_peaks):
+        if c_idx not in assigned_cols:
+            # create new track with previous frames filled with nan to align lengths
+            new_tr = {'buffers': [], 'ks': [], 'freqs': [], 'Qs': []}
+            # add previous buffer placeholders for alignment
+            for _ in range(i):  # i frames already passed
+                new_tr['buffers'].append(buffers_sorted[_])
+                new_tr['ks'].append(np.nan)
+                new_tr['freqs'].append(np.nan)
+                new_tr['Qs'].append(np.nan)
+            # append current
+            new_tr['buffers'].append(cur_buf)
+            new_tr['ks'].append(p['k'])
+            new_tr['freqs'].append(p['freq'])
+            new_tr['Qs'].append(p['Q'])
+            tracks.append(new_tr)
+
+# 最后 normalize 每个 track 的长度（若有短的加尾部 nan）
+n_frames = len(buffers_sorted)
+for tr in tracks:
+    while len(tr['buffers']) < n_frames:
+        # append missing frames at end
+        tr['buffers'].append(buffers_sorted[len(tr['buffers'])])
+        tr['ks'].append(np.nan)
+        tr['freqs'].append(np.nan)
+        tr['Qs'].append(np.nan)
+
+# 现在得到若干 tracks，挑出我们关心的前三条主轨迹（按第一个 buffer 中 k 的排序，若不存在则忽略）
+# 先构造一个 dataframe 方便输出
+track_rows = []
+for ti, tr in enumerate(tracks):
+    for idx_frame, buf in enumerate(buffers_sorted):
+        track_rows.append({
+            'track_id': ti,
+            'buffer': buf,
+            'k': tr['ks'][idx_frame],
+            'freq_real': np.nan if tr['freqs'][idx_frame] is np.nan else np.real(tr['freqs'][idx_frame]),
+            'freq_imag': np.nan if tr['freqs'][idx_frame] is np.nan else np.imag(tr['freqs'][idx_frame]),
+            'Q': tr['Qs'][idx_frame]
+        })
+df_tracks = pd.DataFrame(track_rows)
+df_tracks.to_csv(os.path.join(output_dir, 'bic_tracks_raw.csv'), index=False)
+print("Saved raw tracks to:", os.path.join(output_dir, 'bic_tracks_raw.csv'))
+
+# 为了方便展示，挑出在首个 buffer（buffers_sorted[0]）存在峰的那些 track，并按 k 排序
+initial_buf = buffers_sorted[0]
+initial_present = df_tracks[(df_tracks['buffer'] == initial_buf) & (~df_tracks['k'].isna())]
+init_track_order = initial_present.sort_values('k')['track_id'].tolist()
+print("Initial tracks present at first buffer (sorted by k):", init_track_order)
+
+# 取前三条（或少于3条时取现有条数）
+selected_track_ids = init_track_order[:3] if len(init_track_order) > 0 else list(range(min(3, len(tracks))))
+
+# ------------------------------
+# 计算 merging 速度（Δk / Δbuffer）
+# ------------------------------
+# 对每个选中的 track 做线性拟合（忽略 nan），得到拟合斜率和有限差分
+speed_results = []
+for tid in selected_track_ids:
+    df_tid = df_tracks[df_tracks['track_id'] == tid].sort_values('buffer')
+    mask = ~df_tid['k'].isna()
+    bs = df_tid['buffer'].values[mask]
+    ks = df_tid['k'].values[mask]
+    if len(bs) >= 2:
+        # 线性拟合
+        coef = np.polyfit(bs, ks, 1)
+        slope_fit = coef[0]  # Δk / Δbuffer
+        intercept = coef[1]
+        # 局部有限差分（逐段）
+        diffs = np.diff(ks) / np.diff(bs)
+        mean_fd = np.nan if len(diffs) == 0 else np.nanmean(diffs)
+    else:
+        slope_fit = np.nan
+        mean_fd = np.nan
+    speed_results.append({'track_id': tid, 'slope_fit': slope_fit, 'mean_fd': mean_fd, 'n_points': len(ks)})
+
+df_speeds = pd.DataFrame(speed_results)
+df_speeds.to_csv(os.path.join(output_dir, 'bic_tracks_speeds.csv'), index=False)
+print("Saved speed summary to:", os.path.join(output_dir, 'bic_tracks_speeds.csv'))
+print(df_speeds)
+
+# ------------------------------
+# 绘图：k vs buffer, freq vs buffer, k-difference between track pairs
+# ------------------------------
+plt.figure(figsize=(4, 3))
+colors = ['C0', 'C1', 'C2', 'C3', 'C4', 'C5']
+for idx, tid in enumerate(selected_track_ids):
+    df_tid = df_tracks[df_tracks['track_id'] == tid].sort_values('buffer')
+    plt.plot(df_tid['buffer'], df_tid['k'], marker='o', label=f"track {tid}", color=colors[idx % len(colors)])
+    # 标注拟合斜率
+    mask = ~df_tid['k'].isna()
+    if mask.sum() >= 2:
+        coef = np.polyfit(df_tid['buffer'].values[mask], df_tid['k'].values[mask], 1)
+        slope = coef[0]
+        plt.text(df_tid['buffer'].values[mask].mean(), df_tid['k'].values[mask].mean(),
+                 f"s={slope:.3e}", color=colors[idx % len(colors)])
+plt.xlabel('buffer (nm)')
+plt.ylabel('k')
+plt.title('BIC tracks: k vs buffer')
+plt.legend()
+plt.grid(True)
+plt.savefig(os.path.join(output_dir, 'k_vs_buffer.png'), dpi=200, bbox_inches='tight')
+print("Saved k vs buffer plot to:", os.path.join(output_dir, 'k_vs_buffer.png'))
+plt.close()
+
+plt.figure(figsize=(4, 3))
+for idx, tid in enumerate(selected_track_ids):
+    df_tid = df_tracks[df_tracks['track_id'] == tid].sort_values('buffer')
+    plt.plot(df_tid['buffer'], df_tid['freq_real'], marker='o', label=f"track {tid}", color=colors[idx % len(colors)])
+plt.xlabel('buffer (nm)')
+plt.ylabel('Re(frequency)')
+plt.title('BIC tracks: frequency vs buffer')
+plt.legend()
+plt.grid(True)
+plt.savefig(os.path.join(output_dir, 'freq_vs_buffer.png'), dpi=200, bbox_inches='tight')
+print("Saved freq vs buffer plot to:", os.path.join(output_dir, 'freq_vs_buffer.png'))
+plt.close()
+
+# 如果已选择至少两条轨迹，绘制它们之间的 freq 差随 buffer 的变化（展示合并趋势）
+if len(selected_track_ids) >= 2:
+    plt.figure(figsize=(4, 3))
+    tid_ref = selected_track_ids[1]
+    for idx in [0, 2]:
+        # df_tid = df_tracks[df_tracks['track_id'] == idx].sort_values('buffer')
+        # plt.plot(df_tid['buffer'], df_tid['k'], marker='o', label=f"track {idx}", color=colors[idx % len(colors)])
+        tid = selected_track_ids[idx]
+        d0 = df_tracks[df_tracks['track_id'] == tid_ref].sort_values('buffer')
+        d1 = df_tracks[df_tracks['track_id'] == tid].sort_values('buffer')
+        # 对应 buffer 下 freq 的差（若任一 nan -> nan）
+        kd = np.array(d0['freq_real'].values) - np.array(d1['freq_real'].values)
+        plt.plot(buffers_sorted, np.abs(kd), marker='o', label=f"|track {tid_ref} - track {tid}|", color=colors[idx % len(colors)])
+    plt.xlabel('buffer (nm)')
+    plt.ylabel('|freq difference|')
+    plt.title('freq difference between tracks (merging behavior)')
+    plt.legend()
     plt.grid(True)
-    plt.show()
+    plt.savefig(os.path.join(output_dir, 'freq_diff_vs_buffer.png'), dpi=200, bbox_inches='tight')
+    print("Saved freq-difference plot to:", os.path.join(output_dir, 'freq_diff_vs_buffer.png'))
+    plt.close()
 
-    Z_grouped = group_vectors_one_sided_hungarian(
-        [Z_new], deltas3,
-        value_weights=value_weights,
-        deriv_weights=deriv_weights,
-        max_m=6
-    )
+# 如果已选择至少两条轨迹，绘制它们之间的 freq 差随 buffer 的变化（展示合并趋势）
+if len(selected_track_ids) >= 2:
+    plt.figure(figsize=(4, 3))
+    tid_ref = selected_track_ids[1]
+    for idx in [0, 2]:
+        # df_tid = df_tracks[df_tracks['track_id'] == idx].sort_values('buffer')
+        # plt.plot(df_tid['buffer'], df_tid['k'], marker='o', label=f"track {idx}", color=colors[idx % len(colors)])
+        tid = selected_track_ids[idx]
+        d0 = df_tracks[df_tracks['track_id'] == tid_ref].sort_values('buffer')
+        d1 = df_tracks[df_tracks['track_id'] == tid].sort_values('buffer')
+        # 对应 buffer 下 k 的差（若任一 nan -> nan）
+        kd = np.array(d0['k'].values) - np.array(d1['k'].values)
+        plt.plot(buffers_sorted, np.abs(kd), marker='o', label=f"|track {tid_ref} - track {tid}|", color=colors[idx % len(colors)])
+    plt.xlabel('buffer (nm)')
+    plt.ylabel('|k difference|')
+    plt.title('k difference between tracks (merging behavior)')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(os.path.join(output_dir, 'k_diff_vs_buffer.png'), dpi=200, bbox_inches='tight')
+    print("Saved k-difference plot to:", os.path.join(output_dir, 'k_diff_vs_buffer.png'))
+    plt.close()
 
-    # 假设你已经得到了 grid_coords, Z
-    new_coords, Z_target1 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=0  # 第n个频率
-    )
-
-    # advanced analysis
-    # extract BIC modes
-    BIC_Q_threshold = 1e5
-    # find peaks in Z_target1's Qfactor
-    Qfactors = Z_target1.real/Z_target1.imag/2
-    from scipy.signal import find_peaks
-    peaks, _ = find_peaks(Qfactors, height=BIC_Q_threshold)
-    print(f"Found {len(peaks)} BIC modes with Q > {BIC_Q_threshold}")
-    # locate and print BIC modes' coordinates and frequencies
-    for peak in peaks:
-        coord = {key: new_coords[key][peak] for key in new_coords}
-        freq = Z_target1[peak]
-        Qfactor = Qfactors[peak]
-        print(f"BIC mode at {coord}, frequency: {freq}, Qfactor: {Qfactor}")
-
-    new_coords, Z_target2 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=1  # 第n个频率
-    )
-    new_coords, Z_target3 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=2  # 第n个频率
-    )
-    new_coords, Z_target4 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=3  # 第n个频率
-    )
-    new_coords, Z_target5 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=4  # 第n个频率
-    )
-    new_coords, Z_target6 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=5  # 第n个频率
-    )
-
-    dataset1 = {'eigenfreq': Z_target1}
-    dataset2 = {'eigenfreq': Z_target2}
-    dataset3 = {'eigenfreq': Z_target3}
-    dataset4 = {'eigenfreq': Z_target4}
-    dataset5 = {'eigenfreq': Z_target5}
-    dataset6 = {'eigenfreq': Z_target6}
-
-
-    data_path = prepare_plot_data(
-        new_coords, data_class='Eigensolution', dataset_list=[
-            dataset1,
-        ], fixed_params={},
-        save_dir='./rsl/eigensolution',
-    )
-
-    from projects.MergingBICs.plot_thickband_3 import main
-
-    main(data_path)
-
+print("All done. Results and plots are in:", output_dir)

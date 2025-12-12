@@ -1,7 +1,5 @@
 from core.data_postprocess.data_filter import advanced_filter_eigensolution
 from core.data_postprocess.data_grouper import *
-from core.plot_3D_params_space_plt import *
-from core.plot_3D_params_space_pv import plot_Z_diff_pyvista
 from core.prepare_plot import prepare_plot_data
 from core.process_multi_dim_params_space import *
 
@@ -68,7 +66,7 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            'buffer (nm)': 250,
+            'buffer (nm)': 242.5,
             # "sp_polar_show": 0,
         },  # 固定
         filter_conditions={
@@ -118,6 +116,32 @@ if __name__ == '__main__':
         new_coords, Z_grouped,
         freq_index=0  # 第n个频率
     )
+
+    # advanced analysis
+    # extract BIC modes
+    BIC_Q_threshold = 1e5
+    # find peaks in Z_target1's Qfactor
+    Qfactors = Z_target1.real/Z_target1.imag/2
+    # vis Qfactors
+    import matplotlib.pyplot as plt
+    plt.figure(figsize=(6, 4))
+    plt.scatter(new_coords['k'], Qfactors, color='blue', s=10)
+    plt.xlabel('k')
+    plt.ylabel('Qfactor')
+    plt.title('Qfactors of First Eigenmode')
+    plt.yscale('log')
+    plt.grid(True)
+    plt.show()
+    from scipy.signal import find_peaks
+    peaks, _ = find_peaks(Qfactors, height=BIC_Q_threshold)
+    print(f"Found {len(peaks)} BIC modes with Q > {BIC_Q_threshold}")
+    # locate and print BIC modes' coordinates and frequencies
+    for peak in peaks:
+        coord = {key: new_coords[key][peak] for key in new_coords}
+        freq = Z_target1[peak]
+        Qfactor = Qfactors[peak]
+        print(f"BIC mode at {coord}, frequency: {freq}, Qfactor: {Qfactor}")
+
     new_coords, Z_target2 = group_solution(
         new_coords, Z_grouped,
         freq_index=1  # 第n个频率
