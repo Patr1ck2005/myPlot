@@ -20,6 +20,7 @@ def main(data_path):
     plotter.load_data()
     plotter.prepare_data()
     plotter.new_2d_fig()
+    # plotter.plot_ordered_line()
     plotter.plot_thick_bg()
     plotter.plot_colored_line(cmap='magma', vmin=2, vmax=7)
     plotter.adjust_view_2dim()

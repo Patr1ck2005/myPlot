@@ -12,7 +12,8 @@ c_const = 299792458
 if __name__ == '__main__':
     # data_path = 'data/FP_PhC-diff_FP-thickT.csv'
     # data_path = 'data/FP_PhC-diff_FP-thickT-detailed-14eigen.csv'
-    data_path = 'data/FP_PhC-StrB-14eigenband-detailed.csv'
+    # data_path = 'data/FP_PhC-StrB-14eigenband-detailed.csv'
+    data_path = 'data/FP_PhC-diff_FP-detailed-14eigenband-strB.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -69,7 +70,7 @@ if __name__ == '__main__':
         z_keys=z_keys,
         fixed_params={
             # 'buffer (nm)': 200+20*3,  # 200-400, 20
-            'buffer (nm)': 250,
+            'buffer (nm)': 245,
             # 'buffer (nm)': 260+10,
             # "sp_polar_show": 1,
         },  # 固定
@@ -111,7 +112,8 @@ if __name__ == '__main__':
         [Z_new], deltas3,
         value_weights=value_weights,
         deriv_weights=deriv_weights,
-        max_m=8
+        max_m=8,
+        auto_split_streams=False,
     )
 
     # 假设你已经得到了 grid_coords, Z
@@ -119,6 +121,40 @@ if __name__ == '__main__':
         new_coords, Z_grouped,
         freq_index=0  # 第n个频率
     )
+    #################################### advanced analysis ####################################
+    # extract BIC modes
+    BIC_Q_threshold = 1e5
+    # find peaks in Z_target1's Qfactor
+    Qfactors = Z_target1.real / Z_target1.imag / 2
+    # vis Qfactors
+    import matplotlib.pyplot as plt
+
+    plt.figure(figsize=(6, 4))
+    plt.scatter(new_coords['k'], Qfactors, color='blue', s=10)
+    plt.xlabel('k')
+    plt.ylabel('Qfactor')
+    plt.title('Qfactors of First Eigenmode')
+    plt.yscale('log')
+    plt.grid(True)
+    plt.show()
+    from scipy.signal import find_peaks
+
+    peaks, _ = find_peaks(Qfactors, height=BIC_Q_threshold)
+    print(f"Found {len(peaks)} BIC modes with Q > {BIC_Q_threshold}")
+    # locate and print BIC modes' coordinates and frequencies
+    k_lst = []
+    f_lst = []
+    for peak in peaks:
+        coord = {key: new_coords[key][peak] for key in new_coords}
+        complex_freq = Z_target1[peak]
+        Qfactor = Qfactors[peak]
+        k_lst.append(coord['k'])
+        f_lst.append(complex_freq.real)
+        print(f"BIC mode at {coord}, frequency: {complex_freq}, Qfactor: {Qfactor}")
+    aniso_f_factor = (f_lst[2] - f_lst[1]) / (f_lst[0] - f_lst[1])
+    aniso_k_factor = k_lst[2] / k_lst[0]
+    print("Anisotropy factors:" + "f_factor={:.2f}, k_factor={:.2f}".format(aniso_f_factor, aniso_k_factor))
+    #################################### advanced analysis ####################################
     new_coords, Z_target2 = group_solution(
         new_coords, Z_grouped,
         freq_index=1  # 第n个频率

@@ -16,8 +16,8 @@ from core.data_postprocess.data_grouper import group_vectors_one_sided_hungarian
 # -------------------------------------------------------
 
 # ---- 用户可调整参数 ----
-data_path = 'data/FP_PhC-diff_FP-detailed-14eigenband-strA.csv'
-period = 400  # nm
+data_path = 'data/FP_PhC-diff_FP-detailed-14eigenband-strB.csv'
+period = 450  # nm
 BIC_Q_threshold = 1e5  # Q 阈值
 min_peak_prominence = None  # 可根据需要调整 find_peaks 的参数
 max_match_k_distance = 0.02  # 匹配阈值（k的单位与网格相同），超出则认为无法匹配
@@ -25,13 +25,10 @@ output_dir = './rsl/bic_scan'
 os.makedirs(output_dir, exist_ok=True)
 
 # 给定的 buffer 值数组（使用你提供的）
-buffer_values = np.array([242.5, 243. , 243.5, 244. , 244.5, 245. ,
-                          245.5, 246. , 246.5, 247. , 247.5, 248. , 248.5, 249. , 249.5, 250. , 250.5,
-                          251. , 251.5, 252. , 252.5, 253. , 253.5, 254. , 254.5, 255. , 255.5, 256. ,
-                          256.5, 257. , 257.5, 258. , 258.5, 259. , 259.5, 260. ])
+buffer_values = np.array([245., 245.5, 246., 246.5, 247., 247.5, 248., 248.5, 249., 249.5, 250.])
 # buffer_values = np.array([242.5, 243. , 243.5, 244. , 244.5, 245. ,
 #                           245.5, 246. ,])
-# buffer_values = np.array([245., 250., 255., 260.])
+# buffer_values = np.array([245., 250.])
 
 # 加载数据并进行与原脚本一致的预处理
 df = pd.read_csv(data_path, sep='\t')
@@ -78,7 +75,7 @@ for buf in buffer_values:
             fixed_params={'buffer (nm)': float(buf)},
             filter_conditions={
                 "fake_factor (1)": {"<": 1},
-                "频率 (Hz)": {">": 0.42, "<": 0.52},
+                "频率 (Hz)": {"<": 0.6, ">": 0.50},
             }
         )
 
@@ -350,7 +347,8 @@ if len(selected_track_ids) >= 2:
         d1 = df_tracks[df_tracks['track_id'] == tid].sort_values('buffer')
         # 对应 buffer 下 freq 的差（若任一 nan -> nan）
         kd = np.array(d0['freq_real'].values) - np.array(d1['freq_real'].values)
-        plt.plot(buffers_sorted, np.abs(kd), marker='o', label=f"|track {tid_ref} - track {tid}|", color=colors[idx % len(colors)])
+        plt.plot(buffers_sorted, np.abs(kd), marker='o', label=f"|track {tid_ref} - track {tid}|",
+                 color=colors[idx % len(colors)])
     plt.xlabel('buffer (nm)')
     plt.ylabel('|freq difference|')
     plt.title('freq difference between tracks (merging behavior)')
@@ -372,7 +370,8 @@ if len(selected_track_ids) >= 2:
         d1 = df_tracks[df_tracks['track_id'] == tid].sort_values('buffer')
         # 对应 buffer 下 k 的差（若任一 nan -> nan）
         kd = np.array(d0['k'].values) - np.array(d1['k'].values)
-        plt.plot(buffers_sorted, np.abs(kd), marker='o', label=f"|track {tid_ref} - track {tid}|", color=colors[idx % len(colors)])
+        plt.plot(buffers_sorted, np.abs(kd), marker='o', label=f"|track {tid_ref} - track {tid}|",
+                 color=colors[idx % len(colors)])
     plt.xlabel('buffer (nm)')
     plt.ylabel('|k difference|')
     plt.title('k difference between tracks (merging behavior)')
