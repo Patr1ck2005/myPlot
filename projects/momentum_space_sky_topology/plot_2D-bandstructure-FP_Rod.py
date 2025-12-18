@@ -194,7 +194,7 @@ if __name__ == '__main__':
         save_dir='./rsl/eigensolution',
     )
 
-    from projects.MergingBICs.plot_thickband_3 import main
+    from projects.MergingBICs.plot_thickband_strA import main
 
     main(data_path)
 

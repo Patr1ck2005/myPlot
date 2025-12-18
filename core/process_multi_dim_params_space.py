@@ -285,6 +285,45 @@ def extract_basic_analysis_fields(
             freq_real[i, j] = float(freq.real if isinstance(freq, complex) else freq)
     return phi, tanchi, qlog, freq_real
 
+def extract_adjacent_fields(
+    additional_Z_grouped: np.ndarray,
+    band_index: int,
+    z_keys: Sequence[str],
+) -> Tuple[np.ndarray, ...]:
+    """
+    按 z_keys 的顺序，从 additional_Z_grouped 中提取对应字段。
+
+    结构：
+        additional_Z_grouped[i, j][band_index][k]
+        其中 k 与 z_keys 的顺序一一对应。
+
+    返回：
+        一个 tuple，每个元素是 shape=(H, W) 的 ndarray，
+        顺序与 z_keys 完全一致。
+    """
+    H, W = additional_Z_grouped.shape[:2]
+    n_fields = len(z_keys)
+
+    # 为每个字段准备一个输出矩阵
+    outputs = [np.full((H, W), np.nan) for _ in range(n_fields)]
+
+    for i in range(H):
+        for j in range(W):
+            band = additional_Z_grouped[i, j][band_index]
+            if band is None:
+                continue
+
+            for k in range(n_fields):
+                val = band[k]
+
+                # 统一做一个“物理上合理”的取值规则
+                if isinstance(val, complex):
+                    val = val.real
+
+                outputs[k][i, j] = float(val)
+
+    return tuple(outputs)
+
 
 def _auto_norm(data: np.ndarray, vmin: Optional[float], vmax: Optional[float]) -> Normalize:
     """根据数据与可选的 vmin/vmax 生成 Normalize，自动忽略 NaN/inf。"""

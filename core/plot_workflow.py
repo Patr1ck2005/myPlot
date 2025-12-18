@@ -47,7 +47,7 @@ class BasePlotter(ABC):
     支持重叠：re_initialized只重置data，不碰fig/ax
     """
 
-    def __init__(self, config: Optional[Union[PlotConfig, Dict]] = None, data_path: Optional[str] = None):
+    def __init__(self, config: Optional[Union[PlotConfig, Dict]] = None, data_path: Optional[str] = None) -> None:
         self.config = PlotConfig(**config) if isinstance(config, dict) else config or PlotConfig()
         self.data_path = data_path
         self.fig: Optional[plt.Figure] = None

@@ -94,7 +94,7 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, index=0, **kwargs):
         if not kwargs.get('default_color', False):
             # assign default color according to index
             default_line_color = plt.cm.tab10(index % 10)
-        ax.plot(x_vals, z1, color=default_line_color, linewidth=linewidth_base, alpha=alpha_line, label='Base Line', linestyle=default_linestyle)
+        ax.plot(x_vals, z1, color=default_line_color, linewidth=linewidth_base, alpha=alpha_line, label=f'{index}', linestyle=default_linestyle)
 
     # 填充模式
     if enable_fill:

@@ -138,6 +138,29 @@ class BandPlotterOneDim(LinePlotter, ABC):
         self.xlim = (self.x_vals.min(), self.x_vals.max())
         self.ylim = (np.nanmin(y_mins) * (1-y_margin), np.nanmax(y_maxs) * (1+y_margin))
 
+    def plot_ordered_line(self, y_margin=0.02) -> None:  # 重写：整体+循环填充
+        params_line = {
+            'enable_fill': False,
+            'gradient_fill': False,
+            'enable_dynamic_color': False,
+            'cmap': None,
+            'add_colorbar': False,
+            'default_color': False, 'alpha_fill': 1,
+            'linewidth_base': 2,
+            'edge_color': 'none',
+            'alpha_line': 0.75,
+        }
+        y_mins, y_maxs = [], []
+        for i, (x, y) in enumerate(zip(self.x_vals_list, self.y_vals_list)):
+            Qfactor = np.where(y.imag != 0, np.abs(y.real / (2 * y.imag)), 1e10)
+            Qfactor_log = np.log10(Qfactor)
+            self.plot_line(x, z1=y.real, z2=y.imag, z3=Qfactor_log, **params_line, index=i)  # 填充
+            y_mins.append(np.min(y.real))
+            y_maxs.append(np.max(y.real))
+        self.xlim = (self.x_vals.min(), self.x_vals.max())
+        self.ylim = (np.nanmin(y_mins) * (1-y_margin), np.nanmax(y_maxs) * (1+y_margin))
+        self.ax.legend()
+
 
     def plot_diffraction_cone(self, env_n=1, scale=1, upper_limit=1, color='lightgreen', alpha=0.2) -> None:
         # 绘制衍射锥线
@@ -329,7 +352,7 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
                        origin='lower', cmap='RdBu',
                        aspect='equal')
 
-    def plot_3D_surface(self, index, mapping=None, rbga=None, shade=True, **kwargs) -> None:
+    def plot_3D_surface(self, index, mapping=None, rbga=None, shade=True, elev=45, azim=25, **kwargs) -> None:
         if mapping is None:
             mapping = {
                 'cmap': 'hot',
@@ -345,7 +368,7 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
             z1=eigenfreq,
             z2=qlog,
             rbga=rbga,
-            elev=45, azim=25, shade=shade,
+            elev=elev, azim=azim, shade=shade,
             **kwargs
         )
 
@@ -443,9 +466,50 @@ class MomentumSpaceSpectrumPlotter(HeatmapPlotter, ABC):
                        origin='lower', aspect='equal', **kwargs)
 
 
-class MomentumSpacePropagationPlotter(HeatmapPlotter, ABC):
-    def prepare_data(self, U) -> None:  # 手动重写：NaN过滤
-        self.m1 = self.coordinates['m1']
-        self.m2 = self.coordinates['m2']
-        self.Mx, self.My = np.meshgrid(self.m1, self.m2, indexing='ij')
-        self.U = U
+class TwoDimFieldVisualizer:
+    """
+    通用二维参数空间可视化器
+    - 不理解物理意义
+    - 只管理坐标、字段和绘制策略
+    """
+
+    def __init__(self, x, y, fields: dict):
+        """
+        x, y: 1D arrays
+        fields: dict[str, ndarray], shape=(Nx, Ny) or (Nx, Ny, ...)
+        """
+        self.x = x
+        self.y = y
+        self.X, self.Y = np.meshgrid(x, y, indexing='ij')
+        self.fields = fields
+
+    # ---------- 字段变换 ----------
+
+    def add_field(self, name, value):
+        self.fields[name] = value
+
+    def compute_phi_tanchi_from_s123(self, s1_key='s1', s2_key='s2', s3_key='s3'):
+        s1 = self.fields[s1_key]
+        s2 = self.fields[s2_key]
+        s3 = self.fields[s3_key]
+
+        cos2chi = np.sqrt(np.maximum(s1**2 + s2**2, 0))
+        chi = 0.5 * np.arctan2(s3, cos2chi)
+        phi = (0.5 * np.arctan2(s2, s1)) % np.pi
+
+        self.fields['phi'] = phi
+        self.fields['tanchi'] = np.tan(chi)
+
+    def compute_qlog_from_eigenfreq(self, key='eigenfreq'):
+        Z = self.fields[key]
+        qlog = np.log10(np.where(Z.imag != 0, np.abs(Z.real / (2 * Z.imag)), np.nan))
+        self.fields['qlog'] = qlog
+
+    # ---------- 绘制入口 ----------
+
+    def plot(self, strategy, field, **kwargs):
+        fig, ax = plt.subplots()
+        strategy(ax, self, field, **kwargs)
+        return fig, ax
+
+
