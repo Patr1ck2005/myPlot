@@ -14,6 +14,8 @@ from advance_plot_styles.scatter_plot import plot_scatter_advanced
 @dataclass
 class PlotConfig:
     figsize: Tuple[float, float] = (4, 6)
+    # Arial font
+    font: str = 'Arial'
     fs: int = 9
     save_dir: str = './rsl'
     show: bool = True
@@ -29,6 +31,7 @@ class PlotConfig:
         plt.rcParams.update({'font.size': self.fs})
         plt.rcParams['xtick.direction'] = self.tick_direction
         plt.rcParams['ytick.direction'] = self.tick_direction
+        plt.rcParams['font.family'] = self.font
 
     # 可选：一并更新并应用
     def update(self, **kw):

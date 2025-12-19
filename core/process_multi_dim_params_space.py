@@ -199,12 +199,13 @@ def group_solution(grid_coords, Z, freq_index=1):
         list_A = Z[idx]
 
         if len(list_A) <= freq_index:
-            raise IndexError(
+            print(
                 f"Index {idx} has a list of length {len(list_A)}, "
                 f"which is insufficient to access element {freq_index + 1}."
             )
-
-        Z_new[idx] = list_A[freq_index]
+            Z_new[idx] = np.nan  # 或者其他适当的缺失值表示
+        else:
+            Z_new[idx] = list_A[freq_index]
 
     return new_coords, Z_new
 

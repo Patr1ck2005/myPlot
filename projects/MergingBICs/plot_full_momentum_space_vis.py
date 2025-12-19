@@ -70,7 +70,7 @@ if __name__ == '__main__':
     # plotter.save_and_show()
 
 
-    data_path = r"D:\DELL\Documents\myPlots\projects\MergingBICs\manual\3Deigen-RectHole_P400_T200_L180_D0.6.pkl"
+    data_path = r".\manual\3Deigen-RectHole_P400_T200_L180_D0.6.pkl"
     config = PlotConfig(
         plot_params={},
         annotations={'show_tick_labels': True, 'xlim': (-0.10, 0.10), 'ylim': (-0.10, 0.10)},
@@ -116,17 +116,18 @@ if __name__ == '__main__':
     log_real_U0 = np.sign(real_U0) * np.log10(np.abs(real_U0) + 1e-5)
     from matplotlib.colors import SymLogNorm
 
-    im = ax.imshow(real_U0.T, origin='lower', extent=(m1[0], m1[-1], m2[0], m2[-1]),
-                   cmap='RdBu', norm=SymLogNorm(linthresh=1e-2, vmin=-1, vmax=1))
-                   # cmap='RdBu', vmin=-1, vmax=1)
-    # im = ax.imshow(np.abs(U0).T, origin='lower', extent=(m1[0], m1[-1], m2[0], m2[-1]),
-    #                # cmap='RdBu', norm=SymLogNorm(linthresh=1e-2, vmin=-1, vmax=1))
-    #                cmap='magma', vmin=0, vmax=1)
-    ax.set_xlim(-0.10, 0.10)
-    ax.set_ylim(-0.10, 0.10)
-    # cbar = fig.colorbar(im, ax=ax)
-    plt.savefig('temp.svg', bbox_inches='tight', transparent=True, dpi=1000)
-    plt.show()
+    # im = ax.imshow(real_U0.T, origin='lower', extent=(m1[0], m1[-1], m2[0], m2[-1]),
+    #                cmap='RdBu', norm=SymLogNorm(linthresh=1e-2, vmin=-1, vmax=1))
+    #                # cmap='RdBu', vmin=-1, vmax=1)
+    # # im = ax.imshow(np.abs(U0).T, origin='lower', extent=(m1[0], m1[-1], m2[0], m2[-1]),
+    # #                # cmap='RdBu', norm=SymLogNorm(linthresh=1e-2, vmin=-1, vmax=1))
+    # #                cmap='magma', vmin=0, vmax=1)
+    # ax.set_xlim(-0.10, 0.10)
+    # ax.set_ylim(-0.10, 0.10)
+    # # cbar = fig.colorbar(im, ax=ax)
+    # plt.savefig('temp.svg', bbox_inches='tight', transparent=True, dpi=1000)
+    # plt.show()
+
     # 1) 单个 z 面
     z = 0.00
     norm_f = 0.453
@@ -159,15 +160,15 @@ if __name__ == '__main__':
 
     # 2) XZ 纵截面（y=0 切片）
     # z_list = np.linspace(0, 5e3, 200)
-    z_list = np.linspace(-1e4, 1e4, 20)
-    z_list = np.linspace(-1e4, 0, 100)
+    # z_list = np.linspace(-1e6, 1e6, 20)
+    z_list = np.linspace(-2e5, 0, 100)
     # z_list = np.linspace(0, 1e4, 100)
     x, z, Exz = angular_spectrum_xz_slice(m1, m2, U0, z_list, k0=1, y0=0.0, include_evanescent=False, time_sign=-1)
     # 可视化：np.abs(Exz) 或 np.angle(Exz)
     fig, ax = plt.subplots(figsize=(4, 1.25))
     im = ax.imshow(np.abs(Exz).T**2, origin='lower', extent=(z[0], z[-1], x[0], x[-1]),
                    aspect='auto', cmap='magma')
-    ax.set_ylim(-1.5e3, 1.5e3)
+    ax.set_ylim(-5e3, 5e3)
     plt.savefig('temp.svg', bbox_inches='tight', transparent=True, dpi=1000)
     plt.show()
 

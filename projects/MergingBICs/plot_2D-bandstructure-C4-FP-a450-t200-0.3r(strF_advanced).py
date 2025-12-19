@@ -14,18 +14,23 @@ from core.data_postprocess.data_grouper import group_vectors_one_sided_hungarian
 
 # 如果你的包里函数名或位置不同，请相应修改导入
 # -------------------------------------------------------
+fs = 9
+plt.rcParams.update({'font.size': fs})
+plt.rcParams['xtick.direction'] = 'in'
+plt.rcParams['ytick.direction'] = 'in'
 
 # ---- 用户可调整参数 ----
 data_path = 'data/FP_PhC-diff_FP-detailed-14eigenband-strB.csv'
 period = 450  # nm
 BIC_Q_threshold = 1e5  # Q 阈值
 min_peak_prominence = None  # 可根据需要调整 find_peaks 的参数
-max_match_k_distance = 0.02  # 匹配阈值（k的单位与网格相同），超出则认为无法匹配
+max_match_k_distance = 0.1  # 匹配阈值（k的单位与网格相同），超出则认为无法匹配
 output_dir = './rsl/bic_scan'
 os.makedirs(output_dir, exist_ok=True)
 
 # 给定的 buffer 值数组（使用你提供的）
 buffer_values = np.array([245., 245.5, 246., 246.5, 247., 247.5, 248., 248.5, 249., 249.5, 250.])
+buffer_space = buffer_values[1] - buffer_values[0]
 # buffer_values = np.array([242.5, 243. , 243.5, 244. , 244.5, 245. ,
 #                           245.5, 246. ,])
 # buffer_values = np.array([245., 250.])
@@ -94,7 +99,8 @@ for buf in buffer_values:
             [Z_new], deltas3,
             value_weights=value_weights,
             deriv_weights=deriv_weights,
-            max_m=6
+            max_m=8,
+            auto_split_streams=False
         )
 
         # 得到第 n 个频带
@@ -273,96 +279,71 @@ print("Initial tracks present at first buffer (sorted by k):", init_track_order)
 selected_track_ids = init_track_order[:3] if len(init_track_order) > 0 else list(range(min(3, len(tracks))))
 
 # ------------------------------
-# 计算 merging 速度（Δk / Δbuffer）
-# ------------------------------
-# 对每个选中的 track 做线性拟合（忽略 nan），得到拟合斜率和有限差分
-speed_results = []
-for tid in selected_track_ids:
-    df_tid = df_tracks[df_tracks['track_id'] == tid].sort_values('buffer')
-    mask = ~df_tid['k'].isna()
-    bs = df_tid['buffer'].values[mask]
-    ks = df_tid['k'].values[mask]
-    if len(bs) >= 2:
-        # 线性拟合
-        coef = np.polyfit(bs, ks, 1)
-        slope_fit = coef[0]  # Δk / Δbuffer
-        intercept = coef[1]
-        # 局部有限差分（逐段）
-        diffs = np.diff(ks) / np.diff(bs)
-        mean_fd = np.nan if len(diffs) == 0 else np.nanmean(diffs)
-    else:
-        slope_fit = np.nan
-        mean_fd = np.nan
-    speed_results.append({'track_id': tid, 'slope_fit': slope_fit, 'mean_fd': mean_fd, 'n_points': len(ks)})
-
-df_speeds = pd.DataFrame(speed_results)
-df_speeds.to_csv(os.path.join(output_dir, 'bic_tracks_speeds.csv'), index=False)
-print("Saved speed summary to:", os.path.join(output_dir, 'bic_tracks_speeds.csv'))
-print(df_speeds)
-
-# ------------------------------
 # 绘图：k vs buffer, freq vs buffer, k-difference between track pairs
 # ------------------------------
-plt.figure(figsize=(4, 3))
-colors = ['C0', 'C1', 'C2', 'C3', 'C4', 'C5']
+plt.figure(figsize=(2, 1))
+# colors = ['C0', 'C1', 'C2', 'C3', 'C4', 'C5']
+colors = ['gray', 'r', 'b']
 for idx, tid in enumerate(selected_track_ids):
     df_tid = df_tracks[df_tracks['track_id'] == tid].sort_values('buffer')
-    plt.plot(df_tid['buffer'], df_tid['k'], marker='o', label=f"track {tid}", color=colors[idx % len(colors)])
-    # 标注拟合斜率
-    mask = ~df_tid['k'].isna()
-    if mask.sum() >= 2:
-        coef = np.polyfit(df_tid['buffer'].values[mask], df_tid['k'].values[mask], 1)
-        slope = coef[0]
-        plt.text(df_tid['buffer'].values[mask].mean(), df_tid['k'].values[mask].mean(),
-                 f"s={slope:.3e}", color=colors[idx % len(colors)])
-plt.xlabel('buffer (nm)')
-plt.ylabel('k')
-plt.title('BIC tracks: k vs buffer')
-plt.legend()
+    plt.plot(df_tid['buffer']/period, df_tid['k'], marker='o', label=f"track {tid}", color=colors[idx % len(colors)])
+    # # 标注拟合斜率
+    # mask = ~df_tid['k'].isna()
+    # if mask.sum() >= 2:
+    #     coef = np.polyfit(df_tid['buffer'].values[mask], df_tid['k'].values[mask], 1)
+    #     slope = coef[0]
+    #     plt.text(df_tid['buffer'].values[mask].mean(), df_tid['k'].values[mask].mean(),
+    #              f"s={slope:.3e}", color=colors[idx % len(colors)])
+plt.xlabel('L/P')
+plt.ylabel('k (2$\pi$/P)')
+# plt.title('BIC tracks: k vs buffer')
+# plt.legend()
 plt.grid(True)
 plt.savefig(os.path.join(output_dir, 'k_vs_buffer.png'), dpi=200, bbox_inches='tight')
 print("Saved k vs buffer plot to:", os.path.join(output_dir, 'k_vs_buffer.png'))
+plt.savefig('temp.svg', dpi=300, bbox_inches='tight', transparent=True)
+plt.show()
 plt.close()
 
-plt.figure(figsize=(4, 3))
+plt.figure(figsize=(2, 1))
 for idx, tid in enumerate(selected_track_ids):
     df_tid = df_tracks[df_tracks['track_id'] == tid].sort_values('buffer')
-    plt.plot(df_tid['buffer'], df_tid['freq_real'], marker='o', label=f"track {tid}", color=colors[idx % len(colors)])
-plt.xlabel('buffer (nm)')
-plt.ylabel('Re(frequency)')
-plt.title('BIC tracks: frequency vs buffer')
-plt.legend()
+    plt.plot(df_tid['buffer']/period, df_tid['freq_real'], marker='o', label=f"track {tid}", color=colors[idx % len(colors)])
+plt.xlabel('L/P')
+plt.ylabel('Re(f) (c/P)')
+# plt.title('BIC tracks: frequency vs buffer')
+# plt.legend()
 plt.grid(True)
 plt.savefig(os.path.join(output_dir, 'freq_vs_buffer.png'), dpi=200, bbox_inches='tight')
 print("Saved freq vs buffer plot to:", os.path.join(output_dir, 'freq_vs_buffer.png'))
+plt.savefig('temp.svg', dpi=300, bbox_inches='tight', transparent=True)
+plt.show()
 plt.close()
 
-# 如果已选择至少两条轨迹，绘制它们之间的 freq 差随 buffer 的变化（展示合并趋势）
-if len(selected_track_ids) >= 2:
-    plt.figure(figsize=(4, 3))
-    tid_ref = selected_track_ids[1]
-    for idx in [0, 2]:
-        tid = selected_track_ids[idx]
-        d0 = df_tracks[df_tracks['track_id'] == tid_ref].sort_values('buffer')
-        d1 = df_tracks[df_tracks['track_id'] == tid].sort_values('buffer')
-        # 对应 buffer 下 freq 的差（若任一 nan -> nan）
-        kd = np.array(d0['freq_real'].values) - np.array(d1['freq_real'].values)
-        plt.plot(buffers_sorted, np.abs(kd), marker='o', label=f"|track {tid_ref} - track {tid}|",
-                 color=colors[idx % len(colors)])
-    plt.xlabel('buffer (nm)')
-    plt.ylabel('|freq difference|')
-    plt.title('freq difference between tracks (merging behavior)')
-    plt.legend()
-    plt.grid(True)
-    plt.savefig(os.path.join(output_dir, 'freq_diff_vs_buffer.png'), dpi=200, bbox_inches='tight')
-    print("Saved freq-difference plot to:", os.path.join(output_dir, 'freq_diff_vs_buffer.png'))
-    plt.close()
+plt.figure(figsize=(1.25, 3-0.25))
+df_tid0 = df_tracks[df_tracks['track_id'] == 0].sort_values('buffer')
+df_tid1 = df_tracks[df_tracks['track_id'] == 1].sort_values('buffer')
+df_tid2 = df_tracks[df_tracks['track_id'] == 2].sort_values('buffer')
+print((df_tid1['freq_real']-df_tid0['freq_real'])/(df_tid2['freq_real']-df_tid0['freq_real']))
+plt.plot(df_tid0['buffer']/period, (df_tid1['freq_real'].values-df_tid0['freq_real'].values)/(df_tid2['freq_real'].values-df_tid0['freq_real'].values), marker='o', label=f"track a", color='orange')
+plt.plot(df_tid0['buffer']/period, (df_tid1['k'].values-df_tid0['k'].values)/(df_tid2['k'].values-df_tid0['k'].values), marker='o', label=f"track b", color='green')
+plt.xlabel('L/P')
+plt.ylabel('')
+# plt.title('BIC tracks: frequency vs buffer')
+# plt.legend()
+plt.grid(True)
+plt.savefig(os.path.join(output_dir, 'freq_vs_buffer.png'), dpi=200, bbox_inches='tight')
+print("Saved freq vs buffer plot to:", os.path.join(output_dir, 'freq_vs_buffer.png'))
+plt.savefig('temp.svg', dpi=300, bbox_inches='tight', transparent=True)
+plt.show()
+plt.close()
 
+colors = ['r', 'b']
 # 如果已选择至少两条轨迹，绘制它们之间的 freq 差随 buffer 的变化（展示合并趋势）
 if len(selected_track_ids) >= 2:
-    plt.figure(figsize=(4, 3))
+    plt.figure(figsize=(2, 1))
     tid_ref = selected_track_ids[1]
-    for idx in [0, 2]:
+    for order, idx in enumerate([0, 2]):
         # df_tid = df_tracks[df_tracks['track_id'] == idx].sort_values('buffer')
         # plt.plot(df_tid['buffer'], df_tid['k'], marker='o', label=f"track {idx}", color=colors[idx % len(colors)])
         tid = selected_track_ids[idx]
@@ -370,15 +351,40 @@ if len(selected_track_ids) >= 2:
         d1 = df_tracks[df_tracks['track_id'] == tid].sort_values('buffer')
         # 对应 buffer 下 k 的差（若任一 nan -> nan）
         kd = np.array(d0['k'].values) - np.array(d1['k'].values)
-        plt.plot(buffers_sorted, np.abs(kd), marker='o', label=f"|track {tid_ref} - track {tid}|",
-                 color=colors[idx % len(colors)])
-    plt.xlabel('buffer (nm)')
-    plt.ylabel('|k difference|')
-    plt.title('k difference between tracks (merging behavior)')
-    plt.legend()
+        plt.plot(buffers_sorted/period, np.abs(kd)/(buffer_space/period), marker='o', label=f"|track {tid_ref} - track {tid}|",
+                 color=colors[order % len(colors)])
+    plt.xlabel('L/P')
+    plt.ylabel('|Δk|/ΔL (2$\pi$/P²)')
+    # plt.title('k difference between tracks (merging behavior)')
+    # plt.legend()
     plt.grid(True)
     plt.savefig(os.path.join(output_dir, 'k_diff_vs_buffer.png'), dpi=200, bbox_inches='tight')
     print("Saved k-difference plot to:", os.path.join(output_dir, 'k_diff_vs_buffer.png'))
+    plt.savefig('temp.svg', dpi=300, bbox_inches='tight', transparent=True)
+    plt.show()
+    plt.close()
+
+# 如果已选择至少两条轨迹，绘制它们之间的 freq 差随 buffer 的变化（展示合并趋势）
+if len(selected_track_ids) >= 2:
+    plt.figure(figsize=(2, 1))
+    tid_ref = selected_track_ids[1]
+    for order, idx in enumerate([0, 2]):
+        tid = selected_track_ids[idx]
+        d0 = df_tracks[df_tracks['track_id'] == tid_ref].sort_values('buffer')
+        d1 = df_tracks[df_tracks['track_id'] == tid].sort_values('buffer')
+        # 对应 buffer 下 freq 的差（若任一 nan -> nan）
+        kd = np.array(d0['freq_real'].values) - np.array(d1['freq_real'].values)
+        plt.plot(buffers_sorted/period, np.abs(kd)/(buffer_space/period), marker='o', label=f"|track {tid_ref} - track {tid}|",
+                 color=colors[order % len(colors)])
+    plt.xlabel('L/P')
+    plt.ylabel('|Δf|/ΔL (c/P²)')
+    # plt.title('freq difference between tracks (merging behavior)')
+    # plt.legend()
+    plt.grid(True)
+    plt.savefig(os.path.join(output_dir, 'freq_diff_vs_buffer.png'), dpi=200, bbox_inches='tight')
+    print("Saved freq-difference plot to:", os.path.join(output_dir, 'freq_diff_vs_buffer.png'))
+    plt.savefig('temp.svg', dpi=300, bbox_inches='tight', transparent=True)
+    plt.show()
     plt.close()
 
 print("All done. Results and plots are in:", output_dir)
