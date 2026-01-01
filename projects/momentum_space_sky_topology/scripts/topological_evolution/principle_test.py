@@ -18,7 +18,7 @@ def jones_field_base(kx, ky, kxc=0.0, kyc=0.0, amp=1.0):
     Ey = amp*1j*(EL - ER)/np.sqrt(2.0)
     return Ex, Ey
 
-def _stokes_angles(Ex, Ey, eps=1e-12):
+def _stokes_angles(Ex, Ey, eps=0):
     S0 = (np.abs(Ex)**2 + np.abs(Ey)**2) + eps
     S1 = (np.abs(Ex)**2 - np.abs(Ey)**2)
     S2 = 2.0*np.real(Ex*np.conj(Ey))
@@ -36,7 +36,7 @@ def _jones_from_phi_chi(S0, phi, chi):
     amp = np.sqrt(np.maximum(S0, 0.0))
     return amp*Ex_hat, amp*Ey_hat
 
-def stokes_from_jones(Ex, Ey, eps=1e-12):
+def stokes_from_jones(Ex, Ey, eps=0):
     S0 = (np.abs(Ex)**2 + np.abs(Ey)**2) + eps
     S1 = (np.abs(Ex)**2 - np.abs(Ey)**2)
     S2 = 2.0*np.real(Ex*np.conj(Ey))
@@ -83,6 +83,13 @@ if __name__ == "__main__":
     Ex, Ey = jones_field(kx, ky, kxc=kxc, kyc=kyc, amp=1.0, p=1.0)
     S0, S1, S2, S3, phi, chi = stokes_from_jones(Ex, Ey)
     s1, s2, s3 = S1/(S0 + 1e-12), S2/(S0 + 1e-12), S3/(S0 + 1e-12)
+
+    #
+    fig1, ax1 = plt.subplots(figsize=(3, 3))
+    ax1.imshow(Ex.real, origin='lower', extent=extent, cmap='RdBu')
+    ax1.set_title('Hyper colormap')
+    plt.savefig("temp.svg", bbox_inches='tight', transparent=True)
+    plt.show()
 
     # 1) 椭圆贴片（独立成图）
     fig1, ax1 = plt.subplots(figsize=(3, 3))

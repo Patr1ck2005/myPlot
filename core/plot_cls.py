@@ -159,7 +159,30 @@ class BandPlotterOneDim(LinePlotter, ABC):
             y_maxs.append(np.max(y.real))
         self.xlim = (self.x_vals.min(), self.x_vals.max())
         self.ylim = (np.nanmin(y_mins) * (1-y_margin), np.nanmax(y_maxs) * (1+y_margin))
-        self.ax.legend()
+        # self.ax.legend()
+
+    def plot_ordered_qfactor(self, y_margin=0.02) -> None:  # 重写：整体+循环填充
+        params_line = {
+            'enable_fill': False,
+            'gradient_fill': False,
+            'enable_dynamic_color': False,
+            'cmap': None,
+            'add_colorbar': False,
+            'default_color': False, 'alpha_fill': 1,
+            'linewidth_base': 2,
+            'edge_color': 'none',
+            'alpha_line': 0.75,
+        }
+        y_mins, y_maxs = [], []
+        for i, (x, y) in enumerate(zip(self.x_vals_list, self.y_vals_list)):
+            Qfactor = np.where(y.imag != 0, np.abs(y.real / (2 * y.imag)), 1e10)
+            Qfactor_log = np.log10(Qfactor)
+            self.plot_line(x, z1=Qfactor, z2=Qfactor, z3=Qfactor_log, **params_line, index=i)  # 填充
+            y_mins.append(np.min(Qfactor))
+            y_maxs.append(np.max(Qfactor))
+        self.xlim = (self.x_vals.min(), self.x_vals.max())
+        self.ylim = (np.nanmin(y_mins) * (1-y_margin), np.nanmax(y_maxs) * (1+y_margin))
+        # self.ax.legend()
 
 
     def plot_diffraction_cone(self, env_n=1, scale=1, upper_limit=1, color='lightgreen', alpha=0.2) -> None:

@@ -36,7 +36,7 @@ def group_eigensolution(grid_coords, Z, freq_index=1):
 
 
 if __name__ == '__main__':
-    data_path = './data/VBG/k_space-lossy_material.csv'
+    data_path = '../projects/VBG/data/k_space-lossy_material.csv'
     # data_path = './data/VBG/k_space-lossy_material-2.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
