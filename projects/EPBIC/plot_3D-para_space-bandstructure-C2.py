@@ -9,11 +9,8 @@ import numpy as np
 
 c_const = 299792458
 
-
 if __name__ == '__main__':
-    # data_path = 'data/4000Q-diff_h-diff_kx-7eigens.csv'
-    # data_path = 'data/DUGR-diff_h-diff_kx-7eigens.csv'
-    data_path = 'data/DUGR-diff_fill-diff_kx-7eigens.csv'
+    data_path = 'data/slide_sym-0-0.20P_EP_BIC.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
 
@@ -51,8 +48,8 @@ if __name__ == '__main__':
                                                                                            period=period * 1e-9 * 1e12)
     # df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period*1e-9)
     df_sample["频率 (Hz)"] = np.real(df_sample["特征频率 (THz)"])
-    df_sample["k"] = df_sample["a"] - df_sample["b"]
-    df_sample["fake_factor (1)"] = 1 / df_sample["Prop_m (1)"]
+    df_sample["k"] = df_sample["a"]
+    df_sample["fake_factor (1)"] = 1 / df_sample["S3 (1)"]
     # # 筛选k的成分
     df_sample = df_sample[df_sample["k"] <= 0.080]
     # 指定用于构造网格的参数以及目标数据列
@@ -204,8 +201,8 @@ if __name__ == '__main__':
     # imshow 绘图
     fig, ax = plt.subplots(figsize=(3, 2))
     im = ax.imshow(ulog.T, origin='lower',
-              extent=(new_coords[KEY_X][0], new_coords[KEY_X][-1], new_coords[KEY_Y][0], new_coords[KEY_Y][-1]),
-              aspect='auto', cmap='rainbow')
+                   extent=(new_coords[KEY_X][0], new_coords[KEY_X][-1], new_coords[KEY_Y][0], new_coords[KEY_Y][-1]),
+                   aspect='auto', cmap='rainbow')
     ax.set_xlabel(KEY_X)
     ax.set_ylabel(KEY_Y)
     fig.colorbar(im, ax=ax)
@@ -215,8 +212,8 @@ if __name__ == '__main__':
     # imshow 绘图
     fig, ax = plt.subplots(figsize=(3, 2))
     im = ax.imshow(qlog.T, origin='lower',
-              extent=(new_coords[KEY_X][0], new_coords[KEY_X][-1], new_coords[KEY_Y][0], new_coords[KEY_Y][-1]),
-              aspect='auto', cmap='hot')
+                   extent=(new_coords[KEY_X][0], new_coords[KEY_X][-1], new_coords[KEY_Y][0], new_coords[KEY_Y][-1]),
+                   aspect='auto', cmap='hot')
     ax.set_xlabel(KEY_X)
     ax.set_ylabel(KEY_Y)
     fig.colorbar(im, ax=ax)
@@ -226,14 +223,13 @@ if __name__ == '__main__':
     # imshow 绘图
     fig, ax = plt.subplots(figsize=(3, 2))
     im = ax.imshow(freq_real.T, origin='lower',
-              extent=(new_coords[KEY_X][0], new_coords[KEY_X][-1], new_coords[KEY_Y][0], new_coords[KEY_Y][-1]),
-              aspect='auto', cmap='hot')
+                   extent=(new_coords[KEY_X][0], new_coords[KEY_X][-1], new_coords[KEY_Y][0], new_coords[KEY_Y][-1]),
+                   aspect='auto', cmap='hot')
     ax.set_xlabel(KEY_X)
     ax.set_ylabel(KEY_Y)
     fig.colorbar(im, ax=ax)
     plt.savefig('freq_real_plot.svg', dpi=300, transparent=True, bbox_inches='tight')
     plt.show()
-
 
     dataset1 = {
         'eigenfreq': eigenfreq,
