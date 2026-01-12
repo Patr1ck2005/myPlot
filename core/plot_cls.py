@@ -489,24 +489,34 @@ class MomentumSpaceSpectrumPlotter(HeatmapPlotter, ABC):
                        origin='lower', aspect='equal', **kwargs)
 
 
-class TwoDimFieldVisualizer:
+class TwoDimFieldVisualizer(HeatmapPlotter, ABC):
     """
     通用二维参数空间可视化器
     - 不理解物理意义
     - 只管理坐标、字段和绘制策略
     """
 
-    def __init__(self, x, y, fields: dict):
-        """
-        x, y: 1D arrays
-        fields: dict[str, ndarray], shape=(Nx, Ny) or (Nx, Ny, ...)
-        """
-        self.x = x
-        self.y = y
-        self.X, self.Y = np.meshgrid(x, y, indexing='ij')
-        self.fields = fields
+    # def __init__(self, x, y, fields: dict):
+    #     """
+    #     x, y: 1D arrays
+    #     fields: dict[str, ndarray], shape=(Nx, Ny) or (Nx, Ny, ...)
+    #     """
+    #     super().__init__()
+    #     self.x = x
+    #     self.y = y
+    #     self.X, self.Y = np.meshgrid(x, y, indexing='ij')
+    #     self.fields = fields
+    def prepare_data(self, key_x, key_y, key_fields) -> None:  # 手动重写
+        self.x = self.coordinates[key_x]
+        self.y = self.coordinates[key_y]
+        self.X, self.Y = np.meshgrid(self.x, self.y, indexing='ij')
+        self.data_list = self.raw_datasets["data_list"]
+        # self.eigenfreq_list = [self.data_list[i][key_field] for i in range(len(self.data_list))]
+        # self.qlog_list = [self.data_list[i]['qlog'] for i in range(self.data_num)]
+        self.fields = [self.data_list[i][key_fields[0]] for i in range(self.data_num)]
 
-    # ---------- 字段变换 ----------
+    def plot(self) -> None:
+        pass
 
     def add_field(self, name, value):
         self.fields[name] = value
@@ -528,11 +538,24 @@ class TwoDimFieldVisualizer:
         qlog = np.log10(np.where(Z.imag != 0, np.abs(Z.real / (2 * Z.imag)), np.nan))
         self.fields['qlog'] = qlog
 
-    # ---------- 绘制入口 ----------
-
-    def plot(self, strategy, field, **kwargs):
-        fig, ax = plt.subplots()
-        strategy(ax, self, field, **kwargs)
-        return fig, ax
+    def plot_3D_surface(self, index, mapping=None, rbga=None, shade=True, elev=45, azim=25, **kwargs) -> None:
+        if mapping is None:
+            mapping = {
+                'cmap': 'hot',
+                'z2': {'vmin': 0.573, 'vmax': 0.575},  # 可选；未给则自动取数据范围
+                # 'z3': {'vmin': c, 'vmax': d},  # 可选；仅当传入 z3 时有意义；未给则自动 [min,max]
+            }
+        x, y = self.x, self.y
+        field = self.fields[index]
+        colors = self.fields[index]
+        self.ax, mappable = plot_advanced_surface(
+            self.ax, mx=x, my=y,
+            mapping=mapping,
+            z1=field,
+            z2=colors,
+            rbga=rbga,
+            elev=elev, azim=azim, shade=shade,
+            **kwargs
+        )
 
 

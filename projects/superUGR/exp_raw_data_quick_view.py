@@ -3,38 +3,58 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+
+fs = 9
+plt.rcParams.update({"font.size": fs})
+
 def load_and_visualize_ftir_spectra(directory, prefix, start_num, end_num, angles,
                                     file_ext='.dpt', wavenumber_col=0, spectrum_col=1,
-                                    save_plots=False, plot_dir=None):
+                                    save_plots=False, plot_dir=None,
+                                    ref_filename=None, ref_usecols=None,
+                                    interpolate_ref=False, eps=0):
     """
-    加载FTIR谱数据并可视化。
+    加载FTIR谱数据并可视化，并可选用参考谱做分母归一化/比值计算。
 
-    参数:
-    - directory: str, 数据文件所在的目录路径。
-    - prefix: str, 文件名前缀，如 'Sample name.'。
-    - start_num: int, 起始编号，如 5897。
-    - end_num: int, 结束编号，如 5912。
-    - angles: list of float/int, 角度列表，必须与文件数量匹配，如 [0, 1, 2, ..., 15]。
-    - file_ext: str, 文件后缀，默认 '.dpt'。
-    - wavenumber_col: int, 波数列索引，默认 0。
-    - spectrum_col: int, 光谱列索引，默认 1。
-    - save_plots: bool, 是否保存图像，默认 False。
-    - plot_dir: str or None, 保存图像的目录，如果 save_plots=True，则必须提供。
+    新增参数:
+    - ref_filename: str or None, 参考谱文件名（位于directory下或给出完整路径）。若提供，则每条谱将除以参考谱。
+    - ref_usecols: tuple(int,int) or None, 参考谱使用的(波数列, 光谱列)，默认与(wavenumber_col, spectrum_col)一致。
+    - interpolate_ref: bool, 当参考谱波数网格不同，是否将参考谱插值到样品波数网格上。
+    - eps: float, 防止参考谱中出现0导致除零。
 
     返回:
-    - data_dict: dict, 键为角度，值为 (wavenumbers, spectrums) 的元组。
+    - data_dict: dict, 键为角度，值为 (wavenumbers, spectrums_processed) 的元组。
     """
-    # 检查角度列表长度是否匹配文件数量
     num_files = end_num - start_num + 1
     if len(angles) != num_files:
         raise ValueError(f"角度列表长度 {len(angles)} 不匹配文件数量 {num_files}。")
 
-    # 初始化数据存储
-    data_dict = {}
-    all_spectrums = []  # 用于heatmap的2D数组
-    common_wavenumbers = None  # 假设所有文件有相同的波数网格
+    if save_plots and not plot_dir:
+        raise ValueError("save_plots=True 时必须提供 plot_dir。")
 
-    # 按顺序加载文件
+    # -------- 1) 读取参考谱（如果提供）--------
+    ref_w = None
+    ref_s = None
+    if ref_filename is not None:
+        # 允许用户传完整路径；否则默认在 directory 下
+        ref_path = ref_filename if os.path.isabs(ref_filename) else os.path.join(directory, ref_filename)
+        if not os.path.exists(ref_path):
+            raise FileNotFoundError(f"参考谱文件 {ref_path} 不存在。")
+
+        if ref_usecols is None:
+            ref_usecols = (wavenumber_col, spectrum_col)
+
+        ref_data = np.loadtxt(ref_path, usecols=ref_usecols)
+        ref_w = ref_data[:, 0]
+        ref_s = ref_data[:, 1]
+
+    # -------- 2) 加载样品谱 --------
+    data_dict = {}
+    all_spectrums = []
+    common_wavenumbers = None
+
     for i, num in enumerate(range(start_num, end_num + 1)):
         angle = angles[i]
         filename = f"{prefix}{num}{file_ext}"
@@ -43,67 +63,102 @@ def load_and_visualize_ftir_spectra(directory, prefix, start_num, end_num, angle
         if not os.path.exists(filepath):
             raise FileNotFoundError(f"文件 {filepath} 不存在。")
 
-        # 读取数据：假设两列，制表符分隔
         data = np.loadtxt(filepath, usecols=(wavenumber_col, spectrum_col))
         wavenumbers = data[:, 0]
         spectrums = data[:, 1]
 
-        data_dict[angle] = (wavenumbers, spectrums)
-
-        # 为heatmap准备：检查波数是否一致
+        # 统一波数网格检查（样品之间）
         if common_wavenumbers is None:
             common_wavenumbers = wavenumbers
         elif not np.array_equal(common_wavenumbers, wavenumbers):
-            raise ValueError(f"文件 {filename} 的波数网格与前文件不一致，无法直接创建heatmap。需插值处理。")
+            raise ValueError(
+                f"文件 {filename} 的波数网格与前文件不一致，无法直接创建heatmap。需插值处理。"
+            )
 
+        # -------- 3) 用参考谱做分母（如果提供）--------
+        if ref_filename is not None:
+            if np.array_equal(ref_w, wavenumbers):
+                denom = ref_s
+            else:
+                if not interpolate_ref:
+                    raise ValueError(
+                        f"参考谱波数网格与样品不一致（ref={len(ref_w)}点, sample={len(wavenumbers)}点）。"
+                        f"如需自动插值，请设置 interpolate_ref=True。"
+                    )
+                # 将参考谱插值到样品波数网格
+                denom = np.interp(wavenumbers, ref_w, ref_s)
+
+            denom_safe = np.where(np.abs(denom) < eps, np.sign(denom) * eps + eps, denom)
+            spectrums = spectrums / denom_safe
+
+        data_dict[angle] = (wavenumbers, spectrums)
         all_spectrums.append(spectrums)
 
-    # 转换为2D数组用于heatmap：行=角度，列=波数
     all_spectrums = np.array(all_spectrums)
 
-    # 可视化1: 不同角度的曲线图
+    # -------- 4) 可视化1：曲线图 --------
     cmap_lines = plt.get_cmap('viridis', num_files)
     color_list = [cmap_lines(i) for i in range(num_files)]
 
-    plt.figure(figsize=(6, 4))
+    plt.figure(figsize=(4, 3))
     for i, (angle, (wavenumbers, spectrums)) in enumerate(data_dict.items()):
         plt.plot(wavenumbers, spectrums, label=f'Angle: {angle}°', color=color_list[i])
+
     plt.xlabel('Wavenumber (cm⁻¹)')
-    plt.ylabel('spectrum')
-    plt.title('FTIR spectrum Spectra at Different Angles')
+    plt.ylabel('spectrum' if ref_filename is None else 'spectrum / reference')
+    plt.title('FTIR Spectra at Different Angles' + ('' if ref_filename is None else ' (Divided by Reference)'))
+    plt.ylim(0, 1)
     plt.legend()
     plt.grid(True)
+
     if save_plots:
         curve_path = os.path.join(plot_dir, 'ftir_curves.png')
-        plt.savefig(curve_path)
+        plt.savefig(curve_path, dpi=300, bbox_inches='tight')
         print(f"曲线图已保存到 {curve_path}")
     plt.show()
 
-    # 可视化2: 二维heatmap
-    # 转换成THz频率
-    common_y = common_wavenumbers * 0.03  # cm⁻¹ to THz
-    plt.figure(figsize=(5, 6))
-    # 纵轴波数，横轴角度(0-15)
+    # -------- 5) 可视化2：heatmap --------
+    common_y = common_wavenumbers * 0.03  # cm⁻¹ -> THz
+
+    # 采用对称的angle范围, 手动增添对称数据
+    supp_angles = [-a for a in angles[::-1]]
+    supp_spectrums = all_spectrums[::-1, :]
+    angles = supp_angles + angles
+    all_spectrums = np.vstack((supp_spectrums, all_spectrums))
+
+    plt.figure(figsize=(3, 4))
     plt.imshow(
         all_spectrums.T, aspect='auto',
         extent=[min(angles), max(angles), common_y[0], common_y[-1]],
-        origin='lower', cmap='gray',
+        origin='lower',
+        # cmap='gray',
+        cmap='RdBu',
         interpolation='none',
-        vmin=0.6, vmax=1,
+        # vmin/vmax 你可以根据“除以参考谱后的范围”重新调整
+        vmin=0, vmax=1,
     )
-    plt.colorbar(label='spectrum')
+    plt.colorbar(label=('spectrum' if ref_filename is None else 'spectrum / reference'), pad=0.25)
     plt.xlabel('Angle (°)')
-    # plt.ylabel('Wavenumber (cm⁻¹)')
     plt.ylabel('Frequency (THz)')
-    plt.ylim((80, 95))
-    plt.gca().invert_yaxis()
+    plt.ylim((70, 90))
+    # 添加一个次坐标轴显示波长
+    ax = plt.gca()
+    secax = ax.secondary_yaxis('right', functions=(lambda x: 300 / x, lambda x: 300 / x))
+    secax.set_ylabel('Wavelength (μm)')
+
+    # plt.ylabel('Wavelength (μm)')
+    # plt.ylim((5, 4.2))
+    # plt.gca().invert_yaxis()
+
     if save_plots:
         heatmap_path = os.path.join(plot_dir, 'ftir_heatmap.png')
-        plt.savefig(heatmap_path)
+        plt.savefig(heatmap_path, dpi=300, bbox_inches='tight')
         print(f"Heatmap已保存到 {heatmap_path}")
+    plt.savefig('temp.svg', dpi=300, bbox_inches='tight', transparent=True)
     plt.show()
 
     return data_dict
+
 
 
 # # 示例调用（根据你的数据，替换为实际值）
@@ -132,10 +187,38 @@ def load_and_visualize_ftir_spectra(directory, prefix, start_num, end_num, angle
 # start_num = 6044
 # end_num = 6059
 
+# # EXP @2026.1.8 KEREN Sair with reference spectrum
+# prefix = ''
+# directory = r'D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.8 KEREN\26.1.8\Sair'
+# start_num = 0
+# end_num = 15
+#
+# angles = list(range(0, 16))  # 0到15，共16个
+# data = load_and_visualize_ftir_spectra(
+#     directory, prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt',
+#     ref_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.8 KEREN\26.1.8\Sair\BALCKBODY.dpt"
+# )
+
+# # EXP @2026.1.8 KEREN Pair with reference spectrum
+# prefix = ''
+# directory = r'D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.8 KEREN\26.1.8\Pair'
+# start_num = 0
+# end_num = 15
+#
+# angles = list(range(0, 16))  # 0到15，共16个
+# data = load_and_visualize_ftir_spectra(
+#     directory, prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt',
+#     ref_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.8 KEREN\26.1.8\Pair\BLACKBODY.dpt"
+# )
+
+# EXP @2026.1.9 KEREN S-back with reference spectrum
 prefix = ''
-directory = r'D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.8 KEREN\26.1.8\Sair'
+directory = r'D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.9 KEREN\Sback'
 start_num = 0
 end_num = 15
 
 angles = list(range(0, 16))  # 0到15，共16个
-data = load_and_visualize_ftir_spectra(directory, prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt')
+data = load_and_visualize_ftir_spectra(
+    directory, prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt',
+    ref_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.8 KEREN\26.1.8\Pair\BLACKBODY.dpt"
+)

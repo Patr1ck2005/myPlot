@@ -93,12 +93,12 @@ if __name__ == '__main__':
     ys = []
     zs = []
     colors = []
-    for i, m1 in enumerate(new_coords[KEY_X]):
-        for j, m2 in enumerate(new_coords[KEY_Y]):
+    for i, key_x in enumerate(new_coords[KEY_X]):
+        for j, key_y in enumerate(new_coords[KEY_Y]):
             lst_ij = Z_filtered[i][j]
             for idx, freq in enumerate(lst_ij[0]):
-                xs.append(m1)
-                ys.append(m2)
+                xs.append(key_x)
+                ys.append(key_y)
                 zs.append(freq.real)
                 # colors.append(freq.imag)
                 colors.append(idx)  # 第不同个频率用不同颜色
