@@ -94,7 +94,7 @@ if __name__ == '__main__':
     # ys = []
     # zs = []
     # colors = []
-    # for i, key_x in enumerate(new_coords[KEY_X]):
+    # for i, key_x in enumerate(new_coords[X_KEY]):
     #     for j, key_y in enumerate(new_coords[KEY_Y]):
     #         lst_ij = Z_filtered[i][j]
     #         for idx, freq in enumerate(lst_ij[0]):
@@ -109,7 +109,7 @@ if __name__ == '__main__':
     # # set view angle
     # ax.view_init(elev=15, azim=45)
     # plt.colorbar(sc, label='Imaginary Part of Frequency (THz)')
-    # ax.set_xlabel(KEY_X)
+    # ax.set_xlabel(X_KEY)
     # ax.set_ylabel(KEY_Y)
     # ax.set_zlabel('Frequency (THz)')
     # plt.title('3D Scatter Plot of Eigenfrequencies')
@@ -214,7 +214,7 @@ if __name__ == '__main__':
     im = ax.imshow(max_distances.T, origin='lower',
                    extent=(new_coords[KEY_X][0], new_coords[KEY_X][-1], new_coords[KEY_Y][0], new_coords[KEY_Y][-1]),
                    aspect='auto', cmap='magma', vmin=0)
-    # ax.set_xlabel(KEY_X)
+    # ax.set_xlabel(X_KEY)
     # ax.set_ylabel(KEY_Y)
     # fig.colorbar(im, ax=ax)
     # 清空坐标轴刻度和标签
@@ -227,7 +227,7 @@ if __name__ == '__main__':
     im = ax.imshow(min_distances.T, origin='lower',
                    extent=(new_coords[KEY_X][0], new_coords[KEY_X][-1], new_coords[KEY_Y][0], new_coords[KEY_Y][-1]),
                    aspect='auto', cmap='magma', vmin=0)
-    # ax.set_xlabel(KEY_X)
+    # ax.set_xlabel(X_KEY)
     # ax.set_ylabel(KEY_Y)
     # fig.colorbar(im, ax=ax)
     # 清空坐标轴刻度和标签
@@ -263,9 +263,9 @@ if __name__ == '__main__':
     # # imshow 绘图
     # fig, ax = plt.subplots(figsize=(3, 2))
     # im = ax.imshow(qlog.T, origin='lower',
-    #                extent=(new_coords[KEY_X][0], new_coords[KEY_X][-1], new_coords[KEY_Y][0], new_coords[KEY_Y][-1]),
+    #                extent=(new_coords[X_KEY][0], new_coords[X_KEY][-1], new_coords[KEY_Y][0], new_coords[KEY_Y][-1]),
     #                aspect='auto', cmap='hot')
-    # ax.set_xlabel(KEY_X)
+    # ax.set_xlabel(X_KEY)
     # ax.set_ylabel(KEY_Y)
     # fig.colorbar(im, ax=ax)
     # plt.savefig('qlog_plot.svg', dpi=300, transparent=True, bbox_inches='tight')
@@ -274,9 +274,9 @@ if __name__ == '__main__':
     # # imshow 绘图
     # fig, ax = plt.subplots(figsize=(3, 2))
     # im = ax.imshow(freq_real.T, origin='lower',
-    #                extent=(new_coords[KEY_X][0], new_coords[KEY_X][-1], new_coords[KEY_Y][0], new_coords[KEY_Y][-1]),
+    #                extent=(new_coords[X_KEY][0], new_coords[X_KEY][-1], new_coords[KEY_Y][0], new_coords[KEY_Y][-1]),
     #                aspect='auto', cmap='hot')
-    # ax.set_xlabel(KEY_X)
+    # ax.set_xlabel(X_KEY)
     # ax.set_ylabel(KEY_Y)
     # fig.colorbar(im, ax=ax)
     # plt.savefig('freq_real_plot.svg', dpi=300, transparent=True, bbox_inches='tight')
@@ -312,30 +312,40 @@ if __name__ == '__main__':
     config.update(figsize=(1.25, 1.25), tick_direction='in')
     plotter = TwoDimFieldVisualizer(config=config, data_path=data_path)
     plotter.load_data()
-    plotter.prepare_data(key_x=KEY_X, key_y=KEY_Y, key_fields=['eigenfreq', 'eigenfreq_real', 'eigenfreq_imag', 'qlog'])
-
+    # plotter.prepare_data(key_x=X_KEY, key_y=KEY_Y, key_fields=['eigenfreq', 'eigenfreq_real', 'eigenfreq_imag', 'qlog'])
     plotter.new_3d_fig(temp_figsize=(1.25, 1.5))
     # plotter.new_3d_fig(temp_figsize=(1.75, 2))
     # plotter.new_3d_fig(temp_figsize=(3, 2))
-    # plotter.plot_3D_surface(index=0, key_z1='eigenfreq_real', elev=20, azim=120, alpha=1, vmin=0.573, vmax=0.5755,
-    #                         cmap='coolwarm', box_aspect=(1,1,2))
-    # # plotter.plot_3D_surface(index=1, key_z1='eigenfreq_real', elev=20, azim=100, alpha=0.6, vmin=0.573, vmax=0.5755, cmap='RdBu', box_aspect=(1,1,2))
-    # plotter.plot_3D_surface(index=2, key_z1='eigenfreq_real', elev=20, azim=120, alpha=1, vmin=0.573, vmax=0.5755,
-    #                         cmap='coolwarm', box_aspect=(1,1,2))
-    # plotter.plot_3D_surface(index=0, key_z1='eigenfreq_imag', elev=20, azim=120, alpha=1, vmin=0.0, vmax=0.0014,
-    #                         cmap='coolwarm', box_aspect=(1, 1, 2))
-    # plotter.plot_3D_surface(index=2, key_z1='eigenfreq_imag', elev=20, azim=120, alpha=1, vmin=0.0, vmax=0.0014,
-    #                         cmap='coolwarm', box_aspect=(1, 1, 2))
-    plotter.plot_3D_surface(index=0, key_z1='eigenfreq_real', key_z2='eigenfreq_imag', elev=20, azim=120, alpha=1, vmin=0.0, vmax=0.0014,
-                            cmap='coolwarm', box_aspect=(1, 1, 0.75))
-    plotter.plot_3D_surface(index=1, key_z1='eigenfreq_real', key_z2='eigenfreq_imag', elev=20, azim=120, alpha=1, vmin=0.0, vmax=0.0014,
-                            cmap='coolwarm', box_aspect=(1, 1, 0.75))
-    plotter.plot_3D_surface(index=2, key_z1='eigenfreq_real', key_z2='eigenfreq_imag', elev=20, azim=120, alpha=1, vmin=0.0, vmax=0.0014,
-                            cmap='coolwarm', box_aspect=(1, 1, 0.75))
-    # plotter.plot_3D_surface(index=0, key_z1='eigenfreq_imag', key_z2='eigenfreq_real', elev=20, azim=120, alpha=1, vmin=0.573, vmax=0.5755,
-    #                         cmap='coolwarm', box_aspect=(1, 1, 0.75))
-    # plotter.plot_3D_surface(index=1, key_z1='eigenfreq_imag', key_z2='eigenfreq_real', elev=20, azim=120, alpha=1, vmin=0.573, vmax=0.5755,
-    #                         cmap='coolwarm', box_aspect=(1, 1, 0.75))
+    plotter.plot_3d_surface(
+        index=0, x_key=KEY_X, y_key=KEY_Y, z1_key='eigenfreq_real', z2_key='eigenfreq_imag',
+        elev=20, azim=120, alpha=1, vmin=0.0, vmax=0.0014,
+        cmap='coolwarm', box_aspect=(1, 1, 0.75), shade=False
+    )
+    plotter.plot_3d_surface(
+        index=1, x_key=KEY_X, y_key=KEY_Y, z1_key='eigenfreq_real', z2_key='eigenfreq_imag',
+        elev=20, azim=120, alpha=1, vmin=0.0, vmax=0.0014,
+        cmap='coolwarm', box_aspect=(1, 1, 0.75), shade=False
+    )
+    plotter.plot_3d_surface(
+        index=2, x_key=KEY_X, y_key=KEY_Y, z1_key='eigenfreq_real', z2_key='eigenfreq_imag',
+        elev=20, azim=120, alpha=1, vmin=0.0, vmax=0.0014,
+        cmap='coolwarm', box_aspect=(1, 1, 0.75), shade=False
+    )
+    # plotter.plot_3d_surface(
+    #     index=0, x_key=X_KEY, y_key=KEY_Y, z1_key='eigenfreq_imag', z2_key='eigenfreq_real',
+    #     elev=20, azim=120, alpha=1, vmin=0.573, vmax=0.5755,
+    #     cmap='coolwarm', box_aspect=(1, 1, 0.75), shade=False
+    # )
+    # plotter.plot_3d_surface(
+    #     index=1, x_key=X_KEY, y_key=KEY_Y, z1_key='eigenfreq_imag', z2_key='eigenfreq_real',
+    #     elev=20, azim=120, alpha=1, vmin=0.573, vmax=0.5755,
+    #     cmap='coolwarm', box_aspect=(1, 1, 0.75), shade=False
+    # )
+    # plotter.plot_3d_surface(
+    #     index=2, x_key=X_KEY, y_key=KEY_Y, z1_key='eigenfreq_imag', z2_key='eigenfreq_real',
+    #     elev=20, azim=120, alpha=1, vmin=0.573, vmax=0.5755,
+    #     cmap='coolwarm', box_aspect=(1, 1, 0.75), shade=False
+    # )
     plotter.add_annotations()
     plotter.save_and_show()
 

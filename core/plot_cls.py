@@ -455,7 +455,7 @@ class MomentumSpaceSpectrumPlotter(HeatmapPlotter, ABC):
 
 class OneDimFieldVisualizer(LinePlotter, ABC):
     """一维曲线图骨架"""
-    def prepare_data(self, x_key=None) -> None:
+    def prepare_data(self) -> None:
         pass
 
     def plot(self, index, x_key, z1_key, z2_key=None, z3_key=None, **params_bg) -> None:
@@ -472,45 +472,36 @@ class TwoDimFieldVisualizer(HeatmapPlotter, ABC):
     - 不理解物理意义
     - 只管理坐标、字段和绘制策略
     """
-    def prepare_data(self, key_x, key_y, key_fields) -> None:  # 手动重写
-        self.x = self.coordinates[key_x]
-        self.y = self.coordinates[key_y]
-        self.X, self.Y = np.meshgrid(self.x, self.y, indexing='ij')
-        self.data_list = self.raw_datasets["data_list"]
-        self.fields = {}  # 字典存储多个字段, 每个字段是一个列表
-        for k in key_fields:
-            self.fields[k] = [self.data_list[i][k] for i in range(self.data_num)]
+    def prepare_data(self) -> None:  # 手动重写
+        pass
 
     def plot(self) -> None:
         pass
 
-    def add_field(self, name, value: list) -> None:
-        if len(value) != self.data_num:
-            raise ValueError(f"新增字段长度 {len(value)} 与数据数量 {self.data_num} 不匹配")
-        self.fields[name] = value
-
-    def plot_3D_surface(
-            self, index, key_z1, key_z2=None, key_z3=None,
-            mapping=None, rbga=None, shade=False, elev=45, azim=25, vmin=0, vmax=1, cmap='hot', **kwargs
+    def plot_2d_heatmap(
+            self, index, x_key, y_key, z1_key, cmap='hot', vmin=None, vmax=None, **kwargs
     ) -> None:
-        if mapping is None:
-            mapping = {
-                'cmap': cmap,
-                'z2': {'vmin': vmin, 'vmax': vmax},  # 可选；未给则自动取数据范围
-                # 'z3': {'vmin': c, 'vmax': d},  # 可选；仅当传入 z3 时有意义；未给则自动 [min,max]
-            }
-        x, y = self.x, self.y
-        z1 = self.fields[key_z1][index]
-        z2 = self.fields[key_z2][index] if key_z2 is not None else z1
-        z3 = self.fields[key_z3][index] if key_z3 is not None else None
+        pass
+
+    def plot_3d_surface(
+            self, index, x_key, y_key, z1_key, z2_key=None, z3_key=None, cmap='hot', vmin=None, vmax=None, **kwargs
+    ) -> None:
+        x = self.coordinates[x_key]
+        y = self.coordinates[y_key]
+        z1 = self.raw_datasets["data_list"][index][z1_key]
+        z2 = self.raw_datasets["data_list"][index][z2_key] if z2_key is not None else z1
+        z3 = self.raw_datasets["data_list"][index][z3_key] if z3_key is not None else None
+        mapping = {
+            'cmap': cmap,
+            'z2': {'vmin': vmin, 'vmax': vmax},  # 可选；未给则自动取数据范围
+            # 'z3': {'vmin': c, 'vmax': d},  # 可选；仅当传入 z3 时有意义；未给则自动 [min,max]
+        }
         self.ax, mappable = plot_advanced_surface(
             self.ax, mx=x, my=y,
             mapping=mapping,
             z1=z1,
             z2=z2,
             z3=z3,
-            rbga=rbga,
-            elev=elev, azim=azim, shade=shade,
             **kwargs
         )
 
