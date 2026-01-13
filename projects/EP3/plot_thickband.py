@@ -17,7 +17,7 @@ def main(data_path):
     config.tick_direction = 'in'
     plotter = MyScriptPlotter(config=config, data_path=data_path)
     plotter.load_data()
-    plotter.prepare_data(momen_key='a')
+    plotter.prepare_data(x_key='a')
     plotter.new_2d_fig()
     plotter.plot_colored_bg()
     plotter.adjust_view_2dim()

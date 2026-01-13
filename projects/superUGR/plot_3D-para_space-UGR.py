@@ -42,7 +42,7 @@ if __name__ == '__main__':
         }
     )
 
-    deltas3 = (.1, .1)  # n个维度的网格间距
+    deltas = (.1, .1)  # n个维度的网格间距
     # 当沿维度 d 生长时，值差权重矩阵（n×n）
     # 例如：value_weights[d, j] = 在 grow_dir=d 时，对维度 j 的值差权重
     value_weights = np.array([
@@ -63,7 +63,7 @@ if __name__ == '__main__':
             Z_new[i, j] = Z[i, j][0]  # 提取每个 lst_ij 的第 b 列
 
     Z_grouped = group_vectors_one_sided_hungarian(
-        [Z_new], deltas3,
+        [Z_new], deltas,
         value_weights=value_weights,
         deriv_weights=deriv_weights,
     )

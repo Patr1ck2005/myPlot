@@ -292,7 +292,7 @@ def extract_adjacent_fields(
     z_keys: Sequence[str],
 ) -> Tuple[np.ndarray, ...]:
     """
-    按 z_keys 的顺序，从 additional_Z_grouped 中提取对应字段。
+    按 z_keys 的顺序，从 additional_Z_grouped 中提取对应字段。注意返回的是复数数组
 
     结构：
         additional_Z_grouped[i, j][band_index][k]

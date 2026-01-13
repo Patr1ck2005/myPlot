@@ -127,7 +127,7 @@ class BasePlotter(ABC):
         pass
 
     @abstractmethod
-    def plot(self) -> None:
+    def plot(self, **kwargs) -> None:
         """抽象：留空，用户在main手动调用绘图方法（如plot_line）"""
         pass
 

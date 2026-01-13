@@ -10,14 +10,8 @@ import numpy as np
 c_const = 299792458
 
 if __name__ == '__main__':
-    # data_path = 'data/low_mesh-3.58Si/slide_sym-0-0.20P_EP_BIC.csv'
-    # data_path = 'data/low_mesh-3.58Si/slide_asym-EP_BIC.csv'
-    # data_path = 'data/EP_BIC-asym_slide-0.25P.csv'
-    # data_path = 'data/EP_BIC-asym_slide-0.20P.csv'
-    data_path = 'data/EP_(Q)BIC-asym_slide-0.0,0.10P(to_narrow).csv'
-    # data_path = 'data/EP_(Q)BIC-asym_slide-0.0,0.10P.csv'
+    data_path = 'data/EP_QBIC-asym_slide-0,0.1,0.15P.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
-
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
     def convert_complex(freq_str):
@@ -76,29 +70,16 @@ if __name__ == '__main__':
         z_keys=z_keys,
         fixed_params={
             'k': 0,
-            'plas_wid_scale (nm)': 0,
-            # 'plas_wid_scale (nm)': 50,
-            # 'plas_wid_scale (nm)': 100,
-            # 'layer_shift (m)': 0.000e+00,
-            # 'layer_shift (m)': -3.750e-08,
-            # 'layer_shift (m)': -7.500e-08,
-            # 'layer_shift (m)': -1.125e-07,
-            # 'layer_shift (m)': -1.500e-07,
-            # 'layer_shift_top (m)': 0.000e+00,
-            # 'layer_shift_btn (m)': -3.75e-07,
-            # 'layer_shift_top (nm)': 0,
-            # 'layer_shift_btn (nm)': -375,
-            # 'layer_shift_top (nm)': -75,
-            # 'layer_shift_btn (nm)': -375,
+            'plas_wid_scale (nm)': 10,
+
+            'layer_shift_top (nm)': +112.5,
+            'layer_shift_btn (nm)': -112.5,
 
             # 'layer_shift_top (nm)': +75,
             # 'layer_shift_btn (nm)': -75,
 
-            'layer_shift_top (nm)': +0,
-            'layer_shift_btn (nm)': -0,
-
-            # 'layer_shift_top (m)': -0.75e-07,
-            # 'layer_shift_btn (m)': -3.75e-07,
+            # 'layer_shift_top (nm)': +0,
+            # 'layer_shift_btn (nm)': -0,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 1},  # 筛选
@@ -213,6 +194,7 @@ if __name__ == '__main__':
     # band_index = 2
     # Z_target = Z_target3
 
+    # =================================================================================================================
     # 计算三个Z_target的两两最大距离和两两最小距离
     Z_target_list = [Z_target1, Z_target2, Z_target3]
     num_bands = len(Z_target_list)
@@ -253,9 +235,10 @@ if __name__ == '__main__':
     ax.set_ylabel('')
     plt.savefig('min_distances_plot.svg', dpi=300, transparent=True, bbox_inches='tight')
     plt.show()
+    # =================================================================================================================
 
     # 提取 band= 的附加场数据
-    eigenfreq, qfactor, fake_factor = extract_adjacent_fields(
+    eigenfreq1, qfactor1, fake_factor1 = extract_adjacent_fields(
         additional_Z_grouped,
         z_keys=z_keys,
         band_index=0
@@ -271,11 +254,12 @@ if __name__ == '__main__':
         z_keys=z_keys,
         band_index=2
     )
-    qlog = np.log10(qfactor).real
+    qlog1 = np.log10(qfactor1).real
     qlog2 = np.log10(qfactor2).real
     qlog3 = np.log10(qfactor3).real
-    freq_real = np.real(eigenfreq)
+    freq_real1 = np.real(eigenfreq1)
 
+    # =================================================================================================================
     # # imshow 绘图
     # fig, ax = plt.subplots(figsize=(3, 2))
     # im = ax.imshow(qlog.T, origin='lower',
@@ -297,12 +281,13 @@ if __name__ == '__main__':
     # fig.colorbar(im, ax=ax)
     # plt.savefig('freq_real_plot.svg', dpi=300, transparent=True, bbox_inches='tight')
     # plt.show()
+    # =================================================================================================================
 
     dataset1 = {
-        'eigenfreq': eigenfreq,
-        'eigenfreq_real': eigenfreq.real,
-        'eigenfreq_imag': eigenfreq.imag,
-        'qlog': qlog,
+        'eigenfreq': eigenfreq1,
+        'eigenfreq_real': eigenfreq1.real,
+        'eigenfreq_imag': eigenfreq1.imag,
+        'qlog': qlog1,
     }
     dataset2 = {
         'eigenfreq': eigenfreq2,

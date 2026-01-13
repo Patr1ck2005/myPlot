@@ -16,13 +16,13 @@ from utils.functions import skyrmion_density, skyrmion_number, lorenz_func
 class BandPlotterOneDim(LinePlotter, ABC):
     """能带图骨架"""
 
-    def prepare_data(self, momen_key='k') -> None:  # 手动重写：NaN过滤
+    def prepare_data(self, x_key='k') -> None:  # 手动重写：NaN过滤
         self.x_vals_list = []
         self.y_vals_list = []
         for raw_data in self.raw_datasets["data_list"]:
             sub = raw_data['eigenfreq']
             mask = np.isnan(sub)
-            self.x_vals = self.coordinates[momen_key]
+            self.x_vals = self.coordinates[x_key]
             if np.any(mask):
                 print("Warning: NaN移除⚠️")
                 self.y_vals = sub[~mask]
@@ -33,42 +33,8 @@ class BandPlotterOneDim(LinePlotter, ABC):
             self.x_vals_list.append(temp_x)
             self.y_vals_list.append(self.y_vals)
 
-    def plot(self, style='1') -> None:  # 重写：整体+循环填充
-        if style == '1':
-            params_bg = {
-                'enable_fill': True,
-                'gradient_fill': False,
-                'enable_dynamic_color': False,
-                'cmap': None,
-                'add_colorbar': False,
-                'global_color_vmin': 1, 'global_color_vmax': 8,
-                'default_color': 'gray', 'alpha_fill': 0.3,
-                'edge_color': 'none',
-                'gradient_direction': 'z3',
-                'linewidth_base': 0,
-            }
-            params_line = {
-                'enable_fill': False,
-                'gradient_fill': False,
-                'enable_dynamic_color': True,
-                'cmap': 'hot',
-                'add_colorbar': False,
-                'global_color_vmin': 1, 'global_color_vmax': 8,
-                'default_color': 'gray', 'alpha_fill': 1,
-                'linewidth_base': 2,
-                'edge_color': 'none',
-            }
-            y_mins, y_maxs = [], []
-            for i, (x, y) in enumerate(zip(self.x_vals_list, self.y_vals_list)):
-                Qfactor = np.where(y.imag != 0, np.abs(y.real / (2 * y.imag)), 1e10)
-                Qfactor_log = np.log10(Qfactor)
-                self.plot_line(x, z1=y.real, z2=y.imag, z3=Qfactor_log, **params_bg)  # 填充
-                self.plot_line(x, z1=y.real, z2=y.imag, z3=Qfactor_log, **params_line)  # 填充
-                widths = np.abs(y.imag)
-                y_mins.append(np.min(y.real - widths))
-                y_maxs.append(np.max(y.real + widths))
-            self.ax.set_xlim(self.x_vals.min(), self.x_vals.max())
-            self.ax.set_ylim(np.nanmin(y_mins) * 0.98, np.nanmax(y_maxs) * 1.02)
+    def plot(self) -> None:  # 重写：整体+循环填充
+        pass
 
     def plot_thick_bg(self) -> None:  # 重写：整体+循环填充
         params_bg = {
@@ -138,12 +104,12 @@ class BandPlotterOneDim(LinePlotter, ABC):
         self.xlim = (self.x_vals.min(), self.x_vals.max())
         self.ylim = (np.nanmin(y_mins) * (1-y_margin), np.nanmax(y_maxs) * (1+y_margin))
 
-    def plot_ordered_line(self, y_margin=0.02) -> None:  # 重写：整体+循环填充
+    def plot_ordered_line(self, y_margin=0.02, cmap=None) -> None:  # 重写：整体+循环填充
         params_line = {
             'enable_fill': False,
             'gradient_fill': False,
             'enable_dynamic_color': False,
-            'cmap': None,
+            'cmap': cmap,
             'add_colorbar': False,
             'default_color': False, 'alpha_fill': 1,
             'linewidth_base': 2,
@@ -485,6 +451,19 @@ class MomentumSpaceSpectrumPlotter(HeatmapPlotter, ABC):
         rgb = map_complex2rbg(self.s21_list[index])
         self.ax.imshow(rgb, extent=(self.m1.min(), self.m1.max(), self.m2.min(), self.m2.max()),
                        origin='lower', aspect='equal', **kwargs)
+
+
+class OneDimFieldVisualizer(LinePlotter, ABC):
+    """一维曲线图骨架"""
+    def prepare_data(self, x_key=None) -> None:
+        pass
+
+    def plot(self, index, x_key, z1_key, z2_key=None, z3_key=None, **params_bg) -> None:
+        x = self.coordinates[x_key]
+        z1 = self.raw_datasets["data_list"][index][z1_key]
+        z2 = self.raw_datasets["data_list"][index][z2_key] if z2_key is not None else z1
+        z3 = self.raw_datasets["data_list"][index][z3_key] if z3_key is not None else None
+        self.plot_line(x, z1=z1, z2=z2, z3=z3, **params_bg)
 
 
 class TwoDimFieldVisualizer(HeatmapPlotter, ABC):
