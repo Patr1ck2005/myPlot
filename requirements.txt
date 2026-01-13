@@ -4,3 +4,4 @@ scipy
 pandas
 pyvista
 pyperclip
+scikit-learn

@@ -194,10 +194,8 @@ class BandPlotterOneDim(LinePlotter, ABC):
         self.ax.fill_between(kx, diffraction_cone*scale, upper_limit, color=color, alpha=alpha, edgecolor='none', zorder=0)
 
 
-
 class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
     """极化图骨架"""
-
     def prepare_data(self) -> None:  # 手动重写：NaN过滤
         self.m1 = self.coordinates['m1']
         self.m2 = self.coordinates['m2']
@@ -495,64 +493,43 @@ class TwoDimFieldVisualizer(HeatmapPlotter, ABC):
     - 不理解物理意义
     - 只管理坐标、字段和绘制策略
     """
-
-    # def __init__(self, x, y, fields: dict):
-    #     """
-    #     x, y: 1D arrays
-    #     fields: dict[str, ndarray], shape=(Nx, Ny) or (Nx, Ny, ...)
-    #     """
-    #     super().__init__()
-    #     self.x = x
-    #     self.y = y
-    #     self.X, self.Y = np.meshgrid(x, y, indexing='ij')
-    #     self.fields = fields
     def prepare_data(self, key_x, key_y, key_fields) -> None:  # 手动重写
         self.x = self.coordinates[key_x]
         self.y = self.coordinates[key_y]
         self.X, self.Y = np.meshgrid(self.x, self.y, indexing='ij')
         self.data_list = self.raw_datasets["data_list"]
-        # self.eigenfreq_list = [self.data_list[i][key_field] for i in range(len(self.data_list))]
-        # self.qlog_list = [self.data_list[i]['qlog'] for i in range(self.data_num)]
-        self.fields = [self.data_list[i][key_fields[0]] for i in range(self.data_num)]
+        self.fields = {}  # 字典存储多个字段, 每个字段是一个列表
+        for k in key_fields:
+            self.fields[k] = [self.data_list[i][k] for i in range(self.data_num)]
 
     def plot(self) -> None:
         pass
 
-    def add_field(self, name, value):
+    def add_field(self, name, value: list) -> None:
+        if len(value) != self.data_num:
+            raise ValueError(f"新增字段长度 {len(value)} 与数据数量 {self.data_num} 不匹配")
         self.fields[name] = value
 
-    def compute_phi_tanchi_from_s123(self, s1_key='s1', s2_key='s2', s3_key='s3'):
-        s1 = self.fields[s1_key]
-        s2 = self.fields[s2_key]
-        s3 = self.fields[s3_key]
-
-        cos2chi = np.sqrt(np.maximum(s1**2 + s2**2, 0))
-        chi = 0.5 * np.arctan2(s3, cos2chi)
-        phi = (0.5 * np.arctan2(s2, s1)) % np.pi
-
-        self.fields['phi'] = phi
-        self.fields['tanchi'] = np.tan(chi)
-
-    def compute_qlog_from_eigenfreq(self, key='eigenfreq'):
-        Z = self.fields[key]
-        qlog = np.log10(np.where(Z.imag != 0, np.abs(Z.real / (2 * Z.imag)), np.nan))
-        self.fields['qlog'] = qlog
-
-    def plot_3D_surface(self, index, mapping=None, rbga=None, shade=True, elev=45, azim=25, **kwargs) -> None:
+    def plot_3D_surface(
+            self, index, key_z1, key_z2=None, key_z3=None,
+            mapping=None, rbga=None, shade=False, elev=45, azim=25, vmin=0, vmax=1, cmap='hot', **kwargs
+    ) -> None:
         if mapping is None:
             mapping = {
-                'cmap': 'hot',
-                'z2': {'vmin': 0.573, 'vmax': 0.575},  # 可选；未给则自动取数据范围
+                'cmap': cmap,
+                'z2': {'vmin': vmin, 'vmax': vmax},  # 可选；未给则自动取数据范围
                 # 'z3': {'vmin': c, 'vmax': d},  # 可选；仅当传入 z3 时有意义；未给则自动 [min,max]
             }
         x, y = self.x, self.y
-        field = self.fields[index]
-        colors = self.fields[index]
+        z1 = self.fields[key_z1][index]
+        z2 = self.fields[key_z2][index] if key_z2 is not None else z1
+        z3 = self.fields[key_z3][index] if key_z3 is not None else None
         self.ax, mappable = plot_advanced_surface(
             self.ax, mx=x, my=y,
             mapping=mapping,
-            z1=field,
-            z2=colors,
+            z1=z1,
+            z2=z2,
+            z3=z3,
             rbga=rbga,
             elev=elev, azim=azim, shade=shade,
             **kwargs

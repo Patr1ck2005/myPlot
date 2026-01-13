@@ -306,22 +306,16 @@ def extract_adjacent_fields(
     n_fields = len(z_keys)
 
     # 为每个字段准备一个输出矩阵
-    outputs = [np.full((H, W), np.nan) for _ in range(n_fields)]
+    outputs = [np.full((H, W), np.nan, dtype=complex) for _ in range(n_fields)]
 
     for i in range(H):
         for j in range(W):
             band = additional_Z_grouped[i, j][band_index]
             if band is None:
                 continue
-
             for k in range(n_fields):
                 val = band[k]
-
-                # 统一做一个“物理上合理”的取值规则
-                if isinstance(val, complex):
-                    val = val.real
-
-                outputs[k][i, j] = float(val)
+                outputs[k][i, j] = val
 
     return tuple(outputs)
 
@@ -359,11 +353,12 @@ def plot_advanced_surface(
     mapping: Dict[str, Any],
     elev: float = 30,
     azim: float = 25,
-    x_key: str = 'm1',
-    y_key: str = 'm2',
-    z_label: str = 'f',
+    x_key: str = '',
+    y_key: str = '',
+    z_label: str = '',
     rstride: int = 1,
     cstride: int = 1,
+    box_aspect: list = [1, 1, 1],
     **kwargs
 ) -> Tuple[plt.Axes, ScalarMappable]:
     """
@@ -426,7 +421,7 @@ def plot_advanced_surface(
     ax.set_ylabel(y_key)
     ax.set_zlabel(z_label)
     ax.view_init(elev=elev, azim=azim)
-    ax.set_box_aspect([1, 1, 1])
+    ax.set_box_aspect(box_aspect)
 
     # 为 colorbar 构造可复用的 mappable（只用于 z2 的颜色映射）
     mappable = ScalarMappable(norm=norm_z2, cmap=cmap)

@@ -2,6 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, RangeSlider, RadioButtons, Button
 
+plt.rcParams['xtick.direction'] = 'in'
+plt.rcParams['ytick.direction'] = 'in'
+plt.rcParams['font.family'] = 'Arial'
+
 # -----------------------------
 # Fast vectorized computation
 # -----------------------------
@@ -57,14 +61,14 @@ def compute_maps(S, omega1, omega2, gamma_a, gamma_r,
 # -----------------------------
 def main():
     # ---- Initial params (match your typical values) ----
-    S0 = 0.25
-    omega1_0 = -0.1
-    omega2_0 = 0.1
-    gamma_a0 = 0.1
-    gamma_r0 = 0.1
+    S0 = 0.15
+    omega1_0 = -0.2
+    omega2_0 = 0.2
+    gamma_a0 = 0.5
+    gamma_r0 = 0.0
 
-    k_range0 = (0.0, 0.5)
-    w3_range0 = (-0.5, 0.5)
+    k_range0 = (0.0, 1)
+    w3_range0 = (-1, 1)
 
     # Grid resolution (trade speed vs detail)
     Nx = 260
@@ -78,6 +82,25 @@ def main():
     )
 
     extent = [k.min(), k.max(), w3.min(), w3.max()]
+
+    # # 临时分开保存图片 ===============================================================================================
+    # fig, ax = plt.subplots(figsize=(1, 1))
+    # im = ax.imshow(dmax, origin="lower", extent=extent, aspect="auto", vmin=0, cmap="magma", interpolation='none')
+    # # ax.set_title(r"Heatmap: $\max_{i<j}|\lambda_i-\lambda_j|$")
+    # ax.set_xlabel(r"$\kappa$")
+    # ax.set_ylabel(r"$\omega_3$")
+    # # cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.03)
+    # plt.savefig("dmax_initial.svg", dpi=300, bbox_inches='tight', transparent=True)
+    # plt.close(fig)
+    # fig, ax = plt.subplots(figsize=(1, 1))
+    # im = ax.imshow(dmin, origin="lower", extent=extent, aspect="auto", vmin=0, cmap="magma", interpolation='none')
+    # # ax.set_title(r"Heatmap: $\min_{i<j}|\lambda_i-\lambda_j|$")
+    # ax.set_xlabel(r"$\kappa$")
+    # ax.set_ylabel(r"$\omega_3$")
+    # # cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.03)
+    # plt.savefig("dmin_initial.svg", dpi=300, bbox_inches='tight', transparent=True)
+    # plt.close(fig)
+    # ================================================================================================================
 
     # ---- Figure layout ----
     fig = plt.figure(figsize=(12, 6))
