@@ -116,8 +116,7 @@ if __name__ == '__main__':
     #     freq_index=6  # 第n个频率
     # )
 
-    from core.process_multi_dim_params_space import extract_basic_analysis_fields, plot_advanced_surface
-    import matplotlib.pyplot as plt
+    from core.process_multi_dim_params_space import extract_basic_analysis_fields
     from core.plot_cls import MomentumSpaceEigenPolarizationPlotter
     from core.plot_workflow import PlotConfig
     from core.prepare_plot import prepare_plot_data

@@ -167,8 +167,7 @@ if __name__ == '__main__':
     #     freq_index=8  # 第n个频率
     # )
 
-    from core.process_multi_dim_params_space import extract_basic_analysis_fields, plot_advanced_surface
-    import matplotlib.pyplot as plt
+    from core.process_multi_dim_params_space import extract_basic_analysis_fields
     from core.data_postprocess.momentum_space_toolkits import complete_C4_polarization, geom_complete
     from core.plot_cls import MomentumSpaceEigenPolarizationPlotter
     from core.plot_workflow import PlotConfig

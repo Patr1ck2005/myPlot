@@ -8,7 +8,7 @@ from core.data_postprocess.momentum_space_toolkits import plot_isofreq_contours2
     sample_fields_along_path
 from core.data_postprocess.polar_graph_analysis import plot_phi_families_split
 from core.plot_workflow import *
-from core.process_multi_dim_params_space import plot_advanced_surface
+from advance_plot_styles.surface_plot import plot_advanced_surface
 from utils.advanced_color_mapping import map_s1s2s3_color, map_complex2rbg
 from utils.functions import skyrmion_density, skyrmion_number, lorenz_func
 

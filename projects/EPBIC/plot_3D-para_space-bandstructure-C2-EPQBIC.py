@@ -1,46 +1,14 @@
 from core.data_postprocess.data_filter import advanced_filter_eigensolution
 from core.data_postprocess.data_grouper import *
-from core.plot_3D_params_space_plt import *
-from core.plot_3D_params_space_pv import plot_Z_diff_pyvista
-from core.prepare_plot import prepare_plot_data
 from core.process_multi_dim_params_space import *
 
 import numpy as np
 
-c_const = 299792458
+from core.utils import norm_freq, convert_complex
 
 if __name__ == '__main__':
     data_path = 'data/EP_QBIC-asym_slide-0,0.1,0.15P.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
-
-    # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
-    def convert_complex(freq_str):
-        return complex(freq_str.replace('i', 'j'))
-
-
-    def norm_freq(freq, period):
-        return freq / (c_const / period)
-
-
-    def recognize_sp(phi_arr, kx_arr, ky_arr):
-        # 对于 ky=0 的情况，phi=π/2 为 s 偏振, phi=0 为 p 偏振
-        # 对于 ky=kx 的情况，phi=π/4 为 s 偏振，phi=3*π/4 为 p 偏振
-        sp_polar = []
-        for phi, kx, ky in zip(phi_arr, kx_arr, ky_arr):
-            if np.isclose(ky, 0):
-                if np.isclose(phi, np.pi / 2, atol=1e-1):
-                    sp_polar.append(1)
-                else:
-                    sp_polar.append(0)
-            elif np.isclose(ky, kx):
-                if np.isclose(phi, np.pi / 4, atol=1e-1):
-                    sp_polar.append(1)
-                else:
-                    sp_polar.append(0)
-            else:
-                sp_polar.append(-1)
-        return sp_polar
-
 
     period = 1500
     df_sample["特征频率 (THz)"] = (df_sample["特征频率 (THz)"].apply(convert_complex)
@@ -180,11 +148,8 @@ if __name__ == '__main__':
     #     freq_index=8  # 第n个频率
     # )
 
-    from core.process_multi_dim_params_space import extract_basic_analysis_fields, plot_advanced_surface
+    from core.process_multi_dim_params_space import extract_basic_analysis_fields
     import matplotlib.pyplot as plt
-    from core.data_postprocess.momentum_space_toolkits import complete_C4_polarization, geom_complete
-    from core.plot_cls import TwoDimFieldVisualizer
-    from core.plot_workflow import PlotConfig
     from core.prepare_plot import prepare_plot_data
 
     band_index = 0
@@ -305,47 +270,4 @@ if __name__ == '__main__':
         coords=new_coords, data_class='Eigensolution', dataset_list=[dataset1, dataset2, dataset3], fixed_params={},
     )
 # =====================================================================================================================
-    config = PlotConfig(
-        plot_params={},
-        annotations={},
-    )
-    config.update(figsize=(1.25, 1.25), tick_direction='in')
-    plotter = TwoDimFieldVisualizer(config=config, data_path=data_path)
-    plotter.load_data()
-    # plotter.prepare_data(key_x=X_KEY, key_y=KEY_Y, key_fields=['eigenfreq', 'eigenfreq_real', 'eigenfreq_imag', 'qlog'])
-    plotter.new_3d_fig(temp_figsize=(1.25, 1.5))
-    # plotter.new_3d_fig(temp_figsize=(1.75, 2))
-    # plotter.new_3d_fig(temp_figsize=(3, 2))
-    plotter.plot_3d_surface(
-        index=0, x_key=KEY_X, y_key=KEY_Y, z1_key='eigenfreq_real', z2_key='eigenfreq_imag',
-        elev=20, azim=120, alpha=1, vmin=0.0, vmax=0.0014,
-        cmap='coolwarm', box_aspect=(1, 1, 0.75), shade=False
-    )
-    plotter.plot_3d_surface(
-        index=1, x_key=KEY_X, y_key=KEY_Y, z1_key='eigenfreq_real', z2_key='eigenfreq_imag',
-        elev=20, azim=120, alpha=1, vmin=0.0, vmax=0.0014,
-        cmap='coolwarm', box_aspect=(1, 1, 0.75), shade=False
-    )
-    plotter.plot_3d_surface(
-        index=2, x_key=KEY_X, y_key=KEY_Y, z1_key='eigenfreq_real', z2_key='eigenfreq_imag',
-        elev=20, azim=120, alpha=1, vmin=0.0, vmax=0.0014,
-        cmap='coolwarm', box_aspect=(1, 1, 0.75), shade=False
-    )
-    # plotter.plot_3d_surface(
-    #     index=0, x_key=X_KEY, y_key=KEY_Y, z1_key='eigenfreq_imag', z2_key='eigenfreq_real',
-    #     elev=20, azim=120, alpha=1, vmin=0.573, vmax=0.5755,
-    #     cmap='coolwarm', box_aspect=(1, 1, 0.75), shade=False
-    # )
-    # plotter.plot_3d_surface(
-    #     index=1, x_key=X_KEY, y_key=KEY_Y, z1_key='eigenfreq_imag', z2_key='eigenfreq_real',
-    #     elev=20, azim=120, alpha=1, vmin=0.573, vmax=0.5755,
-    #     cmap='coolwarm', box_aspect=(1, 1, 0.75), shade=False
-    # )
-    # plotter.plot_3d_surface(
-    #     index=2, x_key=X_KEY, y_key=KEY_Y, z1_key='eigenfreq_imag', z2_key='eigenfreq_real',
-    #     elev=20, azim=120, alpha=1, vmin=0.573, vmax=0.5755,
-    #     cmap='coolwarm', box_aspect=(1, 1, 0.75), shade=False
-    # )
-    plotter.add_annotations()
-    plotter.save_and_show()
 

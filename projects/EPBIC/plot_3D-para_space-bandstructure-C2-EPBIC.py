@@ -7,7 +7,7 @@ from core.process_multi_dim_params_space import *
 
 import numpy as np
 
-c_const = 299792458
+from core.utils import norm_freq, convert_complex
 
 if __name__ == '__main__':
     # data_path = 'data/low_mesh-3.58Si/slide_sym-0-0.20P_EP_BIC.csv'
@@ -17,36 +17,6 @@ if __name__ == '__main__':
     # data_path = 'data/EP_(Q)BIC-asym_slide-0.0,0.10P(to_narrow).csv'
     # data_path = 'data/EP_(Q)BIC-asym_slide-0.0,0.10P.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
-
-
-    # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
-    def convert_complex(freq_str):
-        return complex(freq_str.replace('i', 'j'))
-
-
-    def norm_freq(freq, period):
-        return freq / (c_const / period)
-
-
-    def recognize_sp(phi_arr, kx_arr, ky_arr):
-        # 对于 ky=0 的情况，phi=π/2 为 s 偏振, phi=0 为 p 偏振
-        # 对于 ky=kx 的情况，phi=π/4 为 s 偏振，phi=3*π/4 为 p 偏振
-        sp_polar = []
-        for phi, kx, ky in zip(phi_arr, kx_arr, ky_arr):
-            if np.isclose(ky, 0):
-                if np.isclose(phi, np.pi / 2, atol=1e-1):
-                    sp_polar.append(1)
-                else:
-                    sp_polar.append(0)
-            elif np.isclose(ky, kx):
-                if np.isclose(phi, np.pi / 4, atol=1e-1):
-                    sp_polar.append(1)
-                else:
-                    sp_polar.append(0)
-            else:
-                sp_polar.append(-1)
-        return sp_polar
-
 
     period = 1500
     df_sample["特征频率 (THz)"] = (df_sample["特征频率 (THz)"].apply(convert_complex)
@@ -199,7 +169,7 @@ if __name__ == '__main__':
     #     freq_index=8  # 第n个频率
     # )
 
-    from core.process_multi_dim_params_space import extract_basic_analysis_fields, plot_advanced_surface
+    from core.process_multi_dim_params_space import extract_basic_analysis_fields
     import matplotlib.pyplot as plt
     from core.data_postprocess.momentum_space_toolkits import complete_C4_polarization, geom_complete
     from core.plot_cls import TwoDimFieldVisualizer

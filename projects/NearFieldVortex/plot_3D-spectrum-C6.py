@@ -73,7 +73,7 @@ if __name__ == '__main__':
     #     freq_index=0  # 第n个
     # )
 
-    from core.process_multi_dim_params_space import extract_basic_analysis_fields, plot_advanced_surface
+    from core.process_multi_dim_params_space import extract_basic_analysis_fields
     import matplotlib.pyplot as plt
     from core.data_postprocess.momentum_space_toolkits import geom_complete, \
         complete_C4_spectrum
