@@ -143,7 +143,13 @@ def add_annotations(ax, plot_params):
         # 极坐标 r 标签位置
         ax.set_rlabel_position(rlabel_position)
     elif isinstance(ax, Axes3D):
-        print("Warning: Z 轴范围设置在此函数中未实现。请在绘图时单独设置。")
+        # 3D 范围
+        if xlim:
+            ax.set_xlim(xlim)
+        if ylim:
+            ax.set_ylim(ylim)
+        if zlim:
+            ax.set_zlim(zlim)
     else:
         # 笛卡尔范围
         if xlim:
@@ -204,6 +210,8 @@ def add_annotations(ax, plot_params):
         # 通用：清空标签
         ax.set_xticklabels([])
         ax.set_yticklabels([])
+        if isinstance(ax, Axes3D):
+            ax.set_zticklabels([])
         # 极坐标额外：隐藏 r/theata 视觉标签
         if is_polar:
             ax.tick_params(axis='x', labelbottom=False)  # theta labels
@@ -216,6 +224,8 @@ def add_annotations(ax, plot_params):
     if not show_ticks:
         ax.set_xticks([])
         ax.set_yticks([])
+        if isinstance(ax, Axes3D):
+            ax.set_zticks([])
 
     # 8. 极坐标网格扩展（如果提供 ticks，设置 theta/r grids）
     if is_polar and add_grid:

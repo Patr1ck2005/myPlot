@@ -68,7 +68,7 @@ if __name__ == '__main__':
 
     KEY_X = 'k'
     KEY_Y = 'fill'
-    # KEY_Y = 'h_grating (nm)'
+    # Y_KEY = 'h_grating (nm)'
 
     # 假设已得到grid_coords, Z
     new_coords, Z_filtered, min_lens = advanced_filter_eigensolution(

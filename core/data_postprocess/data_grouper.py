@@ -527,3 +527,115 @@ def group_vectors_one_sided_hungarian(
     if additional_grouped is None:
         return Zg_out
     return Zg_out, additional_grouped
+
+def ordered_vectors_by_abs(
+    Z_vector_components,        # list[np.ndarray], dtype=object, shape=dims
+    additional_data=None,       # dtype=object，与 Z 前 n 维对齐
+    additional_selector=None,   # tuple，如 (), ('*',), ('*','*')
+    selector_resolve="deepest"
+):
+    """
+    简单分组：
+    - 每个格点独立
+    - 按候选“大小”排序
+    - 直接填入第 0..m-1 条流
+    - additional_data 与候选一一对应
+    """
+
+    if not Z_vector_components:
+        raise ValueError("Z_vector_components cannot be empty.")
+
+    dims = Z_vector_components[0].shape
+    n_dims = len(dims)
+    num_vector_dims = len(Z_vector_components)
+
+    # 校验 additional_data
+    if additional_data is not None:
+        if additional_data.shape[:n_dims] != dims:
+            raise ValueError(
+                f"additional_data 前 {n_dims} 维应与 Z 的 dims 一致：{dims}"
+            )
+
+    # 推断 dtype
+    output_dtype = float
+    for idx in np.ndindex(*dims):
+        cell = Z_vector_components[0][idx]
+        if cell is not None and len(cell) > 0:
+            if isinstance(cell[0], complex):
+                output_dtype = complex
+            break
+
+    m = 0
+    for idx in np.ndindex(*dims):
+        cell = Z_vector_components[0][idx]
+        if cell is not None:
+            m = max(m, len(cell))
+    if m == 0:
+        raise ValueError("All candidate lists are empty.")
+
+    # 输出
+    Zg_out = np.empty(dims, dtype=object)
+    additional_grouped = (
+        np.empty(dims, dtype=object) if additional_data is not None else None
+    )
+
+    # ---------- 确定 additional selector（一次性，全局一致） ----------
+    ad_selector = None
+    if additional_data is not None:
+        if additional_selector is not None:
+            ad_selector = tuple(additional_selector)
+        else:
+            # 自动推断：找第一个有候选的格点
+            for idx in np.ndindex(*dims):
+                cell = Z_vector_components[0][idx]
+                if cell is not None and len(cell) > 0:
+                    ad_selector = _infer_additional_selector(
+                        additional_data[idx],
+                        len(cell),
+                        resolve=selector_resolve
+                    )
+                    break
+    # ---------------------------------------------------------------
+
+    # 遍历所有格点
+    for idx in np.ndindex(*dims):
+
+        cell = Z_vector_components[0][idx]
+
+        if cell is None or len(cell) == 0:
+            Zg_out[idx] = np.full((m, num_vector_dims), np.nan, dtype=output_dtype)
+            if additional_grouped is not None:
+                additional_grouped[idx] = [None] * m
+            continue
+
+        num_candidates = len(cell)
+
+        # 候选索引按“大小”排序（使用第一个分量）
+        idxs = list(range(num_candidates))
+        idxs.sort(
+            key=lambda ii: (
+                cell[ii].real if isinstance(cell[ii], complex) else cell[ii]
+            )
+        )
+
+        # 填充 Z
+        ordered = np.full((m, num_vector_dims), np.nan, dtype=output_dtype)
+        for s, cand_idx in enumerate(idxs[:m]):
+            vec = [Z_k[idx][cand_idx] for Z_k in Z_vector_components]
+            ordered[s, :] = np.array(vec, dtype=output_dtype)
+        Zg_out[idx] = ordered
+
+        # 填充 additional
+        if additional_grouped is not None:
+            ad_cell = additional_data[idx]
+            ordered_ad = [None] * m
+            for s, cand_idx in enumerate(idxs[:m]):
+                ordered_ad[s] = _pick_additional_candidate_stable(
+                    ad_cell, cand_idx, ad_selector
+                )
+            additional_grouped[idx] = ordered_ad
+
+    if additional_grouped is None:
+        return Zg_out
+    return Zg_out, additional_grouped
+

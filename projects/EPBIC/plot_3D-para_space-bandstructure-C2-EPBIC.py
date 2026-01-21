@@ -14,6 +14,8 @@ if __name__ == '__main__':
     # data_path = 'data/low_mesh-3.58Si/slide_asym-EP_BIC.csv'
     data_path = 'data/EP_BIC-asym_slide-0.25P.csv'
     # data_path = 'data/EP_BIC-asym_slide-0.20P.csv'
+    # data_path = 'data/EP_BIC-asym_slide-0.15P.csv'
+    # data_path = 'data/EP_BIC-asym_slide-0.15P-old.csv'
     # data_path = 'data/EP_(Q)BIC-asym_slide-0.0,0.10P(to_narrow).csv'
     # data_path = 'data/EP_(Q)BIC-asym_slide-0.0,0.10P.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
@@ -37,8 +39,8 @@ if __name__ == '__main__':
         print(f"  {key}: {arr}")
     print("数据网格 Z 的形状：", Z.shape)
 
-    KEY_X = 'spacer (nm)'
-    KEY_Y = 'h_die_grating (nm)'
+    X_KEY = 'spacer (nm)'
+    Y_KEY = 'h_die_grating (nm)'
 
     # 假设已得到grid_coords, Z
     new_coords, Z_filtered, min_lens = advanced_filter_eigensolution(
@@ -58,6 +60,10 @@ if __name__ == '__main__':
             # 'layer_shift_btn (m)': -3.75e-07,
             'layer_shift_top (nm)': 0,
             'layer_shift_btn (nm)': -375,
+            # 'layer_shift_top (nm)': -75,  # 0.15P
+            # 'layer_shift_btn (nm)': -300,  # 0.15P
+            # 'layer_shift_top (nm)': 112.5,  # 0.15P
+            # 'layer_shift_btn (nm)': -112.5,  # 0.15P
             # 'layer_shift_top (nm)': -75,
             # 'layer_shift_btn (nm)': -375,
 
@@ -84,7 +90,7 @@ if __name__ == '__main__':
     # zs = []
     # colors = []
     # for i, key_x in enumerate(new_coords[X_KEY]):
-    #     for j, key_y in enumerate(new_coords[KEY_Y]):
+    #     for j, key_y in enumerate(new_coords[Y_KEY]):
     #         lst_ij = Z_filtered[i][j]
     #         for idx, freq in enumerate(lst_ij[0]):
     #             xs.append(key_x)
@@ -99,7 +105,7 @@ if __name__ == '__main__':
     # ax.view_init(elev=15, azim=45)
     # plt.colorbar(sc, label='Imaginary Part of Frequency (THz)')
     # ax.set_xlabel(X_KEY)
-    # ax.set_ylabel(KEY_Y)
+    # ax.set_ylabel(Y_KEY)
     # ax.set_zlabel('Frequency (THz)')
     # plt.title('3D Scatter Plot of Eigenfrequencies')
     # plt.show()
@@ -108,7 +114,7 @@ if __name__ == '__main__':
     # 当沿维度 d 生长时，值差权重矩阵（n×n）
     # 例如：value_weights[d, j] = 在 grow_dir=d 时，对维度 j 的值差权重
     value_weights = np.array([
-        [1, 1], [1, 1]  # 沿维度生长时
+        [1e8, 1e8], [1e8, 1e8]  # 沿维度生长时
     ])
     # 当沿维度 d 生长时，导数不连续权重矩阵（n×n）
     deriv_weights = np.array([
@@ -130,6 +136,11 @@ if __name__ == '__main__':
         max_m=3,
         auto_split_streams=False
     )
+
+    # Z_grouped, additional_Z_grouped = ordered_vectors_by_abs(
+    #     [Z_new],
+    #     additional_data=Z_filtered,
+    # )
 
     # 假设你已经得到了 grid_coords, Z
     new_coords, Z_target1 = group_solution(
@@ -176,13 +187,6 @@ if __name__ == '__main__':
     from core.plot_workflow import PlotConfig
     from core.prepare_plot import prepare_plot_data
 
-    band_index = 0
-    Z_target = Z_target1
-    # band_index = 1
-    # Z_target = Z_target2
-    # band_index = 2
-    # Z_target = Z_target3
-
     # =================================================================================================================
     # 计算三个Z_target的两两最大距离和两两最小距离
     Z_target_list = [Z_target1, Z_target2, Z_target3]
@@ -201,10 +205,10 @@ if __name__ == '__main__':
     plt.rcParams['font.family'] = 'Arial'
     fig, ax = plt.subplots(figsize=(1, 1))
     im = ax.imshow(max_distances.T, origin='lower',
-                   extent=(new_coords[KEY_X][0], new_coords[KEY_X][-1], new_coords[KEY_Y][0], new_coords[KEY_Y][-1]),
+                   extent=(new_coords[X_KEY][0], new_coords[X_KEY][-1], new_coords[Y_KEY][0], new_coords[Y_KEY][-1]),
                    aspect='auto', cmap='magma', vmin=0)
     # ax.set_xlabel(X_KEY)
-    # ax.set_ylabel(KEY_Y)
+    # ax.set_ylabel(Y_KEY)
     # fig.colorbar(im, ax=ax)
     # 清空坐标轴刻度和标签
     ax.set_xlabel('')
@@ -214,10 +218,10 @@ if __name__ == '__main__':
     # 绘制最小距离的等高线图
     fig, ax = plt.subplots(figsize=(1, 1))
     im = ax.imshow(min_distances.T, origin='lower',
-                   extent=(new_coords[KEY_X][0], new_coords[KEY_X][-1], new_coords[KEY_Y][0], new_coords[KEY_Y][-1]),
+                   extent=(new_coords[X_KEY][0], new_coords[X_KEY][-1], new_coords[Y_KEY][0], new_coords[Y_KEY][-1]),
                    aspect='auto', cmap='magma', vmin=0)
     # ax.set_xlabel(X_KEY)
-    # ax.set_ylabel(KEY_Y)
+    # ax.set_ylabel(Y_KEY)
     # fig.colorbar(im, ax=ax)
     # 清空坐标轴刻度和标签
     ax.set_xlabel('')
@@ -252,10 +256,10 @@ if __name__ == '__main__':
     # # imshow 绘图
     # fig, ax = plt.subplots(figsize=(3, 2))
     # im = ax.imshow(qlog.T, origin='lower',
-    #                extent=(new_coords[X_KEY][0], new_coords[X_KEY][-1], new_coords[KEY_Y][0], new_coords[KEY_Y][-1]),
+    #                extent=(new_coords[X_KEY][0], new_coords[X_KEY][-1], new_coords[Y_KEY][0], new_coords[Y_KEY][-1]),
     #                aspect='auto', cmap='hot')
     # ax.set_xlabel(X_KEY)
-    # ax.set_ylabel(KEY_Y)
+    # ax.set_ylabel(Y_KEY)
     # fig.colorbar(im, ax=ax)
     # plt.savefig('qlog_plot.svg', dpi=300, transparent=True, bbox_inches='tight')
     # plt.show()
@@ -263,10 +267,10 @@ if __name__ == '__main__':
     # # imshow 绘图
     # fig, ax = plt.subplots(figsize=(3, 2))
     # im = ax.imshow(freq_real.T, origin='lower',
-    #                extent=(new_coords[X_KEY][0], new_coords[X_KEY][-1], new_coords[KEY_Y][0], new_coords[KEY_Y][-1]),
+    #                extent=(new_coords[X_KEY][0], new_coords[X_KEY][-1], new_coords[Y_KEY][0], new_coords[Y_KEY][-1]),
     #                aspect='auto', cmap='hot')
     # ax.set_xlabel(X_KEY)
-    # ax.set_ylabel(KEY_Y)
+    # ax.set_ylabel(Y_KEY)
     # fig.colorbar(im, ax=ax)
     # plt.savefig('freq_real_plot.svg', dpi=300, transparent=True, bbox_inches='tight')
     # plt.show()
@@ -301,37 +305,34 @@ if __name__ == '__main__':
     config.update(figsize=(1.25, 1.25), tick_direction='in')
     plotter = TwoDimFieldVisualizer(config=config, data_path=data_path)
     plotter.load_data()
-    # plotter.prepare_data(key_x=X_KEY, key_y=KEY_Y, key_fields=['eigenfreq', 'eigenfreq_real', 'eigenfreq_imag', 'qlog'])
     plotter.new_3d_fig(temp_figsize=(1.25, 1.5))
-    # plotter.new_3d_fig(temp_figsize=(1.75, 2))
-    # plotter.new_3d_fig(temp_figsize=(3, 2))
     plotter.plot_3d_surface(
-        index=0, x_key=KEY_X, y_key=KEY_Y, z1_key='eigenfreq_real', z2_key='eigenfreq_imag',
-        elev=20, azim=120, alpha=1, vmin=0.0, vmax=0.0014,
+        index=0, x_key=X_KEY, y_key=Y_KEY, z1_key='eigenfreq_real', z2_key='eigenfreq_imag',
+        elev=20, azim=120, alpha=1, vmin=0.0, vmax=0.0015,
         cmap='coolwarm', box_aspect=(1, 1, 0.75), shade=False
     )
     plotter.plot_3d_surface(
-        index=1, x_key=KEY_X, y_key=KEY_Y, z1_key='eigenfreq_real', z2_key='eigenfreq_imag',
-        elev=20, azim=120, alpha=1, vmin=0.0, vmax=0.0014,
+        index=1, x_key=X_KEY, y_key=Y_KEY, z1_key='eigenfreq_real', z2_key='eigenfreq_imag',
+        elev=20, azim=120, alpha=1, vmin=0.0, vmax=0.0015,
         cmap='coolwarm', box_aspect=(1, 1, 0.75), shade=False
     )
     plotter.plot_3d_surface(
-        index=2, x_key=KEY_X, y_key=KEY_Y, z1_key='eigenfreq_real', z2_key='eigenfreq_imag',
-        elev=20, azim=120, alpha=1, vmin=0.0, vmax=0.0014,
+        index=2, x_key=X_KEY, y_key=Y_KEY, z1_key='eigenfreq_real', z2_key='eigenfreq_imag',
+        elev=20, azim=120, alpha=1, vmin=0.0, vmax=0.0015,
         cmap='coolwarm', box_aspect=(1, 1, 0.75), shade=False
     )
     # plotter.plot_3d_surface(
-    #     index=0, x_key=X_KEY, y_key=KEY_Y, z1_key='eigenfreq_imag', z2_key='eigenfreq_real',
+    #     index=0, x_key=X_KEY, y_key=Y_KEY, z1_key='eigenfreq_imag', z2_key='eigenfreq_real',
     #     elev=20, azim=120, alpha=1, vmin=0.573, vmax=0.5755,
     #     cmap='coolwarm', box_aspect=(1, 1, 0.75), shade=False
     # )
     # plotter.plot_3d_surface(
-    #     index=1, x_key=X_KEY, y_key=KEY_Y, z1_key='eigenfreq_imag', z2_key='eigenfreq_real',
+    #     index=1, x_key=X_KEY, y_key=Y_KEY, z1_key='eigenfreq_imag', z2_key='eigenfreq_real',
     #     elev=20, azim=120, alpha=1, vmin=0.573, vmax=0.5755,
     #     cmap='coolwarm', box_aspect=(1, 1, 0.75), shade=False
     # )
     # plotter.plot_3d_surface(
-    #     index=2, x_key=X_KEY, y_key=KEY_Y, z1_key='eigenfreq_imag', z2_key='eigenfreq_real',
+    #     index=2, x_key=X_KEY, y_key=Y_KEY, z1_key='eigenfreq_imag', z2_key='eigenfreq_real',
     #     elev=20, azim=120, alpha=1, vmin=0.573, vmax=0.5755,
     #     cmap='coolwarm', box_aspect=(1, 1, 0.75), shade=False
     # )

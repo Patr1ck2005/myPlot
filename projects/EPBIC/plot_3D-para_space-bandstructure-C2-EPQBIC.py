@@ -7,7 +7,8 @@ import numpy as np
 from core.utils import norm_freq, convert_complex
 
 if __name__ == '__main__':
-    data_path = 'data/EP_QBIC-asym_slide-0,0.1,0.15P.csv'
+    # data_path = 'data/EP_QBIC-asym_slide-0,0.1,0.15P.csv'
+    data_path = 'data/EP_QBIC-asym_slide-0.25P.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 1500
@@ -40,8 +41,11 @@ if __name__ == '__main__':
             'k': 0,
             'plas_wid_scale (nm)': 10,
 
-            'layer_shift_top (nm)': +112.5,
-            'layer_shift_btn (nm)': -112.5,
+            'layer_shift_top (nm)': +0,
+            'layer_shift_btn (nm)': -375.,
+
+            # 'layer_shift_top (nm)': +112.5,
+            # 'layer_shift_btn (nm)': -112.5,
 
             # 'layer_shift_top (nm)': +75,
             # 'layer_shift_btn (nm)': -75,
@@ -63,7 +67,7 @@ if __name__ == '__main__':
     # zs = []
     # colors = []
     # for i, key_x in enumerate(new_coords[X_KEY]):
-    #     for j, key_y in enumerate(new_coords[KEY_Y]):
+    #     for j, key_y in enumerate(new_coords[Y_KEY]):
     #         lst_ij = Z_filtered[i][j]
     #         for idx, freq in enumerate(lst_ij[0]):
     #             xs.append(key_x)
@@ -78,7 +82,7 @@ if __name__ == '__main__':
     # ax.view_init(elev=15, azim=45)
     # plt.colorbar(sc, label='Imaginary Part of Frequency (THz)')
     # ax.set_xlabel(X_KEY)
-    # ax.set_ylabel(KEY_Y)
+    # ax.set_ylabel(Y_KEY)
     # ax.set_zlabel('Frequency (THz)')
     # plt.title('3D Scatter Plot of Eigenfrequencies')
     # plt.show()
@@ -152,13 +156,6 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     from core.prepare_plot import prepare_plot_data
 
-    band_index = 0
-    Z_target = Z_target1
-    # band_index = 1
-    # Z_target = Z_target2
-    # band_index = 2
-    # Z_target = Z_target3
-
     # =================================================================================================================
     # 计算三个Z_target的两两最大距离和两两最小距离
     Z_target_list = [Z_target1, Z_target2, Z_target3]
@@ -180,7 +177,7 @@ if __name__ == '__main__':
                    extent=(new_coords[KEY_X][0], new_coords[KEY_X][-1], new_coords[KEY_Y][0], new_coords[KEY_Y][-1]),
                    aspect='auto', cmap='magma', vmin=0)
     # ax.set_xlabel(X_KEY)
-    # ax.set_ylabel(KEY_Y)
+    # ax.set_ylabel(Y_KEY)
     # fig.colorbar(im, ax=ax)
     # 清空坐标轴刻度和标签
     ax.set_xlabel('')
@@ -193,7 +190,7 @@ if __name__ == '__main__':
                    extent=(new_coords[KEY_X][0], new_coords[KEY_X][-1], new_coords[KEY_Y][0], new_coords[KEY_Y][-1]),
                    aspect='auto', cmap='magma', vmin=0)
     # ax.set_xlabel(X_KEY)
-    # ax.set_ylabel(KEY_Y)
+    # ax.set_ylabel(Y_KEY)
     # fig.colorbar(im, ax=ax)
     # 清空坐标轴刻度和标签
     ax.set_xlabel('')
@@ -228,10 +225,10 @@ if __name__ == '__main__':
     # # imshow 绘图
     # fig, ax = plt.subplots(figsize=(3, 2))
     # im = ax.imshow(qlog.T, origin='lower',
-    #                extent=(new_coords[X_KEY][0], new_coords[X_KEY][-1], new_coords[KEY_Y][0], new_coords[KEY_Y][-1]),
+    #                extent=(new_coords[X_KEY][0], new_coords[X_KEY][-1], new_coords[Y_KEY][0], new_coords[Y_KEY][-1]),
     #                aspect='auto', cmap='hot')
     # ax.set_xlabel(X_KEY)
-    # ax.set_ylabel(KEY_Y)
+    # ax.set_ylabel(Y_KEY)
     # fig.colorbar(im, ax=ax)
     # plt.savefig('qlog_plot.svg', dpi=300, transparent=True, bbox_inches='tight')
     # plt.show()
@@ -239,10 +236,10 @@ if __name__ == '__main__':
     # # imshow 绘图
     # fig, ax = plt.subplots(figsize=(3, 2))
     # im = ax.imshow(freq_real.T, origin='lower',
-    #                extent=(new_coords[X_KEY][0], new_coords[X_KEY][-1], new_coords[KEY_Y][0], new_coords[KEY_Y][-1]),
+    #                extent=(new_coords[X_KEY][0], new_coords[X_KEY][-1], new_coords[Y_KEY][0], new_coords[Y_KEY][-1]),
     #                aspect='auto', cmap='hot')
     # ax.set_xlabel(X_KEY)
-    # ax.set_ylabel(KEY_Y)
+    # ax.set_ylabel(Y_KEY)
     # fig.colorbar(im, ax=ax)
     # plt.savefig('freq_real_plot.svg', dpi=300, transparent=True, bbox_inches='tight')
     # plt.show()

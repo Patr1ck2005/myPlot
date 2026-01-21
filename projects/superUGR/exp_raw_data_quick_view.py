@@ -14,15 +14,10 @@ def load_and_visualize_ftir_spectra(directory, prefix, start_num, end_num, angle
                                     file_ext='.dpt', wavenumber_col=0, spectrum_col=1,
                                     save_plots=False, plot_dir=None,
                                     ref_filename=None, ref_usecols=None,
+                                    bg_filename=None, bg_usecols=None,
                                     interpolate_ref=False, eps=0):
     """
     加载FTIR谱数据并可视化，并可选用参考谱做分母归一化/比值计算。
-
-    新增参数:
-    - ref_filename: str or None, 参考谱文件名（位于directory下或给出完整路径）。若提供，则每条谱将除以参考谱。
-    - ref_usecols: tuple(int,int) or None, 参考谱使用的(波数列, 光谱列)，默认与(wavenumber_col, spectrum_col)一致。
-    - interpolate_ref: bool, 当参考谱波数网格不同，是否将参考谱插值到样品波数网格上。
-    - eps: float, 防止参考谱中出现0导致除零。
 
     返回:
     - data_dict: dict, 键为角度，值为 (wavenumbers, spectrums_processed) 的元组。
@@ -50,6 +45,22 @@ def load_and_visualize_ftir_spectra(directory, prefix, start_num, end_num, angle
         ref_w = ref_data[:, 0]
         ref_s = ref_data[:, 1]
 
+    # -------- 1) 读取背景谱（如果提供）--------
+    bg_w = None
+    bg_s = None
+    if bg_filename is not None:
+        # 允许用户传完整路径；否则默认在 directory 下
+        bg_path = bg_filename if os.path.isabs(bg_filename) else os.path.join(directory, bg_filename)
+        if not os.path.exists(bg_path):
+            raise FileNotFoundError(f"参考谱文件 {bg_path} 不存在。")
+
+        if bg_usecols is None:
+            bg_usecols = (wavenumber_col, spectrum_col)
+
+        bg_data = np.loadtxt(bg_path, usecols=bg_usecols)
+        bg_w = bg_data[:, 0]
+        bg_s = bg_data[:, 1]
+
     # -------- 2) 加载样品谱 --------
     data_dict = {}
     all_spectrums = []
@@ -75,6 +86,21 @@ def load_and_visualize_ftir_spectra(directory, prefix, start_num, end_num, angle
                 f"文件 {filename} 的波数网格与前文件不一致，无法直接创建heatmap。需插值处理。"
             )
 
+        # -------- 3) 减去背景谱（如果提供）--------
+        if bg_filename is not None:
+            if np.array_equal(bg_w, wavenumbers):
+                bg_s = bg_s
+            else:
+                if not interpolate_ref:
+                    raise ValueError(
+                        f"参考谱波数网格与样品不一致（ref={len(ref_w)}点, sample={len(wavenumbers)}点）。"
+                        f"如需自动插值，请设置 interpolate_ref=True。"
+                    )
+                # 将参考谱插值到样品波数网格
+                bg_s = np.interp(wavenumbers, bg_w, bg_s)
+        else:
+            bg_s = 0.0
+
         # -------- 3) 用参考谱做分母（如果提供）--------
         if ref_filename is not None:
             if np.array_equal(ref_w, wavenumbers):
@@ -87,9 +113,11 @@ def load_and_visualize_ftir_spectra(directory, prefix, start_num, end_num, angle
                     )
                 # 将参考谱插值到样品波数网格
                 denom = np.interp(wavenumbers, ref_w, ref_s)
+        else:
+            denom = 1.0
 
-            denom_safe = np.where(np.abs(denom) < eps, np.sign(denom) * eps + eps, denom)
-            spectrums = spectrums / denom_safe
+        spectrums = (spectrums - bg_s) / (denom - bg_s)
+        # spectrums = (spectrums) / (denom)
 
         data_dict[angle] = (wavenumbers, spectrums)
         all_spectrums.append(spectrums)
@@ -120,11 +148,11 @@ def load_and_visualize_ftir_spectra(directory, prefix, start_num, end_num, angle
     # -------- 5) 可视化2：heatmap --------
     common_y = common_wavenumbers * 0.03  # cm⁻¹ -> THz
 
-    # 采用对称的angle范围, 手动增添对称数据
-    supp_angles = [-a for a in angles[::-1]]
-    supp_spectrums = all_spectrums[::-1, :]
-    angles = supp_angles + angles
-    all_spectrums = np.vstack((supp_spectrums, all_spectrums))
+    # # 采用对称的angle范围, 手动增添对称数据
+    # supp_angles = [-a for a in angles[::-1]]
+    # supp_spectrums = all_spectrums[::-1, :]
+    # angles = supp_angles + angles
+    # all_spectrums = np.vstack((supp_spectrums, all_spectrums))
 
     plt.figure(figsize=(3, 4))
     plt.imshow(
@@ -190,35 +218,38 @@ def load_and_visualize_ftir_spectra(directory, prefix, start_num, end_num, angle
 # # EXP @2026.1.8 KEREN Sair with reference spectrum
 # prefix = ''
 # directory = r'D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.8 KEREN\26.1.8\Sair'
-# start_num = 0
+# start_num = -6
 # end_num = 15
 #
-# angles = list(range(0, 16))  # 0到15，共16个
+# angles = list(range(start_num, end_num+1))
 # data = load_and_visualize_ftir_spectra(
 #     directory, prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt',
-#     ref_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.8 KEREN\26.1.8\Sair\BALCKBODY.dpt"
+#     ref_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.8 KEREN\26.1.8\Sair\BALCKBODY.dpt",
+#     bg_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.9 KEREN\air.dpt"
 # )
 
 # # EXP @2026.1.8 KEREN Pair with reference spectrum
 # prefix = ''
 # directory = r'D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.8 KEREN\26.1.8\Pair'
-# start_num = 0
+# start_num = -5
 # end_num = 15
 #
-# angles = list(range(0, 16))  # 0到15，共16个
+# angles = list(range(start_num, end_num+1))
 # data = load_and_visualize_ftir_spectra(
 #     directory, prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt',
-#     ref_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.8 KEREN\26.1.8\Pair\BLACKBODY.dpt"
+#     ref_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.8 KEREN\26.1.8\Pair\BLACKBODY.dpt",
+#     bg_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.9 KEREN\air.dpt"
 # )
 
 # EXP @2026.1.9 KEREN S-back with reference spectrum
 prefix = ''
 directory = r'D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.9 KEREN\Sback'
-start_num = 0
+start_num = -3
 end_num = 15
 
-angles = list(range(0, 16))  # 0到15，共16个
+angles = list(range(start_num, end_num+1))
 data = load_and_visualize_ftir_spectra(
     directory, prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt',
-    ref_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.8 KEREN\26.1.8\Pair\BLACKBODY.dpt"
+    ref_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.8 KEREN\26.1.8\Pair\BLACKBODY.dpt",
+    bg_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.9 KEREN\air.dpt"
 )
