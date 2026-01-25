@@ -22,7 +22,7 @@ class PlotConfig:
     plot_params: Dict[str, Any] = None
     annotations: Dict[str, Any] = None
     dpi: int = 300
-    tick_direction: str = 'out'
+    tick_direction: str = 'in'
 
     def __post_init__(self):
         self.apply()

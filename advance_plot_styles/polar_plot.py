@@ -149,6 +149,7 @@ def plot_on_poincare_sphere(ax, s1, s2, s3, S0=None,
         # cb = mpl.pyplot.colorbar(sc, ax=ax, shrink=0.8, label=r'$S_3/S_0$')
 
     ax.set_box_aspect([1,1,1])
-    ax.set_xlabel('$S_1/S_0$'); ax.set_ylabel('$S_2/S_0$'); ax.set_zlabel('$S_3/S_0$')
+    # ax.set_xlabel('$S_1/S_0$'); ax.set_ylabel('$S_2/S_0$'); ax.set_zlabel('$S_3/S_0$')
+    ax.set_xticklabels([]); ax.set_yticklabels([]); ax.set_zticklabels([])
     return ax
 

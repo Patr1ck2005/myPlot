@@ -252,12 +252,12 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
             self.phi_list.append(phi % np.pi)
             self.tanchi_list.append(np.tan(chi))
 
-    def plot_polarization_ellipses(self, index, step=(1, 1), scale=1e-2) -> None:
+    def plot_polarization_ellipses(self, index, step=(1, 1), scale=1e-2, cmap='RdBu') -> None:
         self.ax = plot_polarization_ellipses(
             self.ax, self.Mx, self.My, self.s1_list[index], self.s2_list[index], self.s3_list[index],
             step=step,  # 适当抽样，防止太密
             scale=scale,  # 自动用 0.8*min(dx,dy)
-            cmap='RdBu',
+            cmap=cmap,
             alpha=1, lw=1,
         )
         # 重新设置画布的视角
@@ -321,6 +321,21 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
             plt.show()
         return samples_list
 
+    def sample_along_round_path(self, index=0, center=(0,0), radius=0.05):
+        m1f, m2f = self.m1, self.m2
+        phi_f, tanchi_f = self.phi_list[index], self.tanchi_list[index]
+        Z_f = self.eigenfreq_list[index]
+        qlog_f = np.log10(np.where(Z_f.imag != 0, np.abs(Z_f.real / (2 * Z_f.imag)), 1e10))
+        # 构造圆形路径
+        theta = np.linspace(0, 2 * np.pi, 400)
+        p = np.array([center[0] + radius * np.cos(theta), center[1] + radius * np.sin(theta)]).T
+        # 沿路径插值采样
+        fields = {'phi': phi_f, 'tanchi': tanchi_f, 'qlog': qlog_f, 'freq': Z_f.real}
+        samples_list = []
+        samp = sample_fields_along_path(m1f, m2f, fields, p, npts=400)
+        samples_list.append(samp)
+        return samples_list
+
     def imshow_qlog(self, index=0, **kwargs) -> None:
         if 'cmap' not in kwargs:
             kwargs['cmap'] = 'hot'
@@ -358,6 +373,12 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
             elev=elev, azim=azim, shade=shade,
             **kwargs
         )
+
+    def scatter_3D(self, index, **kwargs) -> None:
+        m1, m2 = self.m1, self.m2
+        M1, M2 = np.meshgrid(m1, m2, indexing='ij')
+        eigenfreq = self.eigenfreq_list[index]
+        self.ax.scatter(M1.flatten(), M2.flatten(), eigenfreq.flatten().real, depthshade=True, **kwargs)
 
     def plot_skyrmion_quiver(self, index, step=(6, 6)) -> None:
         self.ax = plot_skyrmion_quiver(
