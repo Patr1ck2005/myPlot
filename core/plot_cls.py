@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from advance_plot_styles.polar_plot import *
-from core.data_postprocess.momentum_space_toolkits import plot_isofreq_contours2D, extract_isofreq_paths, \
+from core.data_postprocess.momentum_space_toolkits import plot_iso_contours2D, extract_isofreq_paths, \
     sample_fields_along_path
 from core.data_postprocess.polar_graph_analysis import plot_phi_families_split
 from core.plot_workflow import *
@@ -150,7 +150,6 @@ class BandPlotterOneDim(LinePlotter, ABC):
         self.ylim = (np.nanmin(y_mins) * (1-y_margin), np.nanmax(y_maxs) * (1+y_margin))
         # self.ax.legend()
 
-
     def plot_diffraction_cone(self, env_n=1, scale=1, upper_limit=1, color='lightgreen', alpha=0.2) -> None:
         # 绘制衍射锥线
         kx = self.x_vals
@@ -161,6 +160,7 @@ class BandPlotterOneDim(LinePlotter, ABC):
 
 
 class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
+    print("This class has been abandoned. Use 'MomentumSpaceEigenVisualizer' instead.")
     """极化图骨架"""
     def prepare_data(self) -> None:  # 手动重写：NaN过滤
         self.m1 = self.coordinates['m1']
@@ -195,45 +195,7 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
         self.qlog_list = [interp_field(self.data_list[i]['qlog']) for i in range(self.data_num)]
 
     def plot(self) -> None:
-        self.new_2d_fig()
-        self.plot_polarization_ellipses(index=0)
-        plt.show()
-
-        self.new_3d_fig()
-        self.plot_3D_surface(index=0)
-        plt.show()
-
-        self.new_2d_fig()
-        self.plot_phi_families_regimes(index=0)
-        plt.show()
-
-        self.new_2d_fig()
-        self.plot_phi_families_split(index=0)
-        plt.show()
-
-    def plot_skyrmion_analysis(self, index) -> None:
-        self.prepare_chi_phi_data()
-
-        self.new_3d_fig(temp_figsize=(3, 3))
-        self.plot_on_poincare_sphere(index)
-        plt.show()
-
-        self.new_2d_fig()
-        self.plot_polarization_ellipses(index)
-        plt.show()
-
-        self.new_2d_fig()
-        self.plot_phi_families_regimes(index)
-        self.plot_phi_families_split(index)
-        plt.show()
-
-        self.new_2d_fig()
-        self.imshow_advanced_color_mapping(index)
-        plt.show()
-
-        self.new_2d_fig()
-        nsk = self.imshow_skyrmion_density(index)
-        plt.show()
+        pass
 
     def prepare_chi_phi_data(self) -> None:
         # 通过s123计算phi, tanchi
@@ -251,51 +213,6 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
             phi = (0.5 * np.arctan2(s2, s1)) % np.pi
             self.phi_list.append(phi % np.pi)
             self.tanchi_list.append(np.tan(chi))
-
-    def plot_polarization_ellipses(self, index, step=(1, 1), scale=1e-2, cmap='RdBu') -> None:
-        self.ax = plot_polarization_ellipses(
-            self.ax, self.Mx, self.My, self.s1_list[index], self.s2_list[index], self.s3_list[index],
-            step=step,  # 适当抽样，防止太密
-            scale=scale,  # 自动用 0.8*min(dx,dy)
-            cmap=cmap,
-            alpha=1, lw=1,
-        )
-        # 重新设置画布的视角
-        self.ax.set_xlim(self.Mx.min(), self.Mx.max())
-        self.ax.set_ylim(self.My.min(), self.My.max())
-
-    def get_advanced_color_mapping(self, index) -> np.ndarray:
-        rgb = map_s1s2s3_color(self.s1_list[index], self.s2_list[index], self.s3_list[index])
-        return rgb
-
-    def imshow_advanced_color_mapping(self, index) -> None:
-        rgb = self.get_advanced_color_mapping(index)
-        self.ax.imshow(np.transpose(rgb, (1, 0, 2)),
-                       extent=(self.m1.min(), self.m1.max(), self.m2.min(), self.m2.max()),
-                       origin='lower', aspect='equal')
-
-    def plot_isofreq_contours2D(self, index, levels=(0.509, 0.510, 0.511), colors=('k', 'k', 'k'), cmap=None) -> None:
-        if cmap is not None:
-            # 使用 colormap 生成颜色列表
-            from matplotlib import cm
-            colormap = cm.get_cmap(cmap, len(levels))
-            colors = [colormap(i) for i in range(len(levels))]
-        self.ax = plot_isofreq_contours2D(
-            self.ax, self.m1, self.m2, self.eigenfreq_list[index].T, levels=levels,
-            colors=colors,
-            linewidths=1.0
-        )
-
-    def plot_phi_families_regimes(self, index) -> None:
-        # color_1 = 'lightgreen'
-        color_1 = 'white'
-        color_2 = 'lightcoral'
-        # 绘制区域
-        self.ax.contourf(self.m1, self.m2, (np.sin(2 * self.phi_list[index].T) > 0), levels=[-0.5, 0.5, 1.5],
-                         colors=[color_2, color_1], alpha=0.5)
-
-    def plot_phi_families_split(self, index) -> None:
-        self.ax = plot_phi_families_split(self.ax, self.m1, self.m2, self.phi_list[index], overlay=None, lw=1)
 
     def sample_along_isofreq(self, index=0, level=None, show=False):
         assert level is not None, "请提供等频线频率值 level"
@@ -321,114 +238,9 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
             plt.show()
         return samples_list
 
-    def sample_along_round_path(self, index=0, center=(0,0), radius=0.05):
-        m1f, m2f = self.m1, self.m2
-        phi_f, tanchi_f = self.phi_list[index], self.tanchi_list[index]
-        Z_f = self.eigenfreq_list[index]
-        qlog_f = np.log10(np.where(Z_f.imag != 0, np.abs(Z_f.real / (2 * Z_f.imag)), 1e10))
-        # 构造圆形路径
-        theta = np.linspace(0, 2 * np.pi, 400)
-        p = np.array([center[0] + radius * np.cos(theta), center[1] + radius * np.sin(theta)]).T
-        # 沿路径插值采样
-        fields = {'phi': phi_f, 'tanchi': tanchi_f, 'qlog': qlog_f, 'freq': Z_f.real}
-        samples_list = []
-        samp = sample_fields_along_path(m1f, m2f, fields, p, npts=400)
-        samples_list.append(samp)
-        return samples_list
-
-    def imshow_qlog(self, index=0, **kwargs) -> None:
-        if 'cmap' not in kwargs:
-            kwargs['cmap'] = 'hot'
-        self.ax.imshow(self.qlog_list[index].T, extent=(self.m1.min(), self.m1.max(), self.m2.min(), self.m2.max()),
-                       origin='lower', aspect='equal', **kwargs)
-
-    def imshow_phi(self, index=0, **kwargs) -> None:
-        if 'cmap' not in kwargs:
-            kwargs['cmap'] = 'twilight'
-        self.ax.imshow(self.phi_list[index].T, extent=(self.m1.min(), self.m1.max(), self.m2.min(), self.m2.max()),
-                       origin='lower',
-                       aspect='equal', **kwargs)
-
-    def imshow_s3(self, index=0) -> None:
-        self.ax.imshow(self.s3_list[index].T, extent=(self.m1.min(), self.m1.max(), self.m2.min(), self.m2.max()),
-                       origin='lower', cmap='RdBu',
-                       aspect='equal')
-
-    def plot_3D_surface(self, index, mapping=None, rbga=None, shade=True, elev=45, azim=25, **kwargs) -> None:
-        if mapping is None:
-            mapping = {
-                'cmap': 'hot',
-                'z2': {'vmin': 2, 'vmax': 7},  # 可选；未给则自动取数据范围
-                # 'z3': {'vmin': c, 'vmax': d},  # 可选；仅当传入 z3 时有意义；未给则自动 [min,max]
-            }
-        m1f, m2f = self.m1, self.m2
-        eigenfreq = self.eigenfreq_list[index]
-        qlog = self.qlog_list[index]
-        self.ax, mappable = plot_advanced_surface(
-            self.ax, x=m1f, y=m2f,
-            mapping=mapping,
-            z1=eigenfreq,
-            z2=qlog,
-            rbga=rbga,
-            elev=elev, azim=azim, shade=shade,
-            **kwargs
-        )
-
-    def scatter_3D(self, index, **kwargs) -> None:
-        m1, m2 = self.m1, self.m2
-        M1, M2 = np.meshgrid(m1, m2, indexing='ij')
-        eigenfreq = self.eigenfreq_list[index]
-        # self.ax.scatter(M1.flatten(), M2.flatten(), eigenfreq.flatten().real, depthshade=True, **kwargs)
-        self.ax.plot_trisurf(M1.flatten(), M2.flatten(), eigenfreq.flatten().real, **kwargs)
-
-    def plot_skyrmion_quiver(self, index, step=(6, 6)) -> None:
-        self.ax = plot_skyrmion_quiver(
-            self.ax, self.Mx, self.My,
-            self.s1_list[index], self.s2_list[index], self.s3_list[index],
-            step=step,
-            normalize=True,
-            cmap='RdBu',
-            clim=(-1, 1),
-            quiver_scale=None,
-            width=0.006,
-        )
-
-    def plot_on_poincare_sphere(self, index):
-        self.ax = plot_on_poincare_sphere(
-            self.ax,
-            self.s1_list[index], self.s2_list[index], self.s3_list[index],
-            S0=None,
-            step=(1, 1),
-            c_by='s3',
-            cmap='RdBu',
-            clim=(-1, 1),
-            s=8,
-            alpha=0.9,
-            sphere_style='wire',
-        )
-
-    def imshow_skyrmion_density(self, index):
-        nsk = skyrmion_density(
-            self.s1_list[index], self.s2_list[index], self.s3_list[index]
-        )
-        self.ax.imshow(nsk.T, extent=(self.m1.min(), self.m1.max(), self.m2.min(), self.m2.max()),
-                       origin='lower', cmap='bwr', aspect='equal')
-
-        print(f"full-plane")
-        s = skyrmion_number(nsk, show=False)
-        left_half_mask = (self.Mx < 0)
-        print(f"left half-plane")
-        s_left = skyrmion_number(nsk, mask=left_half_mask, show=False)
-        left_round_mask = (self.Mx ** 2 + self.My ** 2 < 0.05 ** 2) * (self.Mx < 0)
-        print(f"left half-plane")
-        s_left_round = skyrmion_number(nsk, mask=left_round_mask, show=False)
-        return nsk
-
     def compute_cross_polarization_conversion(self, index=0, freq=None):
         cross_conversion = np.exp(-2j*self.phi_list[index])*lorenz_func(delta_omega=(freq-self.eigenfreq_list[index].real), gamma=self.eigenfreq_list[index].imag, gamma_nr=0)
         self.cross_conversion = cross_conversion
-        # self.ax.imshow(np.real(cross_conversion).T, extent=(self.m1.min(), self.m1.max(), self.m2.min(), self.m2.max()),
-        #                   origin='lower', cmap='RdBu', aspect='equal')
 
 
 class MomentumSpaceSpectrumPlotter(HeatmapPlotter, ABC):
@@ -500,10 +312,53 @@ class TwoDimFieldVisualizer(HeatmapPlotter, ABC):
     def plot(self) -> None:
         pass
 
-    def plot_2d_heatmap(
-            self, index, x_key, y_key, z1_key, cmap='hot', vmin=None, vmax=None, **kwargs
+    def interpolate_data(
+            self, index, x_key, y_key, factor=2, field_keys=None, order=3,
+    ):
+        """
+        对指定二维字段做统一插值，并同步更新坐标
+        """
+        from scipy.ndimage import zoom
+
+        # ---- 坐标 ----
+        x = self.coordinates[x_key]
+        y = self.coordinates[y_key]
+
+        new_x = np.linspace(x.min(), x.max(), len(x) * factor)
+        new_y = np.linspace(y.min(), y.max(), len(y) * factor)
+
+        self.coordinates[x_key] = new_x
+        self.coordinates[y_key] = new_y
+
+        # ---- 自动识别字段 ----
+        if field_keys is None:
+            sample = self.raw_datasets["data_list"][index]
+            field_keys = [
+                k for k, v in sample.items()
+                if isinstance(v, np.ndarray) and v.ndim == 2
+            ]
+
+        # ---- 插值函数 ----
+        def interp_field(field):
+            return zoom(field, zoom=factor, order=order)
+
+        # ---- 批量插值 ----
+        for data in self.raw_datasets["data_list"]:
+            for key in field_keys:
+                data[key] = interp_field(data[key])
+
+    def imshow_field(
+            self, index, x_key, y_key, field_key, **kwargs
     ) -> None:
-        pass
+        x = self.coordinates[x_key]
+        y = self.coordinates[y_key]
+        z1 = self.raw_datasets["data_list"][index][field_key]
+        self.ax.imshow(
+            z1.T,
+            extent=(x.min(), x.max(), y.min(), y.max()),
+            origin='lower',
+            **kwargs
+        )
 
     def plot_3d_surface(
             self, index, x_key, y_key, z1_key, z2_key=None, z3_key=None, cmap='hot', vmin=None, vmax=None, **kwargs
@@ -533,8 +388,10 @@ class TwoDimFieldVisualizer(HeatmapPlotter, ABC):
         x = self.coordinates[x_key]
         y = self.coordinates[y_key]
         z1_lst = [self.raw_datasets["data_list"][i][z1_key] for i in indexs]
-        z2_lst = [self.raw_datasets["data_list"][i][z2_key] for i in indexs] if z2_key is not None else z1_lst   # for color rending
-        z3_lst = [self.raw_datasets["data_list"][i][z3_key] for i in indexs] if z3_key is not None else None  # for alpha rending
+        # for color rending
+        z2_lst = [self.raw_datasets["data_list"][i][z2_key] for i in indexs] if z2_key is not None else z1_lst
+        # # for alpha rending
+        # z3_lst = [self.raw_datasets["data_list"][i][z3_key] for i in indexs] if z3_key is not None else None
         self.ax, combined_surface, mappable = s3d_plot_multi_surfaces_combined(
             self.ax,
             x=x, y=y,
@@ -543,17 +400,272 @@ class TwoDimFieldVisualizer(HeatmapPlotter, ABC):
             rez=4,
             cmap=cmap,
             vmin=vmin, vmax=vmax,
-            elev=30, azim=25,
+            **kwargs
+        )
+
+    def get_advanced_color_mapping(self, index, s1_key="s1", s2_key="s2", s3_key="s3") -> np.ndarray:
+        s1 = self.raw_datasets["data_list"][index][s1_key]
+        s2 = self.raw_datasets["data_list"][index][s2_key]
+        s3 = self.raw_datasets["data_list"][index][s3_key]
+        rgb = map_s1s2s3_color(s1, s2, s3)
+        return rgb
+
+    def imshow_advanced_color_mapping(self, index, x_key, y_key) -> None:
+        rgb = self.get_advanced_color_mapping(index)
+        x = self.coordinates[x_key]
+        y = self.coordinates[y_key]
+        self.ax.imshow(
+            np.transpose(rgb, (1, 0, 2)),
+            extent=(x.min(), x.max(), y.min(), y.max()), origin='lower', aspect='equal'
         )
 
 
 class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
+    def imshow_field(
+            self, x_key='m1', y_key='m2', **kwargs
+    ) -> None:
+        super().imshow_field(x_key=x_key, y_key=y_key, **kwargs)
+
     def plot_3d_surfaces(
-            self, indexs, x_key='m1', y_key='m1', z1_key='eigenfreq', z2_key='qlog', z3_key=None, cmap='hot',
+            self, indexs, x_key='m1', y_key='m1', z1_key='eigenfreq_real', z2_key='qlog', z3_key=None, cmap='hot',
             vmin=2, vmax=7, **kwargs
     ) -> None:
         super().plot_3d_surfaces(
             indexs, x_key, y_key, z1_key, z2_key, z3_key, cmap, vmin, vmax, **kwargs
         )
+    def _get_field(self, index, key):
+        """
+        获取字段；如果不存在且 key 是可派生物理量，则即时计算
+        """
+        data = self.raw_datasets["data_list"][index]
 
+        if key in data:
+            return data[key]
 
+        # ===== 派生字段 =====
+        if key in ("phi", "tanchi"):
+            s1, s2, s3 = data["s1"], data["s2"], data["s3"]
+            cos2chi = np.sqrt(np.maximum(s1 ** 2 + s2 ** 2, 0.0))
+            chi = 0.5 * np.arctan2(s3, cos2chi)
+            phi = (0.5 * np.arctan2(s2, s1)) % np.pi
+            data["phi"] = phi
+            data["tanchi"] = np.tan(chi)
+            return data[key]
+
+        if key == "qlog":
+            qlog = np.log10(np.abs(data["eigenfreq_real"] / (2 * data["eigenfreq_imag"])))
+            data["qlog"] = qlog
+            return qlog
+
+        raise KeyError(f"Field '{key}' not found and not derivable.")
+
+    def _mesh(self, x_key="m1", y_key="m2"):
+        x = self.coordinates[x_key]
+        y = self.coordinates[y_key]
+        return np.meshgrid(x, y, indexing="ij")
+
+    def plot_polarization_ellipses(
+            self, index, x_key="m1", y_key="m2", step=(1, 1), scale=1e-2, cmap="RdBu",
+    ):
+        Mx, My = self._mesh(x_key, y_key)
+        s1 = self._get_field(index, "s1")
+        s2 = self._get_field(index, "s2")
+        s3 = self._get_field(index, "s3")
+
+        self.ax = plot_polarization_ellipses(
+            self.ax,
+            Mx, My, s1, s2, s3,
+            step=step,
+            scale=scale,
+            cmap=cmap,
+            alpha=1,
+            lw=1,
+        )
+        # 重新设置画布的视角
+        self.ax.set_xlim(Mx.min(), Mx.max())
+        self.ax.set_ylim(My.min(), My.max())
+
+    def plot_iso_contours2D(self, index, levels, colors, z_key, x_key='m1', y_key='m2', cmap=None) -> None:
+        if cmap is not None:
+            # 使用 colormap 生成颜色列表
+            from matplotlib import cm
+            colormap = cm.get_cmap(cmap, len(levels))
+            colors = [colormap(i) for i in range(len(levels))]
+        z = self._get_field(index, z_key)
+        self.ax = plot_iso_contours2D(
+            self.ax, self.coordinates[x_key], self.coordinates[y_key], z.T, levels=levels,
+            colors=colors,
+            linewidths=1.0
+        )
+
+    def _round_path(self, center, radius, num=360):
+        theta = np.linspace(0, 2 * np.pi, num, endpoint=False)
+        x = center[0] + radius * np.cos(theta)
+        y = center[1] + radius * np.sin(theta)
+        s = radius * theta  # 或者弧长
+        return x, y, s
+
+    def sample_along_round_path(
+            self,
+            index,
+            center=(0.0, 0.0),
+            radius=0.05,
+            num=360,
+            field_keys=("phi",),
+            x_key="m1",
+            y_key="m2",
+            method="linear",
+    ):
+        """
+        在 (m1, m2) 空间沿圆形路径采样字段
+
+        Returns
+        -------
+        list[dict]
+            每个 dict 是一个 band / index 的采样结果
+        """
+        from scipy.interpolate import RegularGridInterpolator
+
+        # ---- 坐标 ----
+        x_grid = self.coordinates[x_key]
+        y_grid = self.coordinates[y_key]
+
+        # ---- 路径 ----
+        xp, yp, s = self._round_path(center, radius, num)
+
+        # ---- 构造插值器 ----
+        result = {"s": s}
+
+        for key in field_keys:
+            field = self._get_field(index, key)
+
+            interp = RegularGridInterpolator(
+                (x_grid, y_grid),
+                field,
+                method=method,
+                bounds_error=False,
+                fill_value=np.nan,
+            )
+
+            pts = np.stack([xp, yp], axis=-1)
+            result[key] = interp(pts)
+
+        return [result]
+
+    def plot_field_along_round_path(
+            self,
+            index,
+            center,
+            radius,
+            field_key="phi",
+            num=360,
+            normalize_s=True,
+            x_label="s",
+            y_label=None,
+            **kwargs
+    ):
+        """
+        沿圆形路径采样并绘制 1D 字段
+
+        Returns
+        -------
+        dict
+            采样结果（包含 's' 和 field_key）
+        """
+
+        samples = self.sample_along_round_path(
+            index=index,
+            center=center,
+            radius=radius,
+            num=num,
+            field_keys=(field_key,),
+        )
+
+        sample = samples[0]
+        s = sample["s"]
+        y = sample[field_key]
+
+        if normalize_s:
+            s = s / np.nanmax(s)
+
+        self.ax.plot(s, y, **kwargs)
+
+        # ---- labels（可选）----
+        if x_label is not None:
+            self.ax.set_xlabel(x_label)
+        if y_label is not None:
+            self.ax.set_ylabel(y_label)
+        else:
+            self.ax.set_ylabel(field_key)
+
+        return sample
+
+    def plot_phi_families_regimes(self, index, x_key="m1", y_key="m2", z_key="phi"):
+        z = self._get_field(index, z_key)
+        self.ax.contourf(
+            self.coordinates[x_key], self.coordinates[y_key], (np.sin(2 * z.T) > 0),
+            levels=[-0.5, 0.5, 1.5], colors=["lightcoral", "white"], alpha=0.5,
+        )
+
+    def plot_phi_families_split(self, index, x_key="m1", y_key="m2", z_key="phi"):
+        z = self._get_field(index, z_key)
+        self.ax = plot_phi_families_split(
+            self.ax, self.coordinates[x_key], self.coordinates[y_key], z, lw=1,
+        )
+
+    def imshow_skyrmion_density(self, index):
+        s1 = self._get_field(index, "s1")
+        s2 = self._get_field(index, "s2")
+        s3 = self._get_field(index, "s3")
+
+        nsk = skyrmion_density(s1, s2, s3)
+        m1 = self.coordinates["m1"]
+        m2 = self.coordinates["m2"]
+
+        self.ax.imshow(
+            nsk.T,
+            extent=(m1.min(), m1.max(), m2.min(), m2.max()),
+            origin="lower",
+            cmap="bwr",
+            aspect="equal",
+        )
+        return nsk
+
+    def plot_on_poincare_sphere(
+            self, index, step=(1, 1), x_key="s1", y_key="s2", z_key="s3", cmap='RdBu',
+            clim=(-1, 1), s=8, alpha=0.9
+    ):
+        s1 = self._get_field(index, x_key)
+        s2 = self._get_field(index, y_key)
+        s3 = self._get_field(index, z_key)
+        self.ax = plot_on_poincare_sphere(
+            self.ax,
+            s1, s2, s3,
+            S0=None,
+            step=step,
+            c_by=z_key,
+            cmap=cmap,
+            clim=clim,
+            s=s,
+            alpha=alpha,
+            sphere_style='wire',
+        )
+
+    def plot_skyrmion_quiver(
+            self, index, step=(6, 6), s1_key="s1", s2_key="s2", s3_key="s3", cmap='RdBu',
+            clim=(-1, 1), width=0.006
+    ) -> None:
+        Mx, My = self._mesh()
+        s1 = self._get_field(index, s1_key)
+        s2 = self._get_field(index, s2_key)
+        s3 = self._get_field(index, s3_key)
+        self.ax = plot_skyrmion_quiver(
+            self.ax, Mx, My,
+            s1, s2, s3,
+            step=step,
+            normalize=True,
+            cmap=cmap,
+            clim=clim,
+            quiver_scale=None,
+            width=width,
+        )

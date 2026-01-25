@@ -151,12 +151,11 @@ class BasePlotter(ABC):
             kwargs['subplot_kw'] = {'projection': 'polar'}
         self.fig, self.ax = plt.subplots(**kwargs)
 
-    def new_3d_fig(self, temp_figsize=None) -> None:
+    def new_3d_fig(self, **kwargs) -> None:
         """创建新3D fig/ax，手动调用以控制新图"""
-        from mpl_toolkits.mplot3d import Axes3D
-        if temp_figsize is None:
-            temp_figsize = self.config.figsize
-        self.fig = plt.figure(figsize=temp_figsize)
+        self.config.update(**kwargs)
+        kwargs = {'figsize': self.config.figsize}
+        self.fig = plt.figure(**kwargs)
         self.ax = self.fig.add_subplot(111, projection='3d')
 
     def add_annotations(self) -> None:

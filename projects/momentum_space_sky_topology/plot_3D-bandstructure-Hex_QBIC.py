@@ -193,7 +193,7 @@ if __name__ == '__main__':
 
     plotter.plot_skyrmion_analysis(index=BAND_INDEX)
 
-    plotter.new_3d_fig(temp_figsize=(3, 3))
+    plotter.new_3d_fig(figsize=(3, 3))
     rgba = plotter.get_advanced_color_mapping(index=BAND_INDEX)
     plotter.plot_3D_surface(index=BAND_INDEX, rbga=rgba, shade=False)
     # plotter.plot_3D_surface(index=8)

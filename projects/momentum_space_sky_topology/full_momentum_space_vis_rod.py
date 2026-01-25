@@ -38,7 +38,7 @@ if __name__ == '__main__':
     plotter.add_annotations()
     plotter.save_and_show()
 
-    plotter.new_3d_fig(temp_figsize=(3, 3))
+    plotter.new_3d_fig(figsize=(3, 3))
     plotter.plot_on_poincare_sphere(index=band_index)
     plotter.save_and_show()
 
@@ -57,7 +57,7 @@ if __name__ == '__main__':
     plotter.add_annotations()
     plotter.save_and_show()
 
-    plotter.new_3d_fig(temp_figsize=(3, 3))
+    plotter.new_3d_fig(figsize=(3, 3))
     rgba = plotter.get_advanced_color_mapping(index=band_index)
     # plotter.plot_3D_surface(index=0, shade=False)
     # plotter.plot_3D_surface(index=1, shade=False)

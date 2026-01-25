@@ -421,9 +421,9 @@ def sample_fields_along_path(xgrid, ygrid, fields, path_xy, step=None, npts=400)
 from matplotlib.patches import Ellipse
 from matplotlib.collections import PatchCollection
 
-def plot_isofreq_contours2D(ax, xgrid, ygrid, FREQ, levels,
-                            colors=None, linewidths=1, linestyles='-',
-                            return_paths=True, **contour_kwargs):
+def plot_iso_contours2D(ax, xgrid, ygrid, FREQ, levels,
+                        colors=None, linewidths=1, linestyles='-',
+                        return_paths=True, **contour_kwargs):
     """
     在给定 2D Axes 上绘制等频线，并（可选）返回由各 level 提取的 paths。
     - ax: matplotlib.axes.Axes（2D）

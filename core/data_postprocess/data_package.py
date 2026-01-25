@@ -79,6 +79,8 @@ def package_stad_C4_data(
     s1, s2, s3 = ellipse2stokes(phi_f, tanchi_f)
     dataset = {
         'eigenfreq': main_data,
+        'eigenfreq_real': main_data.real,
+        'eigenfreq_imag': main_data.imag,
         's1': s1,
         's2': s2,
         's3': s3,

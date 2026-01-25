@@ -305,7 +305,7 @@ if __name__ == '__main__':
     config.update(figsize=(1.25, 1.25), tick_direction='in')
     plotter = TwoDimFieldVisualizer(config=config, data_path=data_path)
     plotter.load_data()
-    plotter.new_3d_fig(temp_figsize=(1.25, 1.5))
+    plotter.new_3d_fig(figsize=(1.25, 1.5))
     plotter.plot_3d_surface(
         index=0, x_key=X_KEY, y_key=Y_KEY, z1_key='eigenfreq_real', z2_key='eigenfreq_imag',
         elev=20, azim=120, alpha=1, vmin=0.0, vmax=0.0015,
