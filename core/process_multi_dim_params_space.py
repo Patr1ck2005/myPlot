@@ -283,6 +283,7 @@ def extract_basic_analysis_fields(
             freq_real[i, j] = float(freq.real if isinstance(freq, complex) else freq)
     return phi, tanchi, qlog, freq_real
 
+
 def extract_adjacent_fields(
     additional_Z_grouped: np.ndarray,
     band_index: int,

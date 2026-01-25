@@ -1,11 +1,9 @@
 from core.data_postprocess.data_filter import advanced_filter_eigensolution
-from core.data_postprocess.data_grouper import *
-from core.plot_3D_params_space_plt import *
-from core.plot_3D_params_space_pv import plot_Z_diff_pyvista
-from core.prepare_plot import prepare_plot_data
-from core.process_multi_dim_params_space import *
+from core.data_postprocess.data_grouper import group_vectors_one_sided_hungarian
+from core.process_multi_dim_params_space import create_data_grid, group_solution
 
 import numpy as np
+import pandas as pd
 
 from core.utils import norm_freq, convert_complex
 
@@ -63,6 +61,7 @@ if __name__ == '__main__':
     for i in range(Z_filtered.shape[0]):
         Z_new[i] = Z_filtered[i][0]  # 提取每个 lst_ij 的第 b 列
     # ============================================================================================================
+    from matplotlib import pyplot as plt
     fig, ax = plt.subplots(figsize=(6, 10))
     # 通过散点的方式绘制出来，看看效果
     for i in range(Z_new.shape[0]):
@@ -75,7 +74,10 @@ if __name__ == '__main__':
     plt.title('Filtered Eigenfrequencies before Grouping')
     plt.grid(True)
     plt.show()
-    # ============================================================================================================
+
+    ###################################################################################################################
+    from core.process_multi_dim_params_space import extract_basic_analysis_fields, extract_adjacent_fields
+    from core.prepare_plot import prepare_plot_data
 
     Z_grouped, additional_Z_grouped = group_vectors_one_sided_hungarian(
         [Z_new], deltas,
