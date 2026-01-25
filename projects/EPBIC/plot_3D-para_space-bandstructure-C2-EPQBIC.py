@@ -154,7 +154,7 @@ if __name__ == '__main__':
     # )
 
     # =================================================================================================================
-    from core.process_multi_dim_params_space import extract_basic_analysis_fields, extract_adjacent_fields
+    from core.process_multi_dim_params_space import extract_adjacent_fields
     import matplotlib.pyplot as plt
     from core.prepare_plot import prepare_plot_data
 

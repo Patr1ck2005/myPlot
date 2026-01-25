@@ -166,6 +166,51 @@ def s3d_build_planar_surface_from_arrays(
     return surface
 
 
+def export_obj(
+    filename: str,
+    vertices: np.ndarray,   # (N, 3)
+    faces: np.ndarray       # (M, 3) index from 0
+):
+    with open(filename, "w") as f:
+        f.write("# exported mesh\n")
+        for v in vertices:
+            f.write(f"v {v[0]} {v[1]} {v[2]}\n")
+        for face in faces:
+            # OBJ 是 1-based
+            i, j, k = face + 1
+            f.write(f"f {i} {j} {k}\n")
+
+def grid_to_tri_mesh(x, y, z):
+    z = np.asarray(z)
+
+    # --- 关键：处理 x, y 是 1D 的情况 ---
+    if x.ndim == 1 and y.ndim == 1:
+        X, Y = np.meshgrid(x, y)
+    else:
+        X, Y = x, y
+
+    ny, nx = z.shape
+
+    vertices = np.column_stack([
+        X.ravel(),
+        Y.ravel(),
+        z.ravel()
+    ])
+
+    faces = []
+    for iy in range(ny - 1):
+        for ix in range(nx - 1):
+            i0 = iy * nx + ix
+            i1 = i0 + 1
+            i2 = i0 + nx
+            i3 = i2 + 1
+
+            faces.append([i0, i2, i1])
+            faces.append([i1, i2, i3])
+
+    return np.asarray(vertices), np.asarray(faces)
+
+
 def s3d_plot_multi_surfaces_combined(
     ax: plt.Axes,
     x: np.ndarray,
@@ -217,6 +262,11 @@ def s3d_plot_multi_surfaces_combined(
     zrange_all = max(zmax_all - zmin_all, 1e-12)
 
     combined = None
+
+    all_vertices = []
+    all_faces = []
+    v_offset = 0
+
     for z1, z2, zmin_i, zmax_i in zip(z1_list, z2_list, zmins, zmaxs):
         zrange_i = max(zmax_i - zmin_i, 1e-12)
 
@@ -234,6 +284,18 @@ def s3d_plot_multi_surfaces_combined(
         )
         combined = surf if combined is None else (combined + surf)
 
+        if True:
+            z_plot = (
+                    z_offset_i +
+                    geom_scale_i * (z1 - zmin_i) / zrange_i
+            )
+
+            verts, faces = grid_to_tri_mesh(x, y, z_plot)
+
+            all_vertices.append(verts)
+            all_faces.append(faces + v_offset)
+            v_offset += verts.shape[0]
+
     ax.add_collection3d(combined)
     ax.view_init(elev=elev, azim=azim)
 
@@ -241,4 +303,9 @@ def s3d_plot_multi_surfaces_combined(
     mappable = ScalarMappable(norm=norm_z2, cmap=get_cmap(cmap))
     mappable.set_array([])
 
+    if True:
+        vertices = np.vstack(all_vertices)
+        faces = np.vstack(all_faces)
+
+        export_obj("surface.obj", vertices, faces)
     return ax, combined, mappable

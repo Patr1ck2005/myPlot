@@ -76,7 +76,7 @@ if __name__ == '__main__':
     plt.show()
 
     ###################################################################################################################
-    from core.process_multi_dim_params_space import extract_basic_analysis_fields, extract_adjacent_fields
+    from core.process_multi_dim_params_space import extract_adjacent_fields
     from core.prepare_plot import prepare_plot_data
 
     Z_grouped, additional_Z_grouped = group_vectors_one_sided_hungarian(

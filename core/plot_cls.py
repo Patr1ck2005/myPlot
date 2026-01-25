@@ -419,6 +419,26 @@ class TwoDimFieldVisualizer(HeatmapPlotter, ABC):
             extent=(x.min(), x.max(), y.min(), y.max()), origin='lower', aspect='equal'
         )
 
+    def imshow_compare_datas(self, index_A, index_B, field_key, x_key="m1", y_key="m2", mode="difference", **kwargs) -> None:
+        """
+        比较多个数据集的同一字段，输出差值
+        """
+        x = self.coordinates[x_key]
+        y = self.coordinates[y_key]
+        z1_A = self.raw_datasets["data_list"][index_A][field_key]
+        z1_B = self.raw_datasets["data_list"][index_B][field_key]
+        if mode == "difference":
+            z = abs(z1_A - z1_B)
+        else:
+            raise ValueError(f"Unknown mode '{mode}' for data comparison.")
+        self.ax.imshow(
+            z.T,
+            extent=(x.min(), x.max(), y.min(), y.max()),
+            origin='lower',
+            **kwargs
+        )
+
+
 
 class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
     def imshow_field(
@@ -427,11 +447,10 @@ class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
         super().imshow_field(x_key=x_key, y_key=y_key, **kwargs)
 
     def plot_3d_surfaces(
-            self, indexs, x_key='m1', y_key='m1', z1_key='eigenfreq_real', z2_key='qlog', z3_key=None, cmap='hot',
-            vmin=2, vmax=7, **kwargs
+            self, indexs, z1_key, z2_key, x_key='m1', y_key='m1', z3_key=None, **kwargs
     ) -> None:
         super().plot_3d_surfaces(
-            indexs, x_key, y_key, z1_key, z2_key, z3_key, cmap, vmin, vmax, **kwargs
+            indexs, x_key, y_key, z1_key, z2_key, z3_key, **kwargs
         )
     def _get_field(self, index, key):
         """
@@ -589,14 +608,6 @@ class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
             s = s / np.nanmax(s)
 
         self.ax.plot(s, y, **kwargs)
-
-        # ---- labels（可选）----
-        if x_label is not None:
-            self.ax.set_xlabel(x_label)
-        if y_label is not None:
-            self.ax.set_ylabel(y_label)
-        else:
-            self.ax.set_ylabel(field_key)
 
         return sample
 
