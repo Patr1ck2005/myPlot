@@ -7,38 +7,29 @@ import numpy as np
 
 from advance_plot_styles.polar_plot import plot_on_poincare_sphere, \
     plot_polarization_ellipses
+from core.utils import norm_freq, convert_complex
 
 c_const = 299792458
 
 if __name__ == '__main__':
-    # data_path = 'data/grating-full-7eigen.csv'
-    # data_path = 'data/grating-diff_h-full-7eigen-rough.csv'
-    # data_path = 'data/grating-diff_h-full-7eigen-rough2.csv'
-    data_path = 'data/grating-diff_h-full-7eigen-rough3.csv'
-    # data_path = 'data/grating-diff_h-full-7eigen-detailed.csv'
+    # data_path = 'data/geo1-norm_mesh.csv'
+    data_path = 'data/VacuumEnv-norm_mesh-geo_FW_BIC-0.2k.csv'
+    # data_path = 'data/VacuumEnv-norm_mesh-geo_FW_QBIC-0.2k.csv'
+    # data_path = 'data/SOSEnv-norm_mesh-geo_FW_QBIC-0.2k.csv'
+    # data_path = 'data/SOSenv-norm_mesh-geo_FW_QBIC-0.2k-1.csv'
+    # data_path = 'data/PMMA_SOSenv-norm_mesh-geo_FW_QBIC-0.2k.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
-
-
-    # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
-    def convert_complex(freq_str):
-        return complex(freq_str.replace('i', 'j'))
-
-
-    def norm_freq(freq, period):
-        return freq / (c_const / period)
-
 
     period = 500
     df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq,
                                                                                            period=period * 1e-9 * 1e12)
     df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period * 1e-9)
     df_sample["up_phi (rad)"] = df_sample["up_phi (rad)"].apply(lambda x: x % np.pi)
-    # # 筛选m1<0.1的成分
     df_sample = df_sample[df_sample["m1"] <= 0.2]
     df_sample = df_sample[df_sample["m2"] <= 0.2]
     # 指定用于构造网格的参数以及目标数据列
-    param_keys = ["m1", "m2", "h_grating (nm)", "fill"]
-    z_keys = ["特征频率 (THz)", "品质因子 (1)", "up_tanchi (1)", "up_phi (rad)", "fake_factor (1)", "频率 (Hz)"]
+    param_keys = ["m1", "m2", "t_ridge (nm)", "fill", "t_tot (nm)"]
+    z_keys = ["特征频率 (THz)", "品质因子 (1)", "up_tanchi (1)", "up_phi (rad)", "down_tanchi (1)", "down_phi (rad)", "fake_factor (1)", "频率 (Hz)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
     grid_coords, Z = create_data_grid(df_sample, param_keys, z_keys, deduplication=False)
@@ -52,16 +43,44 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            "h_grating (nm)": 550,
-            "fill": 0.6,
+            "t_tot (nm)": 520,
+            "t_ridge (nm)": 520,
+            "fill": 0.5,
         },  # 固定
         filter_conditions={
-            "fake_factor (1)": {"<": 1},  # 筛选
+            "fake_factor (1)": {"<": 2},  # 筛选
             # "频率 (Hz)": {">": 0.0, "<": 0.530},  # 筛选
         }
     )
 
-    deltas3 = (1e-3, 1e-3)  # n个维度的网格间距
+    ###############################################################################################################
+    fig, ax = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(8, 12))
+    xs = []
+    ys = []
+    zs = []
+    colors = []
+    for i, m1 in enumerate(new_coords['m1']):
+        for j, m2 in enumerate(new_coords['m2']):
+            lst_ij = Z_filtered[i][j]
+            for freq in lst_ij[0]:
+                xs.append(m1)
+                ys.append(m2)
+                zs.append(freq.real)
+                colors.append(freq.imag)
+    sc = ax.scatter(xs, ys, zs, c=colors, cmap='viridis', marker='o', alpha=0.8, s=1)
+    # set aspect
+    ax.set_box_aspect([1, 1, 3])
+    # set view angle
+    ax.view_init(elev=15, azim=45)
+    plt.colorbar(sc, label='Imaginary Part of Frequency (THz)')
+    ax.set_xlabel('m1')
+    ax.set_ylabel('m2')
+    ax.set_zlabel('Frequency (THz)')
+    plt.title('3D Scatter Plot of Eigenfrequencies')
+    plt.show()
+    ###############################################################################################################
+
+    deltas = (1e-3, 1e-3)  # n个维度的网格间距
     # 当沿维度 d 生长时，值差权重矩阵（n×n）
     # 例如：value_weights[d, j] = 在 grow_dir=d 时，对维度 j 的值差权重
     value_weights = np.array([
@@ -79,11 +98,12 @@ if __name__ == '__main__':
             Z_new[i, j] = Z_filtered[i][j][0]  # 提取每个 lst_ij 的第 b 列
 
     Z_grouped, additional_Z_grouped = group_vectors_one_sided_hungarian(
-        [Z_new], deltas3,
+        [Z_new], deltas,
         additional_data=Z_filtered,
         value_weights=value_weights,
         deriv_weights=deriv_weights,
-        max_m=5
+        max_m=14,
+        auto_split_streams=False
     )
 
     # 假设你已经得到了 grid_coords, Z
@@ -121,22 +141,38 @@ if __name__ == '__main__':
     from core.plot_workflow import PlotConfig
     from core.prepare_plot import prepare_plot_data
     from core.data_postprocess.data_package import package_stad_C4_data
-
-    band_index = 2
-    Z_target = Z_target3
-    plt.imshow(Z_target.real.T)
+    band_index_A = 0
+    Z_target_A = Z_target1
+    # band_index = 0
+    # Z_target = Z_target1
+    band_index_B = 1
+    Z_target_B = Z_target2
+    # band_index = 2
+    # Z_target = Z_target3
+    plt.imshow(Z_target_A.real.T)
     plt.colorbar()
     plt.show()
-    full_coords, dataset = package_stad_C4_data(
-        new_coords, band_index, Z_target, additional_Z_grouped, z_keys,
+    full_coords, dataset_A = package_stad_C4_data(
+        new_coords, band_index_A, Z_target_A, additional_Z_grouped, z_keys,
         q_key='品质因子 (1)',
-        tanchi_key='up_tanchi (1)',
-        phi_key='up_phi (rad)'
+        # tanchi_key='up_tanchi (1)',
+        # phi_key='up_phi (rad)',
+        tanchi_key='down_tanchi (1)',
+        phi_key='down_phi (rad)',
+    )
+    full_coords, dataset_B = package_stad_C4_data(
+        new_coords, band_index_B, Z_target_B, additional_Z_grouped, z_keys,
+        q_key='品质因子 (1)',
+        # tanchi_key='up_tanchi (1)',
+        # phi_key='up_phi (rad)',
+        tanchi_key='down_tanchi (1)',
+        phi_key='down_phi (rad)',
     )
     data_path = prepare_plot_data(
-        coords=full_coords, data_class='Eigensolution', dataset_list=[dataset], fixed_params={},
+        coords=full_coords, data_class='Eigensolution', dataset_list=[dataset_A, dataset_B], fixed_params={},
     )
 
+    BAND_INDEX = 0
     config = PlotConfig(
         plot_params={},
         annotations={},
@@ -147,31 +183,50 @@ if __name__ == '__main__':
     plotter.load_data()
     plotter.prepare_data()
 
-    plotter.new_2d_fig()
-    plotter.imshow_qlog(index=0)
+    plotter.new_3d_fig(temp_figsize=(3, 3))
+    plotter.plot_3D_surface(index=BAND_INDEX)
+    plotter.add_annotations()
     plotter.save_and_show()
 
     plotter.new_2d_fig()
-    plotter.plot_polarization_ellipses(index=0, step=(1, 1))
+    plotter.imshow_qlog(index=BAND_INDEX)
+    plotter.save_and_show()
+
+    plotter.new_2d_fig(figsize=(1, 1))
+    plotter.plot_polarization_ellipses(index=BAND_INDEX, step=(2, 2), scale=2e-2, cmap='coolwarm')
+    # annotations = {
+    #     'xlabel': '', 'ylabel': '',
+    #     'xlim': (-0.1, 0.1),
+    #     'ylim': (-0.1, 0.1),
+    # },
+    plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig()
+    plotter.plot_polarization_ellipses(index=BAND_INDEX, step=(1, 1))
     # plotter.plot_isofreq_contours2D(index=0, levels=(0.509, 0.510, 0.511))
     plotter.save_and_show()
-
     # plotter.new_2d_fig()
     # plotter.imshow_skyrmion_density(index=0)
     # plotter.save_and_show()
 
     plotter.new_2d_fig()
     plotter.prepare_chi_phi_data()
-    plotter.plot_phi_families_regimes(index=0)
-    plotter.plot_phi_families_split(index=0)
+    plotter.plot_phi_families_regimes(index=BAND_INDEX)
+    plotter.plot_phi_families_split(index=BAND_INDEX)
+    # plotter.add_annotations()
     plotter.save_and_show()
 
-    plotter.config.figsize = (3, 3)
-    plotter.new_3d_fig()
-    plotter.plot_on_poincare_sphere(index=0)
+    plotter.new_2d_fig(figsize=(3.8, 1))
+    samples_list = plotter.sample_along_round_path(index=BAND_INDEX, center=(0, 0), radius=0.01)
+    plotter.ax.plot(samples_list[0]['s'] / np.max(samples_list[0]['s']), samples_list[0]['phi'], 'r-', linewidth=1, alpha=0.5)
+    samples_list = plotter.sample_along_round_path(index=BAND_INDEX, center=(0, 0), radius=0.05)
+    plotter.ax.plot(samples_list[0]['s'] / np.max(samples_list[0]['s']), samples_list[0]['phi'], 'k-', linewidth=1)
+    samples_list = plotter.sample_along_round_path(index=BAND_INDEX, center=(0, 0), radius=0.03)
+    plotter.ax.plot(samples_list[0]['s'] / np.max(samples_list[0]['s']), samples_list[0]['phi'], 'b-', linewidth=1, alpha=0.5)
+    # plotter.add_annotations()
     plotter.save_and_show()
 
-    plotter.new_3d_fig()
-    plotter.plot_3D_surface(index=0)
-    plotter.add_annotations()
+    plotter.new_3d_fig(temp_figsize=(3, 3))
+    plotter.plot_on_poincare_sphere(index=BAND_INDEX)
     plotter.save_and_show()

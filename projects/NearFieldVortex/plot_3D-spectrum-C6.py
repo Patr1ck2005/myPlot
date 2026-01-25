@@ -9,7 +9,8 @@ from utils.advanced_color_mapping import map_complex2rbg
 c_const = 299792458
 
 if __name__ == '__main__':
-    data_path = 'data/Hex_annular-ExpTest-spectrum1.csv'
+    # data_path = 'data/Hex_annular-ExpTest-spectrum1.csv'
+    data_path = 'data/Hex_annular-ExpTest-spectrum2.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
 
@@ -22,7 +23,7 @@ if __name__ == '__main__':
         return freq / (c_const / period)
 
 
-    period = 1300
+    period = 400
     # df_sample["f (c/P)"] = df_sample["freq (THz)"].apply(norm_freq, period=period * 1e3)
     df_sample["f (c/P)"] = df_sample["freq (THz)"]
     df_sample["k"] = df_sample["m1"] - df_sample["m2"]
@@ -90,14 +91,48 @@ if __name__ == '__main__':
         coords=new_coords, data_class='Spectrum', dataset_list=[dataset1], fixed_params={},
     )
 
-    fig, ax = plt.subplots(figsize=(1.5, 2))
+    # fig, ax = plt.subplots(figsize=(1.5, 2))
+    # im = ax.imshow(R.real.T, origin='lower', extent=(new_coords['k'][0], new_coords['k'][-1],
+    #                                                  new_coords['freq (THz)'][0], new_coords['freq (THz)'][-1]),
+    #                cmap='gray', aspect='auto', vmin=0, vmax=1)
+    # cbar = fig.colorbar(im, ax=ax, label='R')
+    # ax.set_xlabel('k (2π/P)')
+    # ax.set_ylabel('Frequency (THz)')
+    # plt.savefig('temp.png', bbox_inches='tight', transparent=True, dpi=300)
+    # plt.show()
+
+    fs = 9
+    tickdir = 'in'
+    font = 'Arial'
+    plt.rcParams.update({
+        'font.size': fs,
+        'font.family': font,
+        'xtick.direction': tickdir,
+        'ytick.direction': tickdir,
+        # 'axes.linewidth': 0.5,
+    })
+
+    # freq->wavelength
+    # fig, ax = plt.subplots(figsize=(1.5, 2))
+    fig, ax = plt.subplots(figsize=(1.5*2, 2*1.5))
+    wavelengths = c_const / (new_coords['freq (THz)'] * 1e12) * 1e9  # 转换为nm
+    print('range of wavelengths (nm):', wavelengths[0], '~', wavelengths[-1])
     im = ax.imshow(R.real.T, origin='lower', extent=(new_coords['k'][0], new_coords['k'][-1],
-                                                     new_coords['freq (THz)'][0], new_coords['freq (THz)'][-1]),
-                   cmap='gray', aspect='auto', vmin=0, vmax=1)
-    cbar = fig.colorbar(im, ax=ax, label='R')
+                                                     wavelengths[0], wavelengths[-1]),
+                     cmap='gray', aspect='auto', vmin=0, vmax=1)
+    # cbar = fig.colorbar(im, ax=ax, label='R')
+    # plot iso-angle lines (wavelength vs k) -10, -5, 5, 10 degrees
+    iso_angles = [-15, -10, -5, 5, 10, 15]
+    for angle in iso_angles:
+        wavelength_vals = np.linspace(wavelengths[0], wavelengths[-1], 500)
+        k_vals = np.sin(np.radians(angle)) * (period / wavelength_vals)
+        ax.plot(k_vals, wavelength_vals, linestyle='--', label=f'{angle}°', linewidth=1, color='gray')
+        # text at the end of the line
+        ax.text(k_vals[-1], wavelength_vals[-1], f'{angle}°', fontsize=6, verticalalignment='bottom')
     ax.set_xlabel('k (2π/P)')
-    ax.set_ylabel('Frequency (THz)')
+    ax.set_ylabel('Wavelength (nm)')
     plt.savefig('temp.png', bbox_inches='tight', transparent=True, dpi=300)
+    plt.savefig('temp.svg', bbox_inches='tight', transparent=True, dpi=300)
     plt.show()
 
     # fig, ax = plt.subplots(figsize=(3, 3), dpi=200)

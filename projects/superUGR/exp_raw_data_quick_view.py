@@ -116,7 +116,8 @@ def load_and_visualize_ftir_spectra(directory, prefix, start_num, end_num, angle
         else:
             denom = 1.0
 
-        spectrums = (spectrums - bg_s) / (denom - bg_s)
+        # spectrums = (spectrums/(1-3.37e-2) - bg_s) / (denom - bg_s)
+        spectrums = (spectrums/(1) - bg_s) / (denom - bg_s)
         # spectrums = (spectrums) / (denom)
 
         data_dict[angle] = (wavenumbers, spectrums)
@@ -241,15 +242,80 @@ def load_and_visualize_ftir_spectra(directory, prefix, start_num, end_num, angle
 #     bg_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.9 KEREN\air.dpt"
 # )
 
-# EXP @2026.1.9 KEREN S-back with reference spectrum
-prefix = ''
-directory = r'D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.9 KEREN\Sback'
-start_num = -3
-end_num = 15
+# # EXP @2026.1.9 KEREN S-back with reference spectrum
+# prefix = ''
+# directory = r'D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.9 KEREN\Sback'
+# start_num = -3
+# end_num = 15
+#
+# angles = list(range(start_num, end_num+1))
+# data = load_and_visualize_ftir_spectra(
+#     directory, prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt',
+#     ref_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.8 KEREN\26.1.8\Pair\BLACKBODY.dpt",
+#     bg_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.9 KEREN\air.dpt"
+# )
+
+# # EXP @2026.1.23 KEREN S-forw with reference spectrum
+# prefix = 'Sample name.'
+# start_num = 6932
+# end_num = 6950
+#
+# angles = list(range(start_num, end_num+1))
+# data = load_and_visualize_ftir_spectra(
+#     r'D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.23 KEREN\zheng-s-2',
+#     prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt',
+#     ref_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.23 KEREN\heiti_beijing\blackbody.dpt",
+#     bg_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.23 KEREN\heiti_beijing\beijing.dpt"
+# )
+#
+# # EXP @2026.1.23 KEREN P-forw with reference spectrum
+# prefix = 'Sample name.'
+# start_num = 6911
+# end_num = 6931
+#
+# angles = list(range(start_num, end_num+1))
+# data = load_and_visualize_ftir_spectra(
+#     r'D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.23 KEREN\zheng-p',
+#     prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt',
+#     ref_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.23 KEREN\heiti_beijing\blackbody.dpt",
+#     bg_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.23 KEREN\heiti_beijing\beijing.dpt"
+# )
+#
+# # EXP @2026.1.23 KEREN S-back with reference spectrum
+# prefix = 'Sample name.'
+# start_num = 6964
+# end_num = 6984
+#
+# angles = list(range(start_num, end_num+1))
+# data = load_and_visualize_ftir_spectra(
+#     r'D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.23 KEREN\bei-s',
+#     prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt',
+#     ref_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.23 KEREN\heiti_beijing\blackbody.dpt",
+#     bg_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.23 KEREN\heiti_beijing\beijing.dpt"
+# )
+
+# # EXP @2026.1.23 KEREN P-back with reference spectrum
+# prefix = 'Sample name.'
+# start_num = 6991
+# end_num = 7006
+#
+# angles = list(range(start_num, end_num+1))
+# data = load_and_visualize_ftir_spectra(
+#     r'D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.23 KEREN\bei-p',
+#     prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt',
+#     ref_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.23 KEREN\heiti_beijing\blackbody.dpt",
+#     bg_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.23 KEREN\heiti_beijing\beijing.dpt"
+# )
+
+# EXP @2026.1.23 KEREN P-back with reference spectrum
+prefix = 'Sample name.'
+start_num = 6894
+end_num = 6910
 
 angles = list(range(start_num, end_num+1))
 data = load_and_visualize_ftir_spectra(
-    directory, prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt',
-    ref_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.8 KEREN\26.1.8\Pair\BLACKBODY.dpt",
-    bg_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.9 KEREN\air.dpt"
+    r'D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.23 KEREN\zheng-s',
+    prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt',
+    ref_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.23 KEREN\heiti_beijing\blackbody.dpt",
+    bg_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.23 KEREN\heiti_beijing\beijing.dpt"
 )

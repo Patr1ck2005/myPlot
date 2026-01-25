@@ -14,112 +14,112 @@ c_const = 299792458  # 光速 (m/s)
 
 class CustomPlotter(HeatmapPlotter):
     def load_data(self) -> None:
+        # wavelength 数据保存在第一行中, 其中第一个单元是标题
         self.wavelength = pd.read_csv(
             self.data_path,
             sep=',',  # 假设分隔符是逗号；如果实际是制表符，改为 '\t'
-            skiprows=3,  # 跳过前 3 行（元信息和空行）
             nrows=1,
             header=None,
-            usecols=range(1, 3039 + 2),
+            skiprows=0,
+            # usecols=range(1, 4465),
+            # 排除第一列
+            usecols=range(1,  len(pd.read_csv(self.data_path, nrows=1, header=None).columns)),
         )
         print(self.wavelength)
+        # angle 数据保存在第一列中, 其中第一个单元是标题
+        self.angles = pd.read_csv(
+            self.data_path,
+            sep=',',  # 假设分隔符是逗号；如果实际是制表符，改为 '\t'
+            usecols=[0],
+            header=None,
+            skiprows=1,
+        )
+        print(self.angles)
+        # raw_dataset 数据保存在除去第一列和第一行中
         self.raw_dataset = pd.read_csv(
             self.data_path,
             sep=',',  # 假设分隔符是逗号；如果实际是制表符，改为 '\t'
-            skiprows=4,  # 跳过前 3 行（元信息和空行）
-            nrows=511 + 1,
             header=None,
-            usecols=range(1, 3039 + 2),
-        )  # 使用第一列作为索引
+            skiprows=1,
+            usecols=range(1, len(self.wavelength.columns)+1),
+        )
         print(self.raw_dataset)
 
     def prepare_data(self) -> None:
         self.Z1 = self.raw_dataset.to_numpy()
         self.y_vals = self.wavelength.values.flatten()
-        # self.x_vals = self.raw_dataset.index.values
-        # self.x_vals = np.linspace(-50, 50, len(self.raw_dataset.columns))
-        self.x_vals = np.linspace(-49.5, 50, len(self.raw_dataset.index.values))
+        print(self.y_vals)
+        self.x_vals = self.angles.values.flatten()
 
     def plot(self) -> None:  # 重写：调用骨架
-        self.plot_heatmap(self.Z1, self.x_vals, self.y_vals, )
         # 导出imshow中纯净的绘图数据
         im_data = self.Z1  # 获取imshow的纯净数据
         # 筛选范围
-        # 波长范围 1000-1300nm
-        y_mask = (self.y_vals >= 1000) & (self.y_vals <= 1500)
-        # y_mask = (self.y_vals >= 0)
+        # 波长范围
+        # y_mask = (self.y_vals >= 880) & (self.y_vals <= 960)
+        y_mask = (self.y_vals >= 0)
         im_data = im_data[:, y_mask]
-        # 角度范围 -15 到 15 度（本来就是这个范围）
-        # x_mask = (self.x_vals >= -15) & (self.x_vals <= 15)
-        x_mask = (self.x_vals >= -30) & (self.x_vals <= 30)
-        # x_mask = (self.x_vals >= -100)
-        im_data = im_data[x_mask, :]
+        # 角度范围
+        # x_mask = (self.x_vals >= -30) & (self.x_vals <= 30)
+        # im_data = im_data[x_mask, :]
         # # clip 0-1
         # im_data = np.clip(im_data, 0, 1)
         # renorm to 0-1
-        # 使用 SG 平滑后的最大值进行归一化, 沿着 y 轴平滑
-        smoothed_data = scipy.signal.savgol_filter(im_data, window_length=11*5, polyorder=3, axis=1)
-        # 随便绘制一条曲线看效果
-        plt.figure(figsize=(6, 4))
-        plt.plot(self.y_vals[y_mask], smoothed_data[40, :])
-        plt.scatter(self.y_vals[y_mask], im_data[40, :], s=1, color='red')
-        plt.xlabel('Wavelength (nm)')
-        plt.ylabel('Smoothed Intensity (a.u.)')
-        plt.title('Smoothed Spectrum at Angle Index 15')
-        plt.show()
-        im_data /= np.max(smoothed_data)
+        # # 使用 SG 平滑后的最大值进行归一化, 沿着 y 轴平滑
+        # smoothed_data = scipy.signal.savgol_filter(im_data, window_length=11*5, polyorder=3, axis=1)
+        # # 随便绘制一条曲线看效果
+        # plt.figure(figsize=(6, 4))
+        # plt.plot(self.y_vals[y_mask], smoothed_data[40, :])
+        # plt.scatter(self.y_vals[y_mask], im_data[40, :], s=1, color='red')
+        # plt.xlabel('Wavelength (nm)')
+        # plt.ylabel('Smoothed Intensity (a.u.)')
+        # plt.title('Smoothed Spectrum at Angle Index 15')
+        # plt.show()
+        # im_data /= np.max(smoothed_data)
         # clip 0-1
         im_data = np.clip(im_data, 0, 1)
         # 保存为 pkl 文件
         save_dict = {
-            'x_vals': np.deg2rad(self.x_vals[x_mask]),  # 转为NA
-            # 'y_vals': c_const/self.y_vals[y_mask]/(c_const/894),  # 转为归一化频率 (c/P) P=894nm
-            'y_vals': self.y_vals[y_mask] / 894,  # 转为归一化波长 (P) P=894nm
+            'x_vals': self.x_vals,  # 转为NA
+            'y_vals': self.y_vals,  # 波长 (nm)
             'subs': [im_data],
-        }
-        # # plt预览
-        # import matplotlib.pyplot as plt
-        # plt.figure(figsize=(6, 4))
-        # plt.imshow(
-        #     save_dict['subs'][0].T, extent=(save_dict['x_vals'][0], save_dict['x_vals'][-1],
-        #                                     save_dict['y_vals'][0], save_dict['y_vals'][-1]), aspect='auto',
-        #     cmap='gray',
-        #     origin='lower',
-        # )
-        # plt.colorbar(label='Intensity (a.u.)')
-        # plt.xlabel(r'$\theta$ (rad)')
-        # plt.ylabel(r'$\lambda$ (P)')
-        # plt.title('Filtered Experimental Spectrum')
-        # plt.show()
-        # # 实验性功能: 重新映射到 归一化频率 和 k 空间
-        # 测试 wavelength_angle_to_freq_k_space 函数
-        # 示例数据
-        wavelengths = self.y_vals[y_mask]  # 波长
-        angles = self.x_vals[x_mask]  # 角度
-        P = 894  # 周期
-        # 调用函数
-        f_grid, k_grid, Z_interp, _, _ = wavelength_angle_to_norm_freq_k_space(wavelengths, angles, im_data.T, P)
-        # 可视化结果
-        plt.figure(figsize=(6, 4))
-        plt.imshow(
-            Z_interp.T, extent=(k_grid[0, 0], k_grid[-1, 0], f_grid[0, 0], f_grid[0, -1]), aspect='auto',
-            cmap='gray',
-            origin='lower',
-        )
-        plt.colorbar(label='Z')
-        plt.xlabel('k-space (sin(θ) * P/λ)')
-        plt.ylabel('Normalized Frequency (P/λ)')
-        plt.title('Interpolated Z in Normalized Frequency and k-space')
-        plt.show()
-        # 保存结果
-        save_dict = {
-            'x_vals': k_grid[:, 0],  # k_space
-            'y_vals': f_grid[0, :],  # norm_freq
-            'subs': [Z_interp],
         }
         save_path = os.path.join(os.path.dirname(self.data_path), 'im_data.pkl')
         pd.to_pickle(save_dict, save_path)
         print(f"纯净的绘图数据已保存到 {save_path}")
+        # plt预览
+        self.ax.imshow(
+            save_dict['subs'][0].T, extent=(save_dict['x_vals'][0], save_dict['x_vals'][-1],
+                                            save_dict['y_vals'][0], save_dict['y_vals'][-1]), aspect='auto',
+            cmap='gray',
+            origin='lower',
+        )
+        # # 实验性功能: 重新映射到 归一化频率 和 k 空间
+        # 测试 wavelength_angle_to_freq_k_space 函数
+        # # 示例数据
+        # wavelengths = self.y_vals[y_mask]  # 波长
+        # angles = self.x_vals[x_mask]  # 角度
+        # P = c_const  # 周期
+        # # 调用函数
+        # f_grid, k_grid, Z_interp, _, _ = wavelength_angle_to_norm_freq_k_space(wavelengths, angles, im_data.T, P)
+        # # 可视化结果
+        # plt.figure(figsize=(6, 4))
+        # plt.imshow(
+        #     Z_interp.T, extent=(k_grid[0, 0], k_grid[-1, 0], f_grid[0, 0], f_grid[0, -1]), aspect='auto',
+        #     cmap='gray',
+        #     origin='lower',
+        # )
+        # plt.colorbar(label='Z')
+        # plt.xlabel('k-space (sin(θ) * P/λ)')
+        # plt.ylabel('Normalized Frequency (P/λ)')
+        # plt.title('Interpolated Z in Normalized Frequency and k-space')
+        # plt.show()
+        # # 保存结果
+        # save_dict = {
+        #     'x_vals': k_grid[:, 0],  # k_space
+        #     'y_vals': f_grid[0, :],  # norm_freq
+        #     'subs': [Z_interp],
+        # }
 
 
 # 新增函数：批量处理 data 目录下的所有 CSV 文件
@@ -266,37 +266,6 @@ def wavelength_angle_to_norm_freq_k_space(wavelengths, angles, Z, P):
 
 
 if __name__ == '__main__':
-    # 示例数据
-    wavelengths = np.linspace(400, 800, 50)  # 波长从400nm到800nm
-    angles = np.linspace(0, 60, 30)  # 角度从0°到60°
-    Z = np.random.rand(50, 30)  # 物理量，形状为(50, 30)，对应(wavelengths, angles)
-    P = 500  # 周期500nm
-
-    # 调用函数
-    f_grid, k_grid, Z_interp, norm_freq, k_space = wavelength_angle_to_norm_freq_k_space(wavelengths, angles, Z, P)
-
-    # 创建图形
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-
-    # 使用 pcolormesh 绘制变形后的数据（梯形区域）
-    pcm = ax1.pcolormesh(norm_freq, k_space, Z, cmap='viridis', shading='auto')
-    ax1.set_xlabel('Normalized Frequency (P/λ)')
-    ax1.set_ylabel('k-space (sin(θ) * P/λ)')
-    ax1.set_title('Deformed Data (pcolormesh)')
-    fig.colorbar(pcm, ax=ax1, label='Z')
-
-    # 使用 imshow 绘制插值后的方形数据
-    im = ax2.imshow(Z_interp, origin='lower', cmap='viridis',
-                    extent=[f_grid.min(), f_grid.max(), k_grid.min(), k_grid.max()])
-    ax2.set_xlabel('Normalized Frequency (P/λ)')
-    ax2.set_ylabel('k-space (sin(θ) * P/λ)')
-    ax2.set_title('Interpolated Square Data (imshow)')
-    fig.colorbar(im, ax=ax2, label='Z')
-
-    # 调整布局并显示
-    plt.tight_layout()
-    plt.show()
-
     # 单文件模式（示例）
     single_config = PlotConfig(
         plot_params={
@@ -304,26 +273,28 @@ if __name__ == '__main__':
             'title': False, 'global_color_vmin': 0, 'global_color_vmax': 1
         },
         annotations={
-            'xlabel': r'$\theta$', 'ylabel': r'$\lambda (nm)$',
-            'xlim': (-15, 15),
-            'ylim': (1000, 1300),
-            'title': 'test',
+            'xlabel': r'$\theta$°', 'ylabel': r'Wavelength (nm)',
+            'xlim': (-50, 50),
+            # 'ylim': (881-50, 1000),
+            # 'title': 'test',
             'show_axis_labels': True,
             'show_tick_labels': True,
         }
     )
     single_plotter = CustomPlotter(
         config=single_config,
-        data_path=r'.\data\MZH-3EP-X-pol-260Dose'
-                  r'-Calc\MZH-3EP-Y-pol-200Dose-Calc.csv',
+        data_path=r'D:\DELL\Documents\myPlots\projects\NearFieldVortex\data\exp\newep-light50-X-pol-dose220-1_processed.csv',
     )
     # 单文件执行（注释掉以切换）
     single_plotter.load_data()
     single_plotter.prepare_data()
-    single_plotter.new_2d_fig()
+    single_plotter.new_2d_fig(figsize=(1.5*2, 2*4))
     single_plotter.plot()
     single_plotter.add_annotations()
     single_plotter.ax.invert_yaxis()
+    # 在 y=(881, 967) 绘制水平线
+    single_plotter.ax.plot([-20, 20], [881, 881], color='green', linestyle='--', linewidth=1)
+    single_plotter.ax.plot([-20, 20], [967, 967], color='green', linestyle='--', linewidth=1)
     single_plotter.save_and_show(save=True, custom_name='test', custom_abs_path=None)
 
     # # 批量模式：调用 batch_plot，传入 data 目录路径，设置 batch_mode=True
