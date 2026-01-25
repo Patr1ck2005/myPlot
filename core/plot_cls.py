@@ -8,7 +8,7 @@ from core.data_postprocess.momentum_space_toolkits import plot_isofreq_contours2
     sample_fields_along_path
 from core.data_postprocess.polar_graph_analysis import plot_phi_families_split
 from core.plot_workflow import *
-from advance_plot_styles.surface_plot import plot_advanced_surface
+from advance_plot_styles.surface_plot import plot_advanced_surface, s3d_plot_multi_surfaces_combined
 from utils.advanced_color_mapping import map_s1s2s3_color, map_complex2rbg
 from utils.functions import skyrmion_density, skyrmion_number, lorenz_func
 
@@ -365,7 +365,7 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
         eigenfreq = self.eigenfreq_list[index]
         qlog = self.qlog_list[index]
         self.ax, mappable = plot_advanced_surface(
-            self.ax, mx=m1f, my=m2f,
+            self.ax, x=m1f, y=m2f,
             mapping=mapping,
             z1=eigenfreq,
             z2=qlog,
@@ -378,7 +378,8 @@ class MomentumSpaceEigenPolarizationPlotter(HeatmapPlotter, ABC):
         m1, m2 = self.m1, self.m2
         M1, M2 = np.meshgrid(m1, m2, indexing='ij')
         eigenfreq = self.eigenfreq_list[index]
-        self.ax.scatter(M1.flatten(), M2.flatten(), eigenfreq.flatten().real, depthshade=True, **kwargs)
+        # self.ax.scatter(M1.flatten(), M2.flatten(), eigenfreq.flatten().real, depthshade=True, **kwargs)
+        self.ax.plot_trisurf(M1.flatten(), M2.flatten(), eigenfreq.flatten().real, **kwargs)
 
     def plot_skyrmion_quiver(self, index, step=(6, 6)) -> None:
         self.ax = plot_skyrmion_quiver(
@@ -518,12 +519,41 @@ class TwoDimFieldVisualizer(HeatmapPlotter, ABC):
             # 'z3': {'vmin': c, 'vmax': d},  # 可选；仅当传入 z3 时有意义；未给则自动 [min,max]
         }
         self.ax, mappable = plot_advanced_surface(
-            self.ax, mx=x, my=y,
+            self.ax, x=x, y=y,
             mapping=mapping,
             z1=z1,
             z2=z2,
             z3=z3,
             **kwargs
+        )
+
+    def plot_3d_surfaces(
+            self, indexs, x_key, y_key, z1_key, z2_key=None, z3_key=None, cmap='hot', vmin=None, vmax=None, shade=False, **kwargs
+    ) -> None:
+        x = self.coordinates[x_key]
+        y = self.coordinates[y_key]
+        z1_lst = [self.raw_datasets["data_list"][i][z1_key] for i in indexs]
+        z2_lst = [self.raw_datasets["data_list"][i][z2_key] for i in indexs] if z2_key is not None else z1_lst   # for color rending
+        z3_lst = [self.raw_datasets["data_list"][i][z3_key] for i in indexs] if z3_key is not None else None  # for alpha rending
+        self.ax, combined_surface, mappable = s3d_plot_multi_surfaces_combined(
+            self.ax,
+            x=x, y=y,
+            z1_list=z1_lst,
+            z2_list=z2_lst,
+            rez=4,
+            cmap=cmap,
+            vmin=vmin, vmax=vmax,
+            elev=30, azim=25,
+        )
+
+
+class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
+    def plot_3d_surfaces(
+            self, indexs, x_key='m1', y_key='m1', z1_key='eigenfreq', z2_key='qlog', z3_key=None, cmap='hot',
+            vmin=2, vmax=7, **kwargs
+    ) -> None:
+        super().plot_3d_surfaces(
+            indexs, x_key, y_key, z1_key, z2_key, z3_key, cmap, vmin, vmax, **kwargs
         )
 
 

@@ -137,7 +137,7 @@ if __name__ == '__main__':
     # )
 
     from core.process_multi_dim_params_space import extract_basic_analysis_fields
-    from core.plot_cls import MomentumSpaceEigenPolarizationPlotter
+    from core.plot_cls import MomentumSpaceEigenPolarizationPlotter, MomentumSpaceEigenVisualizer
     from core.plot_workflow import PlotConfig
     from core.prepare_plot import prepare_plot_data
     from core.data_postprocess.data_package import package_stad_C4_data
@@ -160,7 +160,7 @@ if __name__ == '__main__':
         tanchi_key='down_tanchi (1)',
         phi_key='down_phi (rad)',
     )
-    full_coords, dataset_B = package_stad_C4_data(
+    _, dataset_B = package_stad_C4_data(
         new_coords, band_index_B, Z_target_B, additional_Z_grouped, z_keys,
         q_key='品质因子 (1)',
         # tanchi_key='up_tanchi (1)',
@@ -172,19 +172,32 @@ if __name__ == '__main__':
         coords=full_coords, data_class='Eigensolution', dataset_list=[dataset_A, dataset_B], fixed_params={},
     )
 
+    ####################################################################################################################
     BAND_INDEX = 0
     config = PlotConfig(
         plot_params={},
         annotations={},
     )
-    config.figsize = (1.5, 1.5)
-    config.tick_direction = 'in'
+    config.update(figsize=(1.5, 1.5), tick_direction='in')
+
+    plotter = MomentumSpaceEigenVisualizer(config=config, data_path=data_path)
+    plotter.load_data()
+    plotter.prepare_data()
+
+    plotter.new_3d_fig(temp_figsize=(3, 3))
+    plotter.plot_3d_surfaces(indexs=(0, 1))
+    plotter.add_annotations()
+    plotter.save_and_show()
+
     plotter = MomentumSpaceEigenPolarizationPlotter(config=config, data_path=data_path)
     plotter.load_data()
     plotter.prepare_data()
 
     plotter.new_3d_fig(temp_figsize=(3, 3))
-    plotter.plot_3D_surface(index=BAND_INDEX)
+    # plotter.scatter_3D(index=0)
+    # plotter.scatter_3D(index=1)
+    plotter.plot_3D_surface(index=0)
+    plotter.plot_3D_surface(index=1)
     plotter.add_annotations()
     plotter.save_and_show()
 

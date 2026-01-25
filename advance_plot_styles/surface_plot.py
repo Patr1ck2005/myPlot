@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any, Tuple, Sequence, List
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -28,8 +28,8 @@ def _auto_norm(data: np.ndarray, vmin: Optional[float], vmax: Optional[float]) -
 
 def plot_advanced_surface(
     ax: plt.Axes,
-    mx: np.ndarray,
-    my: np.ndarray,
+    x: np.ndarray,
+    y: np.ndarray,
     z1: np.ndarray,  # 高度
     z2: np.ndarray,  # 颜色值
     z3: Optional[np.ndarray] = None,  # 透明度值(可选；未给则全不透明)
@@ -61,7 +61,7 @@ def plot_advanced_surface(
     """
 
     # 网格，按 (i,j) 对齐
-    Mx, My = np.meshgrid(mx, my, indexing='ij')
+    Mx, My = np.meshgrid(x, y, indexing='ij')
     assert z1.shape == z2.shape == Mx.shape, "z1/z2 与网格尺寸不一致"
     if z3 is not None:
         assert z3.shape == z1.shape, "z3 与网格尺寸不一致"
@@ -113,3 +113,132 @@ def plot_advanced_surface(
     mappable.set_array([])  # 与 colorbar API 兼容
 
     return ax, mappable
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+import s3dlib.surface as s3d
+
+
+def s3d_build_planar_surface_from_arrays(
+    x: np.ndarray,
+    y: np.ndarray,
+    z1: np.ndarray,
+    z2: np.ndarray,
+    rez,
+    basetype,
+    cmap,
+    alpha,
+    shade,
+    hilite,
+    cname: str = "Value",
+    geom_scale: float = 1.0,
+    z_offset: float = 0.0,
+) -> s3d.PlanarSurface:
+
+    if z1.shape != (x.size, y.size):
+        raise ValueError(f"z1 shape {z1.shape} must be (len(mx), len(my))={(x.size, y.size)}")
+    if z2.shape != z1.shape:
+        raise ValueError(f"z2 shape {z2.shape} must match z1 shape {z1.shape}")
+
+    # fill invalid for stable mapping
+    z1_f = np.array(z1, copy=True)
+    z2_f = np.array(z2, copy=True)
+    bad = ~np.isfinite(z1_f) | ~np.isfinite(z2_f)
+    if bad.any():
+        z1_f[bad] = np.nanmean(z1_f[np.isfinite(z1_f)]) if np.isfinite(z1_f).any() else 0.0
+        z2_f[bad] = np.nanmean(z2_f[np.isfinite(z2_f)]) if np.isfinite(z2_f).any() else 0.0
+
+    surface = s3d.PlanarSurface(rez, basetype=basetype, cmap=cmap)
+    surface.cname = cname
+
+    surface.map_cmap_from_datagrid(z2_f)
+
+    surface.map_geom_from_datagrid(z1_f, scale=float(geom_scale))
+
+    surface.transform(translate=[0.0, 0.0, float(z_offset)])
+
+    surface.set_alpha(float(alpha))
+
+    if shade:
+        surface.shade().hilite(hilite)
+
+    return surface
+
+
+def s3d_plot_multi_surfaces_combined(
+    ax: plt.Axes,
+    x: np.ndarray,
+    y: np.ndarray,
+    z1_list: Sequence[np.ndarray],
+    z2_list: Optional[Sequence[np.ndarray]] = None,
+    *,
+    rez: int = 3,
+    basetype: str = "oct1",
+    cmap: str = "hot",
+    vmin=None,
+    vmax=None,
+    elev: float = 30,
+    azim: float = 25,
+    shade: bool = False,
+    hilite: float = 0,
+    alpha_default: float = 1.0,
+    z_span_plot: float = 1.0,
+) -> Tuple[plt.Axes, Any, ScalarMappable]:
+
+    if z2_list is None:
+        z2_list = z1_list
+
+    if len(z1_list) == 0:
+        raise ValueError("z1_list is empty")
+    if len(z2_list) != len(z1_list):
+        raise ValueError("z2_list length must match z1_list")
+
+    # ---- colorbar norm（vmin/vmax 只影响颜色解释）----
+    all_z2 = np.concatenate([np.asarray(z).ravel() for z in z2_list])
+    all_z2 = all_z2[np.isfinite(all_z2)]
+    norm_z2 = _auto_norm(all_z2, vmin=vmin, vmax=vmax)
+    # 应用到各个 z2
+    z2_list = [norm_z2(z2) for z2 in z2_list]
+
+    # ---- 全局 z 范围（决定统一坐标系）----
+    zmins = []
+    zmaxs = []
+    for z1 in z1_list:
+        a = np.asarray(z1).ravel()
+        a = a[np.isfinite(a)]
+        if a.size == 0:
+            raise ValueError("Some z1 is all non-finite.")
+        zmins.append(float(a.min()))
+        zmaxs.append(float(a.max()))
+
+    zmin_all = float(np.min(zmins))
+    zmax_all = float(np.max(zmaxs))
+    zrange_all = max(zmax_all - zmin_all, 1e-12)
+
+    combined = None
+    for z1, z2, zmin_i, zmax_i in zip(z1_list, z2_list, zmins, zmaxs):
+        zrange_i = max(zmax_i - zmin_i, 1e-12)
+
+        geom_scale_i = float(z_span_plot) * (zrange_i / zrange_all)
+
+        z_offset_i = float(z_span_plot) * ((zmin_i - zmin_all) / zrange_all)
+
+        surf = s3d_build_planar_surface_from_arrays(
+            x, y, z1, z2,
+            rez=rez, basetype=basetype, cmap=cmap,
+            alpha=float(alpha_default),
+            shade=shade, hilite=hilite,
+            geom_scale=geom_scale_i,
+            z_offset=z_offset_i,
+        )
+        combined = surf if combined is None else (combined + surf)
+
+    ax.add_collection3d(combined)
+    ax.view_init(elev=elev, azim=azim)
+
+    # ---- colorbar mappable（数值解释权威）----
+    mappable = ScalarMappable(norm=norm_z2, cmap=get_cmap(cmap))
+    mappable.set_array([])
+
+    return ax, combined, mappable
