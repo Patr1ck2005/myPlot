@@ -6,7 +6,7 @@ import numpy as np
 from advance_plot_styles.polar_plot import *
 from core.data_postprocess.momentum_space_toolkits import plot_iso_contours2D, extract_isofreq_paths, \
     sample_fields_along_path
-from core.data_postprocess.polar_graph_analysis import plot_phi_families_split
+from core.data_postprocess.polar_graph_analysis import plot_field_splits
 from core.plot_workflow import *
 from advance_plot_styles.surface_plot import plot_advanced_surface, s3d_plot_multi_surfaces_combined
 from utils.advanced_color_mapping import map_s1s2s3_color, map_complex2rbg
@@ -383,7 +383,7 @@ class TwoDimFieldVisualizer(HeatmapPlotter, ABC):
         )
 
     def plot_3d_surfaces(
-            self, indexs, x_key, y_key, z1_key, z2_key=None, z3_key=None, cmap='hot', vmin=None, vmax=None, shade=False, **kwargs
+            self, indexs, x_key, y_key, z1_key, z2_key=None, z3_key=None, cmap='hot', vmin=None, vmax=None, **kwargs
     ) -> None:
         x = self.coordinates[x_key]
         y = self.coordinates[y_key]
@@ -439,7 +439,6 @@ class TwoDimFieldVisualizer(HeatmapPlotter, ABC):
         )
 
 
-
 class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
     def imshow_field(
             self, x_key='m1', y_key='m2', **kwargs
@@ -447,19 +446,49 @@ class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
         super().imshow_field(x_key=x_key, y_key=y_key, **kwargs)
 
     def plot_3d_surfaces(
-            self, indexs, z1_key, z2_key, x_key='m1', y_key='m1', z3_key=None, **kwargs
+            self, indexs, z1_key, z2_key, x_key='m1', y_key='m1', **kwargs
     ) -> None:
         super().plot_3d_surfaces(
-            indexs, x_key, y_key, z1_key, z2_key, z3_key, **kwargs
+            indexs, x_key, y_key, z1_key, z2_key, **kwargs
         )
-    def _get_field(self, index, key):
+
+    def plot_3d_surface(
+            self, index, z1_key, x_key='m1', y_key='m1', **kwargs
+    ) -> None:
+        super().plot_3d_surface(
+            index, x_key, y_key, z1_key, **kwargs
+        )
+
+    def _get_coord_field(self, index, key, x_key='m1', y_key='m2', x_key_lim=None, y_key_lim=None):
         """
         获取字段；如果不存在且 key 是可派生物理量，则即时计算
         """
-        data = self.raw_datasets["data_list"][index]
+        # check coordinates
+        if x_key not in self.coordinates or y_key not in self.coordinates:
+            raise KeyError(f"Coordinates '{x_key}' or '{y_key}' not found.")
+        # filter by limits
+        if x_key_lim is not None or y_key_lim is not None:
+            _x, _y = self.coordinates[x_key], self.coordinates[y_key]
+            mask_x = np.ones_like(_x, dtype=bool)
+            mask_y = np.ones_like(_y, dtype=bool)
+            if x_key_lim is not None:
+                mask_x = (_x >= x_key_lim[0]) & (_x <= x_key_lim[1])
+            if y_key_lim is not None:
+                mask_y = (_y >= y_key_lim[0]) & (_y <= y_key_lim[1])
+            # apply mask to coordinates
+            x = _x[mask_x]
+            y = _y[mask_y]
+            # apply mask to data
+            data = self.raw_datasets["data_list"][index].copy()
+            for k, v in data.items():
+                if isinstance(v, np.ndarray) and v.ndim == 2:
+                    data[k] = v[np.ix_(mask_x, mask_y)]
+        else:
+            x, y = self.coordinates[x_key], self.coordinates[y_key]
+            data = self.raw_datasets["data_list"][index]
 
         if key in data:
-            return data[key]
+            return x, y, data[key]
 
         # ===== 派生字段 =====
         if key in ("phi", "tanchi"):
@@ -469,12 +498,12 @@ class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
             phi = (0.5 * np.arctan2(s2, s1)) % np.pi
             data["phi"] = phi
             data["tanchi"] = np.tan(chi)
-            return data[key]
+            return x, y, data[key]
 
         if key == "qlog":
             qlog = np.log10(np.abs(data["eigenfreq_real"] / (2 * data["eigenfreq_imag"])))
             data["qlog"] = qlog
-            return qlog
+            return x, y, qlog
 
         raise KeyError(f"Field '{key}' not found and not derivable.")
 
@@ -487,9 +516,9 @@ class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
             self, index, x_key="m1", y_key="m2", step=(1, 1), scale=1e-2, cmap="RdBu",
     ):
         Mx, My = self._mesh(x_key, y_key)
-        s1 = self._get_field(index, "s1")
-        s2 = self._get_field(index, "s2")
-        s3 = self._get_field(index, "s3")
+        _, _, s1 = self._get_coord_field(index, "s1")
+        _, _, s2 = self._get_coord_field(index, "s2")
+        _, _, s3 = self._get_coord_field(index, "s3")
 
         self.ax = plot_polarization_ellipses(
             self.ax,
@@ -510,7 +539,7 @@ class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
             from matplotlib import cm
             colormap = cm.get_cmap(cmap, len(levels))
             colors = [colormap(i) for i in range(len(levels))]
-        z = self._get_field(index, z_key)
+        _, _, z = self._get_coord_field(index, z_key)
         self.ax = plot_iso_contours2D(
             self.ax, self.coordinates[x_key], self.coordinates[y_key], z.T, levels=levels,
             colors=colors,
@@ -533,7 +562,7 @@ class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
             field_keys=("phi",),
             x_key="m1",
             y_key="m2",
-            method="linear",
+            method="direct",
     ):
         """
         在 (m1, m2) 空间沿圆形路径采样字段
@@ -550,24 +579,34 @@ class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
         y_grid = self.coordinates[y_key]
 
         # ---- 路径 ----
-        xp, yp, s = self._round_path(center, radius, num)
 
-        # ---- 构造插值器 ----
-        result = {"s": s}
+        if method == 'direct':
+            # ---- 直接索引 ----
+            xp, yp, s = self._round_path(center, radius, num)
+            result = {"s": s}
+            for key in field_keys:
+                x, y, field = self._get_coord_field(index, key)
+                # 找到最近的网格点索引
+                xi = np.abs(x[:, None] - xp[None, :]).argmin(axis=0)
+                yi = np.abs(y[:, None] - yp[None, :]).argmin(axis=0)
+                result[key] = field[xi, yi]
+        else:
+            xp, yp, s = self._round_path(center, radius, num)
+            result = {"s": s}
+            # ---- 构造插值器 ----
+            for key in field_keys:
+                _, _, field = self._get_coord_field(index, key)
 
-        for key in field_keys:
-            field = self._get_field(index, key)
+                interp = RegularGridInterpolator(
+                    (x_grid, y_grid),
+                    field,
+                    method=method,
+                    bounds_error=False,
+                    fill_value=np.nan,
+                )
 
-            interp = RegularGridInterpolator(
-                (x_grid, y_grid),
-                field,
-                method=method,
-                bounds_error=False,
-                fill_value=np.nan,
-            )
-
-            pts = np.stack([xp, yp], axis=-1)
-            result[key] = interp(pts)
+                pts = np.stack([xp, yp], axis=-1)
+                result[key] = interp(pts)
 
         return [result]
 
@@ -579,8 +618,6 @@ class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
             field_key="phi",
             num=360,
             normalize_s=True,
-            x_label="s",
-            y_label=None,
             **kwargs
     ):
         """
@@ -609,25 +646,97 @@ class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
 
         self.ax.plot(s, y, **kwargs)
 
+        # print max/min value
+        print(f"Max {field_key}: {np.nanmax(y)}, Min {field_key}: {np.nanmin(y)}")
         return sample
 
-    def plot_phi_families_regimes(self, index, x_key="m1", y_key="m2", z_key="phi"):
-        z = self._get_field(index, z_key)
+    def plot_on_poincare_sphere_along_around_path(
+            self,
+            index,
+            center,
+            radius,
+            num=360,
+            cmap='rainbow',
+            sphere_style='wire',
+            arrow_length_ratio=None,
+            lw=1,
+            **kwargs
+    ):
+        """
+        沿圆形路径采样并绘制 Poincare 球
+
+        Returns
+        -------
+        dict
+            采样结果（包含 's' 和 field_key）
+        """
+
+        # 背景球
+        u = np.linspace(0, 2 * np.pi, 120)
+        v = np.linspace(0, np.pi, 60)
+        X = np.outer(np.cos(u), np.sin(v))
+        Y = np.outer(np.sin(u), np.sin(v))
+        Z = np.outer(np.ones_like(u), np.cos(v))
+        if sphere_style == 'surface':
+            self.ax.plot_surface(X, Y, Z, rstride=4, cstride=4, color='lightgray', alpha=0.15, linewidth=0)
+        else:
+            self.ax.plot_wireframe(X, Y, Z, rstride=6, cstride=6, color='lightgray', linewidth=0.5, alpha=0.6)
+
+        samples = self.sample_along_round_path(
+            index=index,
+            center=center,
+            radius=radius,
+            num=num,
+            field_keys=("s1", "s2", "s3"),
+        )
+
+        sample = samples[0]
+        s1 = sample["s1"]
+        s2 = sample["s2"]
+        s3 = sample["s3"]
+
+        # self.ax.plot(s1, s2, s3, lw=2)
+        # self.ax.scatter(s1, s2, s3, c=np.linspace(0, 1, len(s1)), cmap=cmap, s=15)
+        # plot colored line with arrows
+        # 绘制3D渐变线
+        colors = cm.get_cmap(cmap)(np.linspace(0, 1, len(s1)))
+        if arrow_length_ratio is None:
+            for i in range(len(s1) - 1):
+                self.ax.plot(
+                    s1[i:i + 2], s2[i:i + 2], s3[i:i + 2],
+                    color=colors[i], lw=lw
+                )
+        else:
+            # 绘制带方向箭头的3D渐变线
+            for i in range(len(s1) - 1):
+                self.ax.quiver(
+                    s1[i], s2[i], s3[i],
+                    s1[i + 1] - s1[i], s2[i + 1] - s2[i], s3[i + 1] - s3[i],
+                    color=colors[i], arrow_length_ratio=arrow_length_ratio, lw=lw
+                )
+        self.ax.set_box_aspect([1, 1, 1])
+
+        return sample
+
+    def plot_field_regimes(
+            self, index, x_key="m1", y_key="m2", z_key="phi"
+    ):
+        _, _, z = self._get_coord_field(index, z_key)
         self.ax.contourf(
             self.coordinates[x_key], self.coordinates[y_key], (np.sin(2 * z.T) > 0),
             levels=[-0.5, 0.5, 1.5], colors=["lightcoral", "white"], alpha=0.5,
         )
 
-    def plot_phi_families_split(self, index, x_key="m1", y_key="m2", z_key="phi"):
-        z = self._get_field(index, z_key)
-        self.ax = plot_phi_families_split(
+    def plot_field_splits(self, index, x_key="m1", y_key="m2", z_key="phi"):
+        _, _, z = self._get_coord_field(index, z_key)
+        self.ax = plot_field_splits(
             self.ax, self.coordinates[x_key], self.coordinates[y_key], z, lw=1,
         )
 
-    def imshow_skyrmion_density(self, index):
-        s1 = self._get_field(index, "s1")
-        s2 = self._get_field(index, "s2")
-        s3 = self._get_field(index, "s3")
+    def imshow_skyrmion_density(self, index, cmap='bwr') -> np.ndarray:
+        _, _, s1 = self._get_coord_field(index, "s1")
+        _, _, s2 = self._get_coord_field(index, "s2")
+        _, _, s3 = self._get_coord_field(index, "s3")
 
         nsk = skyrmion_density(s1, s2, s3)
         m1 = self.coordinates["m1"]
@@ -637,29 +746,42 @@ class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
             nsk.T,
             extent=(m1.min(), m1.max(), m2.min(), m2.max()),
             origin="lower",
-            cmap="bwr",
+            cmap=cmap,
             aspect="equal",
         )
         return nsk
 
     def plot_on_poincare_sphere(
-            self, index, step=(1, 1), x_key="s1", y_key="s2", z_key="s3", cmap='RdBu',
-            clim=(-1, 1), s=8, alpha=0.9
+            self, index, step=(1, 1), sx_key="s1", sy_key="s2", sz_key="s3",
+            x_key="m1", y_key="m2", x_key_lim=None, y_key_lim=None,
+            cmap='RdBu', clim=(-1, 1), s=8, alpha=0.9, **kwargs
     ):
-        s1 = self._get_field(index, x_key)
-        s2 = self._get_field(index, y_key)
-        s3 = self._get_field(index, z_key)
+        x, y, s1 = self._get_coord_field(index, sx_key, x_key, y_key, x_key_lim, y_key_lim)
+        _, _, s2 = self._get_coord_field(index, sy_key, x_key, y_key, x_key_lim, y_key_lim)
+        _, _, s3 = self._get_coord_field(index, sz_key, x_key, y_key, x_key_lim, y_key_lim)
+        # 一个临时的着色方法: 根据xy坐标到固定点的距离着色
+        point_x = 0.1156
+        # point_x = 0.1165
+        point_y = 0.0
+        X, Y = np.meshgrid(x, y, indexing='ij')
+        distance = np.sqrt((X - point_x) ** 2 + (Y - point_y) ** 2)
+        # 通过cmap映射距离到颜色
+        norm = plt.Normalize(vmin=0, vmax=0.015)
+        rgba = plt.get_cmap(cmap)(norm(distance))
+
         self.ax = plot_on_poincare_sphere(
             self.ax,
             s1, s2, s3,
+            rgba=rgba,
             S0=None,
             step=step,
-            c_by=z_key,
+            # c_by=sz_key,
+            c_by='rgba',
             cmap=cmap,
             clim=clim,
             s=s,
             alpha=alpha,
-            sphere_style='wire',
+            **kwargs
         )
 
     def plot_skyrmion_quiver(
@@ -667,9 +789,9 @@ class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
             clim=(-1, 1), width=0.006
     ) -> None:
         Mx, My = self._mesh()
-        s1 = self._get_field(index, s1_key)
-        s2 = self._get_field(index, s2_key)
-        s3 = self._get_field(index, s3_key)
+        _, _, s1 = self._get_coord_field(index, s1_key)
+        _, _, s2 = self._get_coord_field(index, s2_key)
+        _, _, s3 = self._get_coord_field(index, s3_key)
         self.ax = plot_skyrmion_quiver(
             self.ax, Mx, My,
             s1, s2, s3,

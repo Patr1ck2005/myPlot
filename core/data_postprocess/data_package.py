@@ -41,15 +41,16 @@ def package_stad_C2_data(
         main_data: ZArray,
         additional_data: ZArray,
         z_keys: Sequence[str],
+        axis: str = 'x',
         **kwargs
 ):
     # 提取 band= 的附加场数据
     phi, tanchi, qlog, freq_real = extract_basic_analysis_fields(
         additional_data, z_keys=z_keys, band_index=band_index, **kwargs
     )
-    full_coords, phi_f, tanchi_f = complete_C2_polarization(coords, phi, tanchi)
-    _, main_data = geom_complete(coords, main_data, mode='x')
-    _, qlog_f = geom_complete(coords, qlog, mode='x')
+    full_coords, phi_f, tanchi_f = complete_C2_polarization(coords, phi, tanchi, axis=axis)
+    _, main_data = geom_complete(coords, main_data, mode=axis)
+    _, qlog_f = geom_complete(coords, qlog, mode=axis)
     s1, s2, s3 = ellipse2stokes(phi_f, tanchi_f)
     dataset = {
         'eigenfreq': main_data,

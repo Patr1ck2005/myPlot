@@ -149,9 +149,9 @@ def complete_C6_polarization(coords, phi_Q1, chi_Q1):
     full_coords = {'m1': kx_full, 'm2': ky_full}
     return full_coords, _wrap_angle_pi(phi_full), chi_full
 
-def complete_C2_polarization(coords, phi_Q1, chi_Q1):
+def complete_C2_polarization(coords, phi_Q1, chi_Q1, axis='x'):
     """
-    由第一/四象限 (phi, chi) 补全至全平面（对称轴 y 轴）：
+    由第一/四象限 (phi, chi) 补全至全平面（沿着 axis 轴）：
     """
     keys = list(coords.keys())
     xk, yk = ('kx', 'ky') if {'kx', 'ky'}.issubset(coords) else (keys[0], keys[1])
@@ -162,12 +162,17 @@ def complete_C2_polarization(coords, phi_Q1, chi_Q1):
     assert np.isclose(kx[0], 0) or np.isclose(ky[0], 0)
     assert phi.shape[:2] == (kx.size, ky.size) and chi.shape[:2] == (kx.size, ky.size)
 
-    kx_full, ky_full = _axis_coords(kx), ky
-
-    # 对称 y 轴
-    phi_L, chi_L = _mirror_phi_chi_y(phi, chi)
-    phi_full = np.concatenate([phi_L, phi], 0)
-    chi_full = np.concatenate([chi_L, chi], 0)
+    if axis == 'x':  # 沿着 x 轴, 对称 y 轴
+        kx_full, ky_full = _axis_coords(kx), ky
+        # 对称 y 轴
+        phi_L, chi_L = _mirror_phi_chi_y(phi, chi)
+        phi_full = np.concatenate([phi_L, phi], 0)
+        chi_full = np.concatenate([chi_L, chi], 0)
+    elif axis == 'y':  # 沿着 y 轴, 对称 x 轴
+        kx_full, ky_full = kx, _axis_coords(ky)
+        phi_B, chi_B = _mirror_phi_chi_x(phi, chi)
+        phi_full = np.concatenate([phi_B, phi], 1)
+        chi_full = np.concatenate([chi_B, chi], 1)
 
     full_coords = {'m1': kx_full, 'm2': ky_full}
     return full_coords, _wrap_angle_pi(phi_full), chi_full

@@ -208,47 +208,21 @@ def extract_phi0_phi90_split(xgrid, ygrid, phi):
 import numpy as np
 import matplotlib.pyplot as plt
 
-def plot_phi_families_split(ax, xgrid, ygrid, phi, *,
-                            overlay=None, overlay_alpha=0.85,
-                            color_phi0='limegreen', color_phi90='black', color_uncertain='orange',
-                            lw=2.0):
+def plot_field_splits(ax, xgrid, ygrid, z, *,
+                      color_1='limegreen', color2='black', color_uncertain='orange',
+                      lw=2.0):
     """
     在给定 Axes 上绘制两族结线（基于 extract_phi0_phi90_split 的逐点切分分类）。
-    参数：
-      overlay: None | 'phi' | 's2' | 'c2'
-               'phi' → 以 φ∈[0,π) 上色（twilight）
-               's2'  → 以 sin(2φ) 上色（RdBu）
-               'c2'  → 以 cos(2φ) 上色（RdBu）
     """
     xg, yg = np.asarray(xgrid), np.asarray(ygrid)
-    PHI    = np.mod(np.asarray(phi), np.pi)
-
-    # 叠加底图（可选）
-    if overlay == 'phi':
-        img, cm, vmin, vmax = PHI, 'twilight', 0.0, np.pi
-    elif overlay == 's2':
-        img, cm, vmin, vmax = np.sin(2*PHI), 'RdBu', -1.0, 1.0
-    elif overlay == 'c2':
-        img, cm, vmin, vmax = np.cos(2*PHI), 'RdBu', -1.0, 1.0
-    else:
-        img = None
-
-    if img is not None:
-        ax.imshow(img.T, origin='lower',
-                  extent=(xg[0], xg[-1], yg[0], yg[-1]),
-                  aspect='auto', cmap=cm, vmin=vmin, vmax=vmax, alpha=overlay_alpha)
+    # PHI    = np.mod(np.asarray(z), np.pi)
 
     # 提取并绘制
-    res = extract_phi0_phi90_split(xg, yg, PHI)
+    res = extract_phi0_phi90_split(xg, yg, z)
     for P in res['phi0']:
-        ax.plot(P[:,0], P[:,1], color=color_phi0, lw=lw, label=r'$\phi\approx 0,\pi$')
+        ax.plot(P[:,0], P[:,1], color=color_1, lw=lw, label=r'$\phi\approx 0,\pi$')
     for P in res['phi90']:
-        ax.plot(P[:,0], P[:,1], color=color_phi90, lw=lw, label=r'$\phi\approx \pi/2$')
+        ax.plot(P[:,0], P[:,1], color=color2, lw=lw, label=r'$\phi\approx \pi/2$')
     for P in res['uncertain']:
         ax.plot(P[:,0], P[:,1], color=color_uncertain, lw=lw, ls='--', label='uncertain')
-
-    ax.set_aspect('equal', adjustable='box')
-    # ax.set_xticklabels([])
-    # ax.set_yticklabels([])
-
     return ax

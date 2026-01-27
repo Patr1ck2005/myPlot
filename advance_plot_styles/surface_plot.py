@@ -33,7 +33,7 @@ def plot_advanced_surface(
     z1: np.ndarray,  # 高度
     z2: np.ndarray,  # 颜色值
     z3: Optional[np.ndarray] = None,  # 透明度值(可选；未给则全不透明)
-    rbga: Optional[np.ndarray] = None,  # 直接给出颜色映射
+    rgba: Optional[np.ndarray] = None,  # 直接给出颜色映射
     *,
     mapping: Dict[str, Any],
     elev: float = 30,
@@ -84,7 +84,7 @@ def plot_advanced_surface(
         alphas = np.ones_like(z2, dtype=float)
 
 
-    if rbga is None:
+    if rgba is None:
         # 生成 RGBA Facecolors
         colors = cmap(norm_z2(z2))
         # 写入 alpha 通道（保留每个面的透明度）
@@ -96,7 +96,7 @@ def plot_advanced_surface(
         if invalid.any():
             colors[invalid] = (0, 0, 0, 0)
     else:
-        colors = rbga
+        colors = rgba
 
     # 绘制
     ax.plot_surface(Mx, My, z1, rstride=rstride, cstride=cstride, facecolors=colors, **kwargs)

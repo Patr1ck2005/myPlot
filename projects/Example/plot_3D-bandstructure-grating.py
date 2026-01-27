@@ -193,8 +193,8 @@ if __name__ == '__main__':
     plotter.save_and_show()
 
     plotter.new_2d_fig(figsize=(1.5, 1.5))
-    plotter.plot_phi_families_regimes(index=BAND_INDEX)
-    plotter.plot_phi_families_split(index=BAND_INDEX)
+    plotter.plot_field_regimes(index=BAND_INDEX)
+    plotter.plot_field_splits(index=BAND_INDEX)
     plotter.save_and_show()
 
     plotter.new_2d_fig(figsize=(3.8, 1))

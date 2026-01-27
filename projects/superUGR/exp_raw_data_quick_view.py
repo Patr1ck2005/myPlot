@@ -12,6 +12,7 @@ plt.rcParams.update({"font.size": fs})
 
 def load_and_visualize_ftir_spectra(directory, prefix, start_num, end_num, angles,
                                     file_ext='.dpt', wavenumber_col=0, spectrum_col=1,
+                                    cmap='RdBu',
                                     save_plots=False, plot_dir=None,
                                     ref_filename=None, ref_usecols=None,
                                     bg_filename=None, bg_usecols=None,
@@ -160,8 +161,7 @@ def load_and_visualize_ftir_spectra(directory, prefix, start_num, end_num, angle
         all_spectrums.T, aspect='auto',
         extent=[min(angles), max(angles), common_y[0], common_y[-1]],
         origin='lower',
-        # cmap='gray',
-        cmap='RdBu',
+        cmap=cmap,
         interpolation='none',
         # vmin/vmax 你可以根据“除以参考谱后的范围”重新调整
         vmin=0, vmax=1,
@@ -307,15 +307,63 @@ def load_and_visualize_ftir_spectra(directory, prefix, start_num, end_num, angle
 #     bg_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.23 KEREN\heiti_beijing\beijing.dpt"
 # )
 
-# EXP @2026.1.23 KEREN P-back with reference spectrum
+# # EXP @2026.1.23 KEREN P-back with reference spectrum
+# prefix = 'Sample name.'
+# start_num = 6894
+# end_num = 6910
+#
+# angles = list(range(start_num, end_num+1))
+# data = load_and_visualize_ftir_spectra(
+#     r'D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.23 KEREN\zheng-s',
+#     prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt',
+#     ref_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.23 KEREN\heiti_beijing\blackbody.dpt",
+#     bg_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.23 KEREN\heiti_beijing\beijing.dpt"
+# )
+
+# EXP @2026.1.23 KEREN s-forw with reference spectrum
 prefix = 'Sample name.'
-start_num = 6894
-end_num = 6910
+start_num = 7191
+end_num = 7206
 
 angles = list(range(start_num, end_num+1))
 data = load_and_visualize_ftir_spectra(
-    r'D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.23 KEREN\zheng-s',
+    r'D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.26\S ZHENG zhengxu(-5-15)',
     prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt',
-    ref_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.23 KEREN\heiti_beijing\blackbody.dpt",
-    bg_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.23 KEREN\heiti_beijing\beijing.dpt"
+    cmap='Blues_r'
 )
+
+# # EXP @2026.1.23 KEREN s-back with reference spectrum
+# prefix = 'Sample name.'
+# start_num = 7208
+# end_num = 7208+20
+#
+# angles = list(range(start_num, end_num+1))
+# data = load_and_visualize_ftir_spectra(
+#     r'D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.26\S BEI daoxu(15--5)',
+#     prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt',
+#     cmap='Blues_r'
+# )
+
+# EXP @2026.1.23 KEREN P-forw with reference spectrum
+prefix = 'Sample name.'
+start_num = 7132
+end_num = 7132+20
+
+angles = list(range(start_num, end_num+1))
+data = load_and_visualize_ftir_spectra(
+    r'D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.26\P ZHENG zhengxu(-5-15)',
+    prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt',
+    cmap='Blues_r'
+)
+
+# # EXP @2026.1.23 KEREN P-back with reference spectrum
+# prefix = 'Sample name.'
+# start_num = 7159
+# end_num = 7159+20
+#
+# angles = list(range(start_num, end_num+1))
+# data = load_and_visualize_ftir_spectra(
+#     r'D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.26\P BEI daoxu(15--5)',
+#     prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt',
+#     cmap='Blues_r'
+# )

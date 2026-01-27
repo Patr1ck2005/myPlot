@@ -3,7 +3,8 @@ import numpy as np
 from pathlib import Path
 
 # Parameters
-cmap_name = "coolwarm"
+# cmap_name = "coolwarm"
+cmap_name = "nipy_spectral"
 # width = 1024
 # height = 64
 
@@ -22,7 +23,7 @@ ax.imshow(gradient, aspect="auto", cmap=cmap_name)
 ax.set_axis_off()
 
 # Save pure PNG
-out_path = Path("./coolwarm.png")
+out_path = Path(f"./{cmap_name}.png")
 fig.savefig(out_path, dpi=100, transparent=False)
 plt.close(fig)
 

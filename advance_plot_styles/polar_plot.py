@@ -105,12 +105,12 @@ def plot_skyrmion_quiver(ax, x, y, s1, s2, s3, S0=None,
 import numpy as np
 import matplotlib as mpl
 
-def plot_on_poincare_sphere(ax, s1, s2, s3, S0=None,
-                            step=(4,4), c_by='s3', cmap='RdBu', clim=(-1,1),
+def plot_on_poincare_sphere(ax, s1, s2, s3, rgba=None, S0=None,
+                            step=(4,4), c_by='rgba', cmap='RdBu', clim=(-1,1),
                             s=6, alpha=0.9, sphere_style='wire'):
     """
     把 (s1,s2,s3) 投到 Poincaré 球面；采样后全部扁平化为 1D 传给 scatter。
-    - c_by: 's3' 用 s3 上色；'phi' 用 φ 上色
+    - c_by: 's3' 用 s3 上色；'phi' 用 φ 上色: 'rgba' 用 rgba 上色。
     """
 
     # 采样（注意 step=(sy,sx) 或 (sx,sx) 都支持）
@@ -135,21 +135,21 @@ def plot_on_poincare_sphere(ax, s1, s2, s3, S0=None,
     Yp = s2s.ravel()
     Zp = s3s.ravel()
 
+    if rgba is not None and c_by.lower() == 'rgba':
+        Cp = rgba[yy][::, xx].reshape(-1, 4)
+        sc = ax.scatter(Xp, Yp, Zp, s=s, c=Cp, alpha=alpha, depthshade=False)
     # 颜色：传标量 + cmap（推荐做法，避免 RGBA 维度错位）
-    if c_by.lower() == 'phi':
+    elif c_by.lower() == 'phi':
         PHI = (0.5*np.arctan2(s2s, s1s)) % np.pi
         Cp = PHI.ravel()
         sc = ax.scatter(Xp, Yp, Zp, s=s, c=Cp, cmap='twilight',
                         vmin=0.0, vmax=np.pi, alpha=alpha, depthshade=False)
-        # cb = mpl.pyplot.colorbar(sc, ax=ax, shrink=0.8, label=r'$\phi$')
     else:
         Cp = np.clip(s3s, -1, 1).ravel()
         sc = ax.scatter(Xp, Yp, Zp, s=s, c=Cp, cmap=cmap,
                         vmin=clim[0], vmax=clim[1], alpha=alpha, depthshade=False)
-        # cb = mpl.pyplot.colorbar(sc, ax=ax, shrink=0.8, label=r'$S_3/S_0$')
 
     ax.set_box_aspect([1,1,1])
-    # ax.set_xlabel('$S_1/S_0$'); ax.set_ylabel('$S_2/S_0$'); ax.set_zlabel('$S_3/S_0$')
     ax.set_xticklabels([]); ax.set_yticklabels([]); ax.set_zticklabels([])
     return ax
 
