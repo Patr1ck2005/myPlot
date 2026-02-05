@@ -115,8 +115,6 @@ def plot_advanced_surface(
     return ax, mappable
 
 
-import numpy as np
-import matplotlib.pyplot as plt
 import s3dlib.surface as s3d
 
 

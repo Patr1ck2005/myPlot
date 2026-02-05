@@ -123,7 +123,7 @@ def _ms_zero_isolines(xg, yg, F):
     return lines
 
 # ------------------ 主逻辑：切分+分类 ------------------
-def _split_and_classify_on_skeleton(xg, yg, PHI, skeleton_lines,
+def _split_and_classify_on_skeleton(xg, yg, sin, cos, skeleton_lines,
                                     h_factor=0.25, tol_c2=1e-12, min_pts=2):
     """
     在 sin(2φ)=0 骨架上，用法向两侧的 cos(2φ) 决定每个顶点的类别，
@@ -131,10 +131,7 @@ def _split_and_classify_on_skeleton(xg, yg, PHI, skeleton_lines,
     返回 {'phi0':[poly...], 'phi90':[poly...], 'uncertain':[poly...]}。
     """
     xg, yg = np.asarray(xg), np.asarray(yg)
-    PHI = np.asarray(PHI)
-    s2  = np.sin(2*PHI)
-    c2  = np.cos(2*PHI)
-    Gx, Gy = _gradient_central(xg, yg, s2)
+    Gx, Gy = _gradient_central(xg, yg, sin)
 
     dx = np.diff(xg).min() if len(xg)>1 else 1.0
     dy = np.diff(yg).min() if len(yg)>1 else 1.0
@@ -154,9 +151,9 @@ def _split_and_classify_on_skeleton(xg, yg, PHI, skeleton_lines,
         nx, ny = gx/nrm, gy/nrm
 
         # 两侧采样 cos(2φ)
-        c0 = _bilinear(xg, yg, c2, P[:,0], P[:,1])
-        cp = _bilinear(xg, yg, c2, P[:,0] + h*nx, P[:,1] + h*ny)
-        cm = _bilinear(xg, yg, c2, P[:,0] - h*nx, P[:,1] - h*ny)
+        c0 = _bilinear(xg, yg, cos, P[:,0], P[:,1])
+        cp = _bilinear(xg, yg, cos, P[:,0] + h*nx, P[:,1] + h*ny)
+        cm = _bilinear(xg, yg, cos, P[:,0] - h*nx, P[:,1] - h*ny)
 
         # 选更“远离0”的一侧作为该点类别符号
         abs_p, abs_m = np.abs(cp), np.abs(cm)
@@ -191,7 +188,7 @@ def _split_and_classify_on_skeleton(xg, yg, PHI, skeleton_lines,
 
     return out
 
-def extract_phi0_phi90_split(xgrid, ygrid, phi):
+def extract_field_splits(xgrid, ygrid, s1, s2):
     """
     从 φ∈[0,π) 出发：
       1) 用 sin(2φ)=0 得到骨架折线；
@@ -199,16 +196,13 @@ def extract_phi0_phi90_split(xgrid, ygrid, phi):
       3) 按连续性切分成多条子曲线并归入 φ≈0/π 或 φ≈π/2。
     """
     xg, yg = np.asarray(xgrid), np.asarray(ygrid)
-    PHI    = _wrap_0_pi(phi)
-    s2     = np.sin(2*PHI)
-    axes   = _ms_zero_isolines(xg, yg, s2)
-    return _split_and_classify_on_skeleton(xg, yg, PHI, axes)
+    axes   = _ms_zero_isolines(xg, yg, s1)
+    return _split_and_classify_on_skeleton(xg, yg, s1, s2, axes)
 
 
 import numpy as np
-import matplotlib.pyplot as plt
 
-def plot_field_splits(ax, xgrid, ygrid, z, *,
+def plot_field_splits(ax, xgrid, ygrid, s1, s2, *,
                       color_1='limegreen', color2='black', color_uncertain='orange',
                       lw=2.0):
     """
@@ -218,7 +212,7 @@ def plot_field_splits(ax, xgrid, ygrid, z, *,
     # PHI    = np.mod(np.asarray(z), np.pi)
 
     # 提取并绘制
-    res = extract_phi0_phi90_split(xg, yg, z)
+    res = extract_field_splits(xg, yg, s1, s2)
     for P in res['phi0']:
         ax.plot(P[:,0], P[:,1], color=color_1, lw=lw, label=r'$\phi\approx 0,\pi$')
     for P in res['phi90']:

@@ -12,7 +12,8 @@ from matplotlib import cm
 
 def _wrap_angle_pi(phi):
     """把取向角规约到 (-pi/2, pi/2]，避免跨分支时跳变过大。"""
-    return (phi + np.pi/2) % np.pi - np.pi/2
+    return (phi + np.pi / 2) % np.pi - np.pi / 2
+
 
 def plot_polarization_ellipses(ax, xgrid, ygrid, s1, s2, s3, S0=None,
                                step=(6, 6), scale=None,
@@ -22,8 +23,8 @@ def plot_polarization_ellipses(ax, xgrid, ygrid, s1, s2, s3, S0=None,
     椭圆贴片表示偏振场；颜色按 S3/S0（RdBu）。
     依然接收 ax，便于链式；但示例中每次单独成图。
     """
-    phi = _wrap_angle_pi(0.5*np.arctan2(s2, s1))
-    chi = 0.5*np.arcsin(np.clip(s3, -1.0, 1.0))
+    phi = _wrap_angle_pi(0.5 * np.arctan2(s2, s1))
+    chi = 0.5 * np.arcsin(np.clip(s3, -1.0, 1.0))
 
     xg = xgrid[:, 0]
     yg = ygrid[0, :]
@@ -40,7 +41,7 @@ def plot_polarization_ellipses(ax, xgrid, ygrid, s1, s2, s3, S0=None,
     for j in ys:
         for i in xs:
             a = scale
-            b = max(scale * abs(np.tan(chi[i, j])), 1e-3*scale)
+            b = max(scale * abs(np.tan(chi[i, j])), 1e-3 * scale)
             e = Ellipse((xg[i], yg[j]), width=a, height=b,
                         angle=np.degrees(phi[i, j]))
             patches.append(e)
@@ -58,23 +59,28 @@ def plot_polarization_ellipses(ax, xgrid, ygrid, s1, s2, s3, S0=None,
     ax.set_aspect('equal', adjustable='box')
     return ax
 
-def imshow_phi(ax, phi, extent=None, vmin=-np.pi/2, vmax=np.pi/2, **imshow_kwargs):
+
+def imshow_phi(ax, phi, extent=None, vmin=-np.pi / 2, vmax=np.pi / 2, **imshow_kwargs):
     im = ax.imshow(phi.T, origin='lower', extent=extent, vmin=vmin, vmax=vmax, **imshow_kwargs)
-    ax.set_xlabel(r'$k_x$'); ax.set_ylabel(r'$k_y$')
+    ax.set_xlabel(r'$k_x$');
+    ax.set_ylabel(r'$k_y$')
     ax.set_title(r'Orientation angle $\phi$')
     plt.colorbar(im, ax=ax, shrink=0.8)
     return ax
 
+
 def imshow_s3(ax, s3, S0=None, extent=None, vmin=-1.0, vmax=1.0, **imshow_kwargs):
     im = ax.imshow(s3.T, origin='lower', extent=extent, vmin=vmin, vmax=vmax, **imshow_kwargs)
-    ax.set_xlabel(r'$k_x$'); ax.set_ylabel(r'$k_y$')
+    ax.set_xlabel(r'$k_x$');
+    ax.set_ylabel(r'$k_y$')
     ax.set_title(r'$S_3$ (helicity)')
     plt.colorbar(im, ax=ax, shrink=0.8)
     return ax
 
+
 def plot_skyrmion_quiver(ax, x, y, s1, s2, s3, S0=None,
-                         step=(4,4), normalize=True,
-                         cmap='RdBu', clim=(-1,1),
+                         step=(4, 4), normalize=True,
+                         color=None, cmap='RdBu', clim=(-1, 1),
                          quiver_scale=None, pivot='mid', width=0.004):
     """
     用箭头展示斯格明子纹理：U,V 为 (S1,S2) 的（归一化）平面分量；
@@ -82,7 +88,8 @@ def plot_skyrmion_quiver(ax, x, y, s1, s2, s3, S0=None,
     """
 
     # 网格
-    xg = x[:, 0]; yg = y[0, :]
+    xg = x[:, 0];
+    yg = y[0, :]
     sx, sy = step
     ii = np.arange(0, xg.size, max(1, int(sx)))
     jj = np.arange(0, yg.size, max(1, int(sy)))
@@ -91,22 +98,59 @@ def plot_skyrmion_quiver(ax, x, y, s1, s2, s3, S0=None,
 
     if normalize:
         mag = np.hypot(U, V) + 1e-12
-        U, V = U/mag, V/mag
+        U, V = U / mag, V / mag
 
     # quiver 支持 C 作为 colormap 输入
-    q = ax.quiver(X, Y, U, V, C, cmap=cmap, clim=clim, pivot=pivot,
-                  angles='xy', scale_units='xy', scale=quiver_scale, width=width)
+    if color is None:
+        q = ax.quiver(X, Y, U, V, C, cmap=cmap, clim=clim, pivot=pivot,
+                      angles='xy', scale_units='xy', scale=quiver_scale, width=width)
+    else:
+        q = ax.quiver(X, Y, U, V, color=color, pivot=pivot,
+                      angles='xy', scale_units='xy', scale=quiver_scale, width=width)
     ax.set_aspect('equal', adjustable='box')
-    ax.set_xlabel(r'$k_x$'); ax.set_ylabel(r'$k_y$')
-    ax.set_title('Skyrmion-like texture')
-    cb = plt.colorbar(q, ax=ax, shrink=0.8, label=r'$S_3/S_0$')
+    # ax.set_xlabel(r'$k_x$'); ax.set_ylabel(r'$k_y$')
+    # ax.set_title('Skyrmion-like texture')
+    # cb = plt.colorbar(q, ax=ax, shrink=0.8, label=r'$S_3/S_0$')
     return ax
 
+
+def plot_polar_quiver(ax, xgrid, ygrid, s1, s2, s3, S0=None,
+                      step=(4, 4), normalize=True,
+                      color=None, cmap='RdBu', clim=(-1, 1),
+                      quiver_scale=None, pivot='mid', width=0.004):
+    """
+    用箭头展示偏振纹理：U,V 为 线偏振映射后的 (S1,S2) 的（归一化）平面分量, 注意此时箭头没有方向性；
+    箭头颜色按 S3/S0（RdBu）。支持网格抽样 step=(sx,sy)。
+    """
+    # 网格
+    xg = xgrid[:, 0]; yg = ygrid[0, :]
+    sx, sy = step
+    ii = np.arange(0, xg.size, max(1, int(sx)))
+    jj = np.arange(0, yg.size, max(1, int(sy)))
+    X, Y = np.meshgrid(xg[ii], yg[jj], indexing='ij')
+    S1, S2, C = s1[ii][:, jj], s2[ii][:, jj], s3[ii][:, jj]
+    phi = _wrap_angle_pi(0.5 * np.arctan2(S2, S1))  # 线偏振方向角
+    U, V = np.cos(phi), np.sin(phi)
+    if normalize:
+        mag = np.hypot(U, V) + 1e-12
+        U, V = U / mag, V / mag
+    # quiver 支持 C 作为 colormap 输入
+    if color is None:
+        from matplotlib.collections import LineCollection
+        # 注意不画箭头头部, 因为线偏振没有方向性, 只画线段, 不用quiver
+        q = ax.quiver(X, Y, U, V, C, cmap=cmap, clim=clim, pivot=pivot,
+                      angles='xy', scale_units='xy', scale=quiver_scale, width=width, headlength=0, headaxislength=0)
+    else:
+        q = ax.quiver(X, Y, U, V, color=color, pivot=pivot,
+                      angles='xy', scale_units='xy', scale=quiver_scale, width=width, headlength=0, headaxislength=0)
+    ax.set_aspect('equal', adjustable='box')
+    return ax
+
+
 import numpy as np
-import matplotlib as mpl
 
 def plot_on_poincare_sphere(ax, s1, s2, s3, rgba=None, S0=None,
-                            step=(4,4), c_by='rgba', cmap='RdBu', clim=(-1,1),
+                            step=(4, 4), c_by='rgba', cmap='RdBu', clim=(-1, 1),
                             s=6, alpha=0.9, sphere_style='wire'):
     """
     把 (s1,s2,s3) 投到 Poincaré 球面；采样后全部扁平化为 1D 传给 scatter。
@@ -120,7 +164,7 @@ def plot_on_poincare_sphere(ax, s1, s2, s3, rgba=None, S0=None,
     s1s, s2s, s3s = s1[yy][:, xx], s2[yy][:, xx], s3[yy][:, xx]
 
     # 背景球
-    u = np.linspace(0, 2*np.pi, 120)
+    u = np.linspace(0, 2 * np.pi, 120)
     v = np.linspace(0, np.pi, 60)
     X = np.outer(np.cos(u), np.sin(v))
     Y = np.outer(np.sin(u), np.sin(v))
@@ -140,7 +184,7 @@ def plot_on_poincare_sphere(ax, s1, s2, s3, rgba=None, S0=None,
         sc = ax.scatter(Xp, Yp, Zp, s=s, c=Cp, alpha=alpha, depthshade=False)
     # 颜色：传标量 + cmap（推荐做法，避免 RGBA 维度错位）
     elif c_by.lower() == 'phi':
-        PHI = (0.5*np.arctan2(s2s, s1s)) % np.pi
+        PHI = (0.5 * np.arctan2(s2s, s1s)) % np.pi
         Cp = PHI.ravel()
         sc = ax.scatter(Xp, Yp, Zp, s=s, c=Cp, cmap='twilight',
                         vmin=0.0, vmax=np.pi, alpha=alpha, depthshade=False)
@@ -149,7 +193,8 @@ def plot_on_poincare_sphere(ax, s1, s2, s3, rgba=None, S0=None,
         sc = ax.scatter(Xp, Yp, Zp, s=s, c=Cp, cmap=cmap,
                         vmin=clim[0], vmax=clim[1], alpha=alpha, depthshade=False)
 
-    ax.set_box_aspect([1,1,1])
-    ax.set_xticklabels([]); ax.set_yticklabels([]); ax.set_zticklabels([])
+    ax.set_box_aspect([1, 1, 1])
+    ax.set_xticklabels([]);
+    ax.set_yticklabels([]);
+    ax.set_zticklabels([])
     return ax
-

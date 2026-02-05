@@ -1,8 +1,3 @@
-from abc import ABC
-
-import matplotlib.pyplot as plt
-import numpy as np
-
 from advance_plot_styles.polar_plot import *
 from core.data_postprocess.momentum_space_toolkits import plot_iso_contours2D, extract_isofreq_paths, \
     sample_fields_along_path
@@ -352,6 +347,7 @@ class TwoDimFieldVisualizer(HeatmapPlotter, ABC):
     ) -> None:
         x = self.coordinates[x_key]
         y = self.coordinates[y_key]
+        # z1 = self.raw_datasets["data_list"][index][field_key]
         z1 = self.raw_datasets["data_list"][index][field_key]
         self.ax.imshow(
             z1.T,
@@ -514,11 +510,12 @@ class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
 
     def plot_polarization_ellipses(
             self, index, x_key="m1", y_key="m2", step=(1, 1), scale=1e-2, cmap="RdBu",
+            s1_key='s1', s2_key='s2', s3_key='s3'
     ):
         Mx, My = self._mesh(x_key, y_key)
-        _, _, s1 = self._get_coord_field(index, "s1")
-        _, _, s2 = self._get_coord_field(index, "s2")
-        _, _, s3 = self._get_coord_field(index, "s3")
+        _, _, s1 = self._get_coord_field(index, s1_key)
+        _, _, s2 = self._get_coord_field(index, s2_key)
+        _, _, s3 = self._get_coord_field(index, s3_key)
 
         self.ax = plot_polarization_ellipses(
             self.ax,
@@ -698,6 +695,9 @@ class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
         # self.ax.plot(s1, s2, s3, lw=2)
         # self.ax.scatter(s1, s2, s3, c=np.linspace(0, 1, len(s1)), cmap=cmap, s=15)
         # plot colored line with arrows
+        self.ax.set_xlabel(r'$s_1$')
+        self.ax.set_ylabel(r'$s_2$')
+        self.ax.set_zlabel(r'$s_3$')
         # 绘制3D渐变线
         colors = cm.get_cmap(cmap)(np.linspace(0, 1, len(s1)))
         if arrow_length_ratio is None:
@@ -719,18 +719,19 @@ class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
         return sample
 
     def plot_field_regimes(
-            self, index, x_key="m1", y_key="m2", z_key="phi"
+            self, index, x_key="m1", y_key="m2", z_key="phi", colors=("lightcoral", "white")
     ):
         _, _, z = self._get_coord_field(index, z_key)
         self.ax.contourf(
             self.coordinates[x_key], self.coordinates[y_key], (np.sin(2 * z.T) > 0),
-            levels=[-0.5, 0.5, 1.5], colors=["lightcoral", "white"], alpha=0.5,
+            levels=[-0.5, 0.5, 1.5], colors=colors, alpha=0.5,
         )
 
-    def plot_field_splits(self, index, x_key="m1", y_key="m2", z_key="phi"):
-        _, _, z = self._get_coord_field(index, z_key)
+    def plot_field_splits(self, index, x_key="m1", y_key="m2", s1_key="s1", s2_key="s2"):
+        _, _, s1 = self._get_coord_field(index, s1_key)
+        _, _, s2 = self._get_coord_field(index, s2_key)
         self.ax = plot_field_splits(
-            self.ax, self.coordinates[x_key], self.coordinates[y_key], z, lw=1,
+            self.ax, self.coordinates[x_key], self.coordinates[y_key], s1, s2, lw=1,
         )
 
     def imshow_skyrmion_density(self, index, cmap='bwr') -> np.ndarray:
@@ -785,7 +786,7 @@ class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
         )
 
     def plot_skyrmion_quiver(
-            self, index, step=(6, 6), s1_key="s1", s2_key="s2", s3_key="s3", cmap='RdBu',
+            self, index, step=(6, 6), s1_key="s1", s2_key="s2", s3_key="s3", color=None, cmap='RdBu',
             clim=(-1, 1), width=0.006
     ) -> None:
         Mx, My = self._mesh()
@@ -797,6 +798,27 @@ class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
             s1, s2, s3,
             step=step,
             normalize=True,
+            color=color,
+            cmap=cmap,
+            clim=clim,
+            quiver_scale=None,
+            width=width,
+        )
+
+    def plot_polar_quiver(
+            self, index, step=(6, 6), s1_key="s1", s2_key="s2", s3_key="s3", color=None, cmap='RdBu',
+            clim=(-1, 1), width=0.003
+    ) -> None:
+        Mx, My = self._mesh()
+        _, _, s1 = self._get_coord_field(index, s1_key)
+        _, _, s2 = self._get_coord_field(index, s2_key)
+        _, _, s3 = self._get_coord_field(index, s3_key)
+        self.ax = plot_polar_quiver(
+            self.ax, Mx, My,
+            s1, s2, s3,
+            step=step,
+            normalize=True,
+            color=color,
             cmap=cmap,
             clim=clim,
             quiver_scale=None,

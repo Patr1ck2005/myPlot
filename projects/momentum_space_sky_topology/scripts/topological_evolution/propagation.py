@@ -92,7 +92,7 @@ def stokes_normalized_from_jones(Ex, Ey):
 if __name__ == "__main__":
 
     # ---------- 1) 动量空间网格：u,v ----------
-    n = 201*3
+    n = 512+1
     umax = 2.0
     u1 = np.linspace(-umax, umax, n)
     v1 = np.linspace(-umax, umax, n)
@@ -101,7 +101,7 @@ if __name__ == "__main__":
 
     # C 点位置（归一化波矢坐标）
     # uc, vc = 0, 0
-    uc, vc = 0.04, 0.01
+    uc, vc = 0.08, 0.00
 
     # ---------- 2) 初始 Jones：在 (u,v) ----------
     Ex_uv_0, Ey_uv_0 = jones_field(u, v, kxc=uc, kyc=vc, amp=1.0, p=1.0)

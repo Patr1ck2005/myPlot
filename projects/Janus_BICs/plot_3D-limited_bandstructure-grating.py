@@ -10,7 +10,8 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_FW_BIC-around.csv'
+    # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_FW_BIC-around.csv'
+    data_path = 'data/AsymEnv-ultra_mesh-search0.40-geo_FW_QBIC-around.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
@@ -53,33 +54,33 @@ if __name__ == '__main__':
         }
     )
 
-    ###############################################################################################################
-    from matplotlib import pyplot as plt
-    fig, ax = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(8, 12))
-    xs = []
-    ys = []
-    zs = []
-    colors = []
-    for i, m1 in enumerate(new_coords['m1']):
-        for j, m2 in enumerate(new_coords['m2']):
-            lst_ij = Z_filtered[i][j]
-            for freq in lst_ij[0]:
-                xs.append(m1)
-                ys.append(m2)
-                zs.append(freq.real)
-                colors.append(freq.imag)
-    sc = ax.scatter(xs, ys, zs, c=colors, cmap='viridis', marker='o', alpha=0.8, s=1)
-    # set aspect
-    ax.set_box_aspect([1, 1, 3])
-    # set view angle
-    ax.view_init(elev=15, azim=45)
-    plt.colorbar(sc, label='Imaginary Part of Frequency (THz)')
-    ax.set_xlabel('m1')
-    ax.set_ylabel('m2')
-    ax.set_zlabel('Frequency (THz)')
-    plt.title('3D Scatter Plot of Eigenfrequencies')
-    plt.show()
-    ###############################################################################################################
+    # ###############################################################################################################
+    # from matplotlib import pyplot as plt
+    # fig, ax = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(8, 12))
+    # xs = []
+    # ys = []
+    # zs = []
+    # colors = []
+    # for i, m1 in enumerate(new_coords['m1']):
+    #     for j, m2 in enumerate(new_coords['m2']):
+    #         lst_ij = Z_filtered[i][j]
+    #         for freq in lst_ij[0]:
+    #             xs.append(m1)
+    #             ys.append(m2)
+    #             zs.append(freq.real)
+    #             colors.append(freq.imag)
+    # sc = ax.scatter(xs, ys, zs, c=colors, cmap='viridis', marker='o', alpha=0.8, s=1)
+    # # set aspect
+    # ax.set_box_aspect([1, 1, 3])
+    # # set view angle
+    # ax.view_init(elev=15, azim=45)
+    # plt.colorbar(sc, label='Imaginary Part of Frequency (THz)')
+    # ax.set_xlabel('m1')
+    # ax.set_ylabel('m2')
+    # ax.set_zlabel('Frequency (THz)')
+    # plt.title('3D Scatter Plot of Eigenfrequencies')
+    # plt.show()
+    # ###############################################################################################################
 
     deltas = (1e-3, 1e-3)  # n个维度的网格间距
     # 当沿维度 d 生长时，值差权重矩阵（n×n）
@@ -140,8 +141,6 @@ if __name__ == '__main__':
 
     ###################################################################################################################
     from core.process_multi_dim_params_space import extract_adjacent_fields
-    from core.plot_cls import MomentumSpaceEigenVisualizer
-    from core.plot_workflow import PlotConfig
     from core.prepare_plot import prepare_plot_data
     from core.data_postprocess.data_package import package_stad_C2_data
     eigenfreq1, qfactor1, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor1 = extract_adjacent_fields(
@@ -173,19 +172,19 @@ if __name__ == '__main__':
     full_coords, dataset_A = package_stad_C2_data(
         new_coords, band_index_A, Z_target_A, additional_Z_grouped, z_keys,
         q_key='品质因子 (1)',
-        # tanchi_key='up_tanchi (1)',
-        # phi_key='up_phi (rad)',
-        tanchi_key='down_tanchi (1)',
-        phi_key='down_phi (rad)',
+        tanchi_key='up_tanchi (1)',
+        phi_key='up_phi (rad)',
+        # tanchi_key='down_tanchi (1)',
+        # phi_key='down_phi (rad)',
         axis='y',
     )
     _, dataset_B = package_stad_C2_data(
         new_coords, band_index_B, Z_target_B, additional_Z_grouped, z_keys,
         q_key='品质因子 (1)',
-        # tanchi_key='up_tanchi (1)',
-        # phi_key='up_phi (rad)',
-        tanchi_key='down_tanchi (1)',
-        phi_key='down_phi (rad)',
+        tanchi_key='up_tanchi (1)',
+        phi_key='up_phi (rad)',
+        # tanchi_key='down_tanchi (1)',
+        # phi_key='down_phi (rad)',
         axis='y',
     )
     data_path = prepare_plot_data(
@@ -194,106 +193,7 @@ if __name__ == '__main__':
     )
 
     ####################################################################################################################
-    BAND_INDEX = 0
-    config = PlotConfig(
-        plot_params={},
-        annotations={},
-    )
-    config.update(figsize=(1.5, 1.5), tick_direction='in')
-
-    plotter = MomentumSpaceEigenVisualizer(config=config, data_path=data_path)
-    plotter.load_data()
-
-    BIC_KX = 0.1156
-    # BIC_KX = 0.1165
-    BIC_KY = 0.0
-    REGIME_RADIUS = 0.015
-
-    plotter.new_3d_fig(figsize=(2, 2))
-    plotter.plot_on_poincare_sphere_along_around_path(
-        index=BAND_INDEX, center=(BIC_KX, 0), radius=0.015, cmap='rainbow',
-        sphere_style='surface', arrow_length_ratio=1
-    )
-    # 去掉3D绘图的背景和背景网格线
-    plotter.ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
-    plotter.ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
-    plotter.ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
-    plotter.ax.grid(False)
-    plotter.ax.view_init(elev=20, azim=30)
-    plotter.add_annotations()
-    plotter.save_and_show()
-
-    import matplotlib.colors as mcolors
-    plotter.new_2d_fig(figsize=(1.25, 1.25))
-    bounds = [-1, -0.995, -0.99, -0.95, -0.5, -0.05, 0.05, 0.5, 0.95, 0.99, 0.995, 1]
-    norm = mcolors.BoundaryNorm(bounds, ncolors=256)
-    im = plotter.imshow_field(index=BAND_INDEX, field_key='s3', cmap='coolwarm', norm=norm)
-    plotter.ax.set_xlim(BIC_KX - REGIME_RADIUS, BIC_KX + REGIME_RADIUS)
-    plotter.ax.set_ylim(BIC_KY - REGIME_RADIUS, BIC_KY + REGIME_RADIUS)
-    plotter.add_annotations()
-    plotter.save_and_show()
-
-    plotter.new_2d_fig(figsize=(1.25, 1.25))
-    plotter.plot_skyrmion_quiver(index=BAND_INDEX, step=(1, 1), cmap='coolwarm', s1_key='s1', s2_key='s3', s3_key='s2')
-    # plotter.add_annotations()
-    plotter.save_and_show()
-
-    plotter.new_2d_fig(figsize=(1.25, 1.25))
-    plotter.plot_field_regimes(index=BAND_INDEX)
-    plotter.plot_field_splits(index=BAND_INDEX)
-    plotter.add_annotations()
-    plotter.save_and_show()
-
-    plotter.new_2d_fig(figsize=(1.25, 1.25))
-    plotter.plot_polarization_ellipses(index=BAND_INDEX, step=(3, 3), scale=2e-3, cmap='coolwarm')
-    plotter.ax.set_xlim(BIC_KX - REGIME_RADIUS, BIC_KX + REGIME_RADIUS)
-    plotter.ax.set_ylim(BIC_KY - REGIME_RADIUS, BIC_KY + REGIME_RADIUS)
-    # plotter.add_annotations()
-    plotter.save_and_show()
-
-    plotter.new_2d_fig(figsize=(3.8, 1))
-    plotter.plot_field_along_round_path(index=BAND_INDEX, center=(BIC_KX, BIC_KY), radius=0.001, color='purple', field_key='phi', alpha=0.5)
-    plotter.plot_field_along_round_path(index=BAND_INDEX, center=(BIC_KX, BIC_KY), radius=0.003, color='r', field_key='phi', alpha=0.5)
-    plotter.plot_field_along_round_path(index=BAND_INDEX, center=(BIC_KX, BIC_KY), radius=0.005, color='k', field_key='phi', alpha=0.5)
-    plotter.plot_field_along_round_path(index=BAND_INDEX, center=(BIC_KX, BIC_KY), radius=0.01, color='b', field_key='phi', alpha=0.5)
-    plotter.plot_field_along_round_path(index=BAND_INDEX, center=(BIC_KX, BIC_KY), radius=0.015, color='g', field_key='phi', alpha=0.5)
-    plotter.save_and_show()
-
-    plotter.new_2d_fig(figsize=(3.8, 1))
-    plotter.plot_field_along_round_path(index=BAND_INDEX, center=(0, 0), radius=0.001, color='r', field_key='s3', alpha=0.5)
-    plotter.plot_field_along_round_path(index=BAND_INDEX, center=(0, 0), radius=0.003, color='k', field_key='s3', alpha=0.5)
-    plotter.plot_field_along_round_path(index=BAND_INDEX, center=(0, 0), radius=0.005, color='b', field_key='s3', alpha=0.5)
-    plotter.save_and_show()
-
-    plotter.new_3d_fig(figsize=(2, 2))
-    # 通过限制 x_key_lim 和 y_key_lim 来放大查看 FW-BIC 附近的极化态分布
-    # 通过波矢离FW-BIC的距离计算得到散点的rgba颜色
-    plotter.plot_on_poincare_sphere(
-        index=BAND_INDEX,
-        x_key_lim=(BIC_KX - REGIME_RADIUS, BIC_KX + REGIME_RADIUS),
-        y_key_lim=(BIC_KY - REGIME_RADIUS, BIC_KY + REGIME_RADIUS),
-        cmap='Reds',
-        s=3,
-        sphere_style='surface'
-    )
-    # 去掉3D绘图的背景和背景网格线
-    plotter.ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
-    plotter.ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
-    plotter.ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
-    plotter.ax.grid(False)
-    plotter.ax.view_init(elev=20, azim=30)
-    plotter.add_annotations()
-    plotter.save_and_show()
-
-    plotter.new_2d_fig(figsize=(1.25, 1.25))
-    plotter.imshow_field(index=BAND_INDEX, field_key='qlog', cmap='hot', vmin=4, vmax=8)
-    plotter.ax.set_xlim(BIC_KX - REGIME_RADIUS, BIC_KX + REGIME_RADIUS)
-    plotter.ax.set_ylim(BIC_KY - REGIME_RADIUS, BIC_KY + REGIME_RADIUS)
-    # plotter.add_annotations()
-    plotter.save_and_show()
-
-    plotter.new_2d_fig(figsize=(1.25, 1.25))
-    plotter.imshow_skyrmion_density(index=BAND_INDEX, cmap='bwr')
-    # plotter.add_annotations()
-    plotter.save_and_show()
+    from core.plot_cls import MomentumSpaceEigenVisualizer
+    from core.plot_workflow import PlotConfig
+    print("绘图已经整理到其他文件中")
     ####################################################################################################################

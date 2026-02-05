@@ -10,21 +10,7 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    # data_path = 'data/geo1-norm_mesh.csv'
-    # data_path = 'data/VacuumEnv-norm_mesh-geo_FW_BIC-0.2k.csv'
-    # data_path = 'data/PMMA_SOSenv-norm_mesh-geo_FW_QBIC-0.2k.csv'
-    # data_path = 'data/AsymEnv-norm_mesh-geo_FW_QBIC-0.2k.csv'
-    # data_path = 'data/AsymEnv-ultra_mesh-geo_FW_QBIC-0.2k.csv'
-    # data_path = 'data/inappro-SOSenv-norm_mesh-geo_FW_QBIC-0.2k.csv'
-    # data_path = 'data/SOSenv-ultra_mesh-search0.40-geo_FW_QBIC-0.2k-1.csv'
-    # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_FW_BIC-0.2k.csv'
-    # data_path = 'data/VacuumEnv-norm_mesh-geo_FW_QBIC-0.2k.csv'
-    # data_path = 'data/VacuumEnv-norm_mesh-search0.45-geo_FW_QBIC-0.2k.csv'  # marked
-    # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_FW_QBIC-0.2k.csv'  # marked
-    # data_path = 'data/AsymEnv-ultra_mesh-search0.40-various_geo_FW_BIC-0.2k.csv'
-    # data_path = 'data/1.67env-ultra_mesh-search0.40-various_geo_FW_BIC-0.2k.csv'
-    # data_path = 'data/VaccumEnv-ultra_mesh-search0.40-various_geo_FW_BIC-0.2k.csv'
-    data_path = 'data/AsymEnv-ultra_mesh-search0.40-T510_520-0.2k.csv'
+    data_path = 'data/VacuumEnv-ultra_mesh-search0.40-P-0.2k.csv'  # marked
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
@@ -34,7 +20,7 @@ if __name__ == '__main__':
     df_sample = df_sample[df_sample["m1"] <= 0.2]
     df_sample = df_sample[df_sample["m2"] <= 0.2]
     # 指定用于构造网格的参数以及目标数据列
-    param_keys = ["m1", "m2", "t_ridge (nm)", "fill", "t_tot (nm)", "substrate_n"]
+    param_keys = ["m1", "m2", "t_ridge (nm)", "fill", "t_tot (nm)", "substrate_n", "M_asym_factor", "P_asym_factor"]
     z_keys = [
         "特征频率 (THz)", "品质因子 (1)",
         "up_tanchi (1)", "up_phi (rad)",
@@ -55,13 +41,12 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            # "t_tot (nm)": 520,
-            # "t_ridge (nm)": 500,
-            "t_tot (nm)": 510,
-            "t_ridge (nm)": 510,
+            "t_tot (nm)": 520,
+            "t_ridge (nm)": 520,
             "fill": 0.5,
-            # "substrate_n": 1.67,
-            "substrate_n": 1.3,
+            "substrate_n": 1,
+            "M_asym_factor": 0,
+            "P_asym_factor": 0.02,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 2},  # 筛选
@@ -159,7 +144,7 @@ if __name__ == '__main__':
     from core.plot_cls import MomentumSpaceEigenVisualizer
     from core.plot_workflow import PlotConfig
     from core.prepare_plot import prepare_plot_data
-    from core.data_postprocess.data_package import package_stad_C4_data
+    from core.data_postprocess.data_package import package_stad_C2_data
 
     eigenfreq1, qfactor1, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor1 = extract_adjacent_fields(
         additional_Z_grouped,
@@ -187,21 +172,23 @@ if __name__ == '__main__':
     Z_target_A = eigenfreq1
     band_index_B = 1
     Z_target_B = eigenfreq2
-    full_coords, dataset_A = package_stad_C4_data(
+    full_coords, dataset_A = package_stad_C2_data(
         new_coords, band_index_A, Z_target_A, additional_Z_grouped, z_keys,
         q_key='品质因子 (1)',
         tanchi_key='up_tanchi (1)',
         phi_key='up_phi (rad)',
         # tanchi_key='down_tanchi (1)',
         # phi_key='down_phi (rad)',
+        axis='y',
     )
-    _, dataset_B = package_stad_C4_data(
+    _, dataset_B = package_stad_C2_data(
         new_coords, band_index_B, Z_target_B, additional_Z_grouped, z_keys,
         q_key='品质因子 (1)',
         tanchi_key='up_tanchi (1)',
         phi_key='up_phi (rad)',
         # tanchi_key='down_tanchi (1)',
         # phi_key='down_phi (rad)',
+        axis='y',
     )
     data_path = prepare_plot_data(
         coords=full_coords, data_class='Eigensolution', dataset_list=[dataset_A, dataset_B], fixed_params={},
@@ -209,7 +196,7 @@ if __name__ == '__main__':
     )
 
     ####################################################################################################################
-    BAND_INDEX = 1
+    BAND_INDEX = 0
     config = PlotConfig(
         plot_params={},
         annotations={},
@@ -220,12 +207,10 @@ if __name__ == '__main__':
     plotter.load_data()
 
     plotter.new_2d_fig(figsize=(1.5, 1.5))
-    # plotter.plot_field_regimes(index=BAND_INDEX, z_key='s2')
-    # plotter.plot_field_splits(index=BAND_INDEX, s1_key='s2', s2_key='s1')
-    # plotter.plot_field_regimes(index=BAND_INDEX, z_key='s1')
-    # plotter.plot_field_splits(index=BAND_INDEX, s1_key='s1', s2_key='s2')
-    plotter.plot_field_regimes(index=BAND_INDEX, z_key='s3', colors=("lightcoral", "lightblue"))
-    plotter.plot_field_splits(index=BAND_INDEX, s1_key='s3', s2_key='s1')
+    plotter.plot_field_regimes(index=BAND_INDEX, z_key='s2')
+    plotter.plot_field_splits(index=BAND_INDEX, s1_key='s2', s2_key='s1')
+    # plotter.plot_field_regimes(index=BAND_INDEX, z_key='s3', colors=("lightcoral", "lightblue"))
+    # plotter.plot_field_splits(index=BAND_INDEX, s1_key='s3', s2_key='s1')
     plotter.add_annotations()
     plotter.save_and_show()
 
@@ -236,8 +221,8 @@ if __name__ == '__main__':
     norm = mcolors.BoundaryNorm(bounds, ncolors=256)
     plotter.imshow_field(index=BAND_INDEX, field_key='s2', cmap='coolwarm', norm=norm)
     # plotter.plot_skyrmion_quiver(index=BAND_INDEX, step=(1, 1), cmap='coolwarm', s1_key='s1', s2_key='s3', s3_key='s2')
-    # plotter.plot_polar_quiver(index=BAND_INDEX, step=(1, 1), color='gray', s1_key='s1', s2_key='s2', s3_key='s3')
-    plotter.plot_polar_quiver(index=BAND_INDEX, step=(1, 1), color='gray', s1_key='s1', s2_key='s3', s3_key='s2')
+    plotter.plot_polar_quiver(index=BAND_INDEX, step=(1, 1), color='gray', s1_key='s1', s2_key='s2', s3_key='s3')
+    # plotter.plot_polar_quiver(index=BAND_INDEX, step=(1, 1), color='gray', s1_key='s1', s2_key='s3', s3_key='s2')
     # plotter.add_annotations()
     plotter.save_and_show()
 
