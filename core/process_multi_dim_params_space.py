@@ -3,6 +3,7 @@ from typing import List
 import numpy as np
 import pandas as pd
 
+
 def create_data_grid(
         df: pd.DataFrame,
         param_keys: list,
@@ -104,6 +105,7 @@ def query_data_grid(
         indices.append(idx[0])
 
     return Z[tuple(indices)]
+
 
 def compress_data_axis(coords, data, axis_key, aggregator=np.max, selection_range=None):
     """
@@ -216,19 +218,20 @@ import numpy as np
 GridCoords = Dict[str, np.ndarray]
 ZArray = np.ndarray  # object 数组（你的 Z / Z_target 结构）
 
+
 # -----------------------------
 # 数据抽取 / 整理
 # -----------------------------
 
 def extract_basic_analysis_fields(
-    additional_Z_grouped: ZArray,
-    band_index: int,
-    z_keys: Sequence[str],
-    *,
-    freq_key: Optional[str] = None,
-    q_key: str = '品质因子 (1)',
-    tanchi_key: str = 'tanchi (1)',
-    phi_key: str = 'phi (rad)'
+        additional_Z_grouped: ZArray,
+        band_index: int,
+        z_keys: Sequence[str],
+        *,
+        freq_key: Optional[str] = None,
+        q_key: str = '品质因子 (1)',
+        tanchi_key: str = 'tanchi (1)',
+        phi_key: str = 'phi (rad)'
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     从 additional_Z_grouped 中提取：phi, tanchi, log10(Q), freq(real)
@@ -285,9 +288,9 @@ def extract_basic_analysis_fields(
 
 
 def extract_adjacent_fields(
-    additional_Z_grouped: np.ndarray,
-    band_index: int,
-    z_keys: Sequence[str],
+        additional_Z_grouped: np.ndarray,
+        band_index: int,
+        z_keys: Sequence[str],
 ) -> Tuple[np.ndarray, ...]:
     """
     按 z_keys 的顺序，从 additional_Z_grouped 中提取对应字段。注意返回的是复数数组

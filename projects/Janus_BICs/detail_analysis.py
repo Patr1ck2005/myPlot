@@ -6,8 +6,8 @@ if __name__ == '__main__':
     # data_path = './manual/Asym_1.2vs1-520T-aroundFWBIC-downward.pkl'
     # data_path = './manual/Asym_0.9vs1-520T-aroundFWBIC-upward.pkl'
     # data_path = './manual/Asym_0.9vs1-520T-aroundFWBIC-downward.pkl'
-    # data_path = './manual/Asym_1vs1-520T-aroundFWBIC-upward.pkl'
-    data_path = './manual/StrB-around_X_BIC.pkl'
+    data_path = './manual/Asym_1vs1-520T-aroundFWBIC-upward.pkl'
+    # data_path = './manual/StrB-around_X_BIC.pkl'
     BAND_INDEX = 0
     config = PlotConfig(
         plot_params={},

@@ -112,35 +112,13 @@ if __name__ == '__main__':
         auto_split_streams=False
     )
 
-    # 假设你已经得到了 grid_coords, Z
-    new_coords, Z_target1 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=0  # 第n个频率
-    )
-    new_coords, Z_target2 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=1  # 第n个频率
-    )
-    new_coords, Z_target3 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=2  # 第n个频率
-    )
-    new_coords, Z_target4 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=3  # 第n个频率
-    )
-    new_coords, Z_target5 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=4  # 第n个频率
-    )
-    # new_coords, Z_target6 = group_solution(
-    #     new_coords, Z_grouped,
-    #     freq_index=5  # 第n个频率
-    # )
-    # new_coords, Z_target7 = group_solution(
-    #     new_coords, Z_grouped,
-    #     freq_index=6  # 第n个频率
-    # )
+    Z_targets = []
+    for freq_index in range(5):
+        new_coords, Z_target = group_solution(
+            new_coords, Z_grouped,
+            freq_index=freq_index  # 第n个频率
+        )
+        Z_targets.append(Z_target)
 
     ###################################################################################################################
     from core.process_multi_dim_params_space import extract_adjacent_fields
@@ -186,30 +164,23 @@ if __name__ == '__main__':
     ax.set_title('up_cx for Band 2')
     plt.show()
 
-    band_index_A = 0
-    Z_target_A = eigenfreq1
-    band_index_B = 1
-    Z_target_B = eigenfreq2
-    full_coords, dataset_A = package_stad_C2_data(
-        new_coords, band_index_A, Z_target_A, additional_Z_grouped, z_keys,
-        q_key='品质因子 (1)',
-        tanchi_key='up_tanchi (1)',
-        phi_key='up_phi (rad)',
-        # tanchi_key='down_tanchi (1)',
-        # phi_key='down_phi (rad)',
-        axis='y',
-    )
-    _, dataset_B = package_stad_C2_data(
-        new_coords, band_index_B, Z_target_B, additional_Z_grouped, z_keys,
-        q_key='品质因子 (1)',
-        tanchi_key='up_tanchi (1)',
-        phi_key='up_phi (rad)',
-        # tanchi_key='down_tanchi (1)',
-        # phi_key='down_phi (rad)',
-        axis='y',
-    )
+    datasets = []
+    selected_bands = [0, 1]
+    for i in selected_bands:
+        Z_target = Z_targets[i]
+        full_coords, dataset = package_stad_C2_data(
+            new_coords, i, Z_target, additional_Z_grouped, z_keys,
+            q_key='品质因子 (1)',
+            tanchi_key='up_tanchi (1)',
+            phi_key='up_phi (rad)',
+            # tanchi_key='down_tanchi (1)',
+            # phi_key='down_phi (rad)',
+            axis='y',
+        )
+        datasets.append(dataset)
+
     data_path = prepare_plot_data(
-        coords=full_coords, data_class='Eigensolution', dataset_list=[dataset_A, dataset_B], fixed_params={},
+        coords=full_coords, data_class='Eigensolution', dataset_list=datasets, fixed_params={},
         save_dir='./rsl/2_para_space',
     )
 

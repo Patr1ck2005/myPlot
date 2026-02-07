@@ -44,6 +44,11 @@ if __name__ == '__main__':
     plotter.add_annotations()
     plotter.save_and_show()
 
+    plotter.new_2d_fig(figsize=(1.5, 1.5))
+    plotter.imshow_field(index=BAND_INDEX, field_key='qlog', cmap='nipy_spectral', vmin=2, vmax=7)
+    # plotter.add_annotations()
+    plotter.save_and_show()
+
     plotter.new_3d_fig(figsize=(2, 2))
     plotter.plot_on_poincare_sphere_along_around_path(
         index=BAND_INDEX, center=(0, 0), radius=0.05, cmap='rainbow',
@@ -113,11 +118,6 @@ if __name__ == '__main__':
     norm = mcolors.BoundaryNorm(bounds, ncolors=256)
     plotter.imshow_field(index=BAND_INDEX, field_key='s3', cmap='coolwarm', norm=norm)
     plotter.add_annotations()
-    plotter.save_and_show()
-
-    plotter.new_2d_fig(figsize=(1.5, 1.5))
-    # plotter.imshow_field(index=BAND_INDEX, field_key='qlog', cmap='hot', vmin=2, vmax=7)
-    plotter.imshow_field(index=BAND_INDEX, field_key='qlog', cmap='nipy_spectral', vmin=2, vmax=7)
     plotter.save_and_show()
 
     plotter.new_3d_fig(figsize=(3, 3))

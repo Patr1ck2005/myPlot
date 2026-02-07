@@ -10,23 +10,7 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    # data_path = 'data/geo1-norm_mesh.csv'
-    # data_path = 'data/VacuumEnv-norm_mesh-geo_FW_BIC-0.2k.csv'
-    # data_path = 'data/PMMA_SOSenv-norm_mesh-geo_FW_QBIC-0.2k.csv'
-    # data_path = 'data/AsymEnv-norm_mesh-geo_FW_QBIC-0.2k.csv'
-    # data_path = 'data/AsymEnv-ultra_mesh-geo_FW_QBIC-0.2k.csv'
-    # data_path = 'data/inappro-SOSenv-norm_mesh-geo_FW_QBIC-0.2k.csv'
-    # data_path = 'data/SOSenv-ultra_mesh-search0.40-geo_FW_QBIC-0.2k-1.csv'
-    data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_FW_BIC-0.2k.csv'  # marked
-    # data_path = 'data/VacuumEnv-norm_mesh-geo_FW_QBIC-0.2k.csv'
-    # data_path = 'data/VacuumEnv-norm_mesh-search0.45-geo_FW_QBIC-0.2k.csv'  # marked
-    # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_FW_QBIC-0.2k.csv'  # marked
-    # data_path = 'data/AsymEnv-ultra_mesh-search0.40-various_geo_FW_BIC-0.2k.csv'
-    # data_path = 'data/1.67env-ultra_mesh-search0.40-various_geo_FW_BIC-0.2k.csv'
-    # data_path = 'data/VaccumEnv-ultra_mesh-search0.40-various_geo_FW_BIC-0.2k.csv'  # marked
-    # data_path = 'data/AsymEnv-ultra_mesh-search0.40-T510_520-0.2k.csv'  # marked
-    # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-0.2k0.05k.csv'  # to be continued
-    # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-0.2k0.05k-supp1.csv'  # to be continued
+    data_path = 'data/VacuumEnv-ultra_mesh-search0.40-0.2k0.05k-supp1.csv'  # to be continued
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
@@ -191,6 +175,7 @@ if __name__ == '__main__':
             phi_key='up_phi (rad)',
             # tanchi_key='down_tanchi (1)',
             # phi_key='down_phi (rad)',
+            axis='y',
         )
         datasets.append(dataset)
 
@@ -200,7 +185,7 @@ if __name__ == '__main__':
     )
 
     ####################################################################################################################
-    BAND_INDEX = 1
+    BAND_INDEX = 0
     config = PlotConfig(
         plot_params={},
         annotations={},

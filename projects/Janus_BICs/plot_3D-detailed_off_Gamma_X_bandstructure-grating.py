@@ -113,53 +113,38 @@ if __name__ == '__main__':
         auto_split_streams=False
     )
 
-    # 假设你已经得到了 grid_coords, Z
-    new_coords, Z_target1 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=0  # 第n个频率
-    )
-    new_coords, Z_target2 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=1  # 第n个频率
-    )
-    new_coords, Z_target3 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=2  # 第n个频率
-    )
-    new_coords, Z_target4 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=3  # 第n个频率
-    )
-    new_coords, Z_target5 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=4  # 第n个频率
-    )
-    # new_coords, Z_target6 = group_solution(
-    #     new_coords, Z_grouped,
-    #     freq_index=5  # 第n个频率
-    # )
-    # new_coords, Z_target7 = group_solution(
-    #     new_coords, Z_grouped,
-    #     freq_index=6  # 第n个频率
-    # )
+    Z_targets = []
+    for freq_index in range(5):
+        new_coords, Z_target = group_solution(
+            new_coords, Z_grouped,
+            freq_index=freq_index  # 第n个频率
+        )
+        Z_targets.append(Z_target)
 
     ###################################################################################################################
     from core.process_multi_dim_params_space import extract_adjacent_fields
     from core.prepare_plot import prepare_plot_data
     from core.data_postprocess.data_package import package_stad_C2_data
-    (eigenfreq1, qfactor1, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor1,
-     up_cx1, up_cy1, down_cx1, down_cy1) = extract_adjacent_fields(
-        additional_Z_grouped,
-        z_keys=z_keys,
-        band_index=0
-    )
-    (eigenfreq2, qfactor2, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor2,
-     up_cx2, up_cy2, down_cx2, down_cy2) = extract_adjacent_fields(
-        additional_Z_grouped,
-        z_keys=z_keys,
-        band_index=1
-    )
+    datasets = []
+    for i, Z_target in enumerate(Z_targets):
+        dataset = {'eigenfreq_real': Z_target.real, 'eigenfreq_imag': Z_target.imag}
+        eigenfreq, qfactor, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor, \
+        up_cx, up_cy, down_cx, down_cy = extract_adjacent_fields(
+            additional_Z_grouped,
+            z_keys=z_keys,
+            band_index=i
+        )
+        qlog = np.log10(qfactor)
+        dataset['qlog'] = qlog.real
+        dataset['up_cx (V/m)'] = up_cx
+        dataset['up_cy (V/m)'] = up_cy
+        dataset['down_cx (V/m)'] = up_cx
+        dataset['down_cy (V/m)'] = up_cy
+        print(f"Band {i}: qlog range = [{dataset['qlog'].min()}, {dataset['qlog'].max()}]")
+        datasets.append(dataset)
 
+    up_cx1 = datasets[0]['up_cx (V/m)']
+    up_cy1 = datasets[0]['up_cy (V/m)']
     # imshow up_cx
     from matplotlib import pyplot as plt
     fig, ax = plt.subplots(figsize=(1.25, 1.25))
@@ -201,35 +186,58 @@ if __name__ == '__main__':
     plt.savefig('./c.svg', dpi=300, bbox_inches='tight', transparent=True)
     plt.show()
 
-    band_index_A = 0
-    Z_target_A = eigenfreq1
-    band_index_B = 1
-    Z_target_B = eigenfreq2
-    full_coords, dataset_A = package_stad_C2_data(
-        new_coords, band_index_A, Z_target_A, additional_Z_grouped, z_keys,
-        q_key='品质因子 (1)',
-        tanchi_key='up_tanchi (1)',
-        phi_key='up_phi (rad)',
-        # tanchi_key='down_tanchi (1)',
-        # phi_key='down_phi (rad)',
-        axis='y',
-    )
-    _, dataset_B = package_stad_C2_data(
-        new_coords, band_index_B, Z_target_B, additional_Z_grouped, z_keys,
-        q_key='品质因子 (1)',
-        tanchi_key='up_tanchi (1)',
-        phi_key='up_phi (rad)',
-        # tanchi_key='down_tanchi (1)',
-        # phi_key='down_phi (rad)',
-        axis='y',
-    )
+    datasets = []
+    selected_bands = [0, 1]
+    for i in selected_bands:
+        Z_target = Z_targets[i]
+        full_coords, dataset = package_stad_C2_data(
+            new_coords, i, Z_target, additional_Z_grouped, z_keys,
+            q_key='品质因子 (1)',
+            tanchi_key='up_tanchi (1)',
+            phi_key='up_phi (rad)',
+            # tanchi_key='down_tanchi (1)',
+            # phi_key='down_phi (rad)',
+            axis='y',
+        )
+        datasets.append(dataset)
+
     data_path = prepare_plot_data(
-        coords=full_coords, data_class='Eigensolution', dataset_list=[dataset_A, dataset_B], fixed_params={},
+        coords=full_coords, data_class='Eigensolution', dataset_list=datasets, fixed_params={},
         save_dir='./rsl/2_para_space',
     )
 
     ####################################################################################################################
     from core.plot_cls import MomentumSpaceEigenVisualizer
     from core.plot_workflow import PlotConfig
+
+    BAND_INDEX = 0
+    config = PlotConfig(
+        plot_params={},
+        annotations={},
+    )
+    config.update(figsize=(1.5, 1.5), tick_direction='in')
+
+    plotter = MomentumSpaceEigenVisualizer(config=config, data_path=data_path)
+    plotter.load_data()
+
+    plotter.new_2d_fig(figsize=(1.5, 1.5))
+    plotter.imshow_field(index=BAND_INDEX, field_key='s1', cmap='coolwarm', vmin=-1, vmax=1)
+    plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig(figsize=(1.5, 1.5))
+    plotter.imshow_field(index=BAND_INDEX, field_key='s2', cmap='coolwarm', vmin=-1, vmax=1)
+    plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig(figsize=(1.5, 1.5))
+    plotter.imshow_field(index=BAND_INDEX, field_key='s3', cmap='coolwarm', vmin=-1, vmax=1)
+    plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig(figsize=(1.5, 1.5))
+    plotter.imshow_field(index=BAND_INDEX, field_key='qlog', cmap='nipy_spectral', vmin=2, vmax=8)
+    plotter.add_annotations()
+    plotter.save_and_show()
     print("绘图已经整理到其他文件中")
     ####################################################################################################################
