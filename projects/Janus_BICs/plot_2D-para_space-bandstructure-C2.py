@@ -10,17 +10,24 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    data_path = 'data/test.csv'
+    data_path = 'data/VacuumEnv-1Dms-ultra_mesh-search0.40-various_T-0.2k.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
-    period = 1500
+    period = 500
     df_sample["特征频率 (THz)"] = (df_sample["特征频率 (THz)"].apply(convert_complex)
                                    .apply(norm_freq, period=period * 1e-9 * 1e12))
     df_sample["频率 (Hz)"] = np.real(df_sample["特征频率 (THz)"])
-    df_sample["k"] = df_sample["a"]
-    df_sample["fake_factor (1)"] = 1 / df_sample["S3 (1)"]
-    param_keys = ["k", "spacer (nm)", "h_die_grating (nm)"]
-    z_keys = ["特征频率 (THz)", "品质因子 (1)", "fake_factor (1)"]
+    df_sample["up_cx (V/m)"] = df_sample["up_cx (V/m)"].apply(convert_complex)
+    df_sample["up_cy (V/m)"] = df_sample["up_cy (V/m)"].apply(convert_complex)
+    df_sample["down_cx (V/m)"] = df_sample["down_cx (V/m)"].apply(convert_complex)
+    df_sample["down_cy (V/m)"] = df_sample["down_cy (V/m)"].apply(convert_complex)
+    df_sample["k"] = df_sample["m1"] - df_sample["m2"]
+    param_keys = ["k", "t_ridge (nm)", "fill", "t_tot (nm)", "substrate_n"]
+    z_keys = ["特征频率 (THz)", "品质因子 (1)",
+              "up_tanchi (1)", "up_phi (rad)",
+              "down_tanchi (1)", "down_phi (rad)",
+              "fake_factor (1)", "频率 (Hz)",
+              "U_factor (1)", "up_cx (V/m)", "up_cy (V/m)", "down_cx (V/m)", "down_cy (V/m)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
     grid_coords, Z = create_data_grid(df_sample, param_keys, z_keys, deduplication=False)
@@ -29,15 +36,17 @@ if __name__ == '__main__':
         print(f"  {key}: {arr}")
     print("数据网格 Z 的形状：", Z.shape)
 
-    X_KEY = 'h_die_grating (nm)'
+    X_KEY = 'k'
 
     # 假设已得到grid_coords, Z
     new_coords, Z_filtered, min_lens = advanced_filter_eigensolution(
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            'k': 0,
-            "spacer (nm)": 2000,
+            "t_tot (nm)": 500,
+            "t_ridge (nm)": 500,
+            "fill": 0.5,
+            "substrate_n": 1.0,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 1},  # 筛选
@@ -49,11 +58,11 @@ if __name__ == '__main__':
     # 当沿维度 d 生长时，值差权重矩阵（n×n）
     # 例如：value_weights[d, j] = 在 grow_dir=d 时，对维度 j 的值差权重
     value_weights = np.array([
-        [1,],   # 沿维度生长时
+        [1, ],  # 沿维度生长时
     ])
     # 当沿维度 d 生长时，导数不连续权重矩阵（n×n）
     deriv_weights = np.array([
-        [1,],
+        [1, ],
     ])
     # 创建一个新的数组，用于存储更新后的结果
     Z_new = np.empty_like(Z_filtered, dtype=object)
@@ -63,6 +72,7 @@ if __name__ == '__main__':
 
     ###############################################################################################################
     from matplotlib import pyplot as plt
+
     fig, ax = plt.subplots(figsize=(6, 10))
     # 通过散点的方式绘制出来，看看效果
     for i in range(Z_new.shape[0]):
@@ -82,32 +92,39 @@ if __name__ == '__main__':
         additional_data=Z_filtered,
         value_weights=value_weights,
         deriv_weights=deriv_weights,
-        max_m=2,
+        max_m=15,
         auto_split_streams=False
     )
 
-    # 假设你已经得到了 grid_coords, Z
-    new_coords, Z_target1 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=0  # 第n个频率
-    )
-    new_coords, Z_target2 = group_solution(
-        new_coords, Z_grouped,
-        freq_index=1  # 第n个频率
-    )
+    Z_targets = []
+    for freq_index in range(15):
+        new_coords, Z_target = group_solution(
+            new_coords, Z_grouped,
+            freq_index=freq_index  # 第n个频率
+        )
+        Z_targets.append(Z_target)
 
     ###################################################################################################################
     from core.plot_workflow import PlotConfig
     from core.prepare_plot import prepare_plot_data
+    from core.process_multi_dim_params_space import extract_adjacent_fields
 
-    dataset1 = {'eigenfreq_real': Z_target1.real, 'eigenfreq_imag': Z_target1.imag}
-    dataset2 = {'eigenfreq_real': Z_target2.real, 'eigenfreq_imag': Z_target2.imag}
+    datasets = []
+    for i, Z_target in enumerate(Z_targets):
+        dataset = {'eigenfreq_real': Z_target.real, 'eigenfreq_imag': Z_target.imag}
+        eigenfreq, qfactor, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor, \
+        up_cx, up_cy, down_cx, down_cy = extract_adjacent_fields(
+            additional_Z_grouped,
+            z_keys=z_keys,
+            band_index=i
+        )
+        qlog = np.log10(qfactor)
+        dataset['qlog'] = qlog.real.ravel()
+        print(f"Band {i}: qlog range = [{dataset['qlog'].min()}, {dataset['qlog'].max()}]")
+        datasets.append(dataset)
 
     data_path = prepare_plot_data(
-        new_coords, data_class='Eigensolution', dataset_list=[
-            dataset1,
-            dataset2,
-        ], fixed_params={},
+        new_coords, data_class='Eigensolution', dataset_list=datasets, fixed_params={},
         save_dir='./rsl/1_para_space',
     )
 
@@ -120,16 +137,22 @@ if __name__ == '__main__':
         annotations={
             'xlabel': '', 'ylabel': '',
             'show_axis_labels': True, 'show_tick_labels': True,
-            # 'ylim': (0.51, 0.57),
+            'ylim': (0.35, 0.65),
         },
     )
-    config.update(figsize=(1.25, 0.75), tick_direction='in')
+    config.update(figsize=(1.25, 3), tick_direction='in')
     plotter = OneDimFieldVisualizer(config=config, data_path=data_path)
     plotter.load_data()
     plotter.new_2d_fig()
-    plotter.plot(index=0, x_key=X_KEY, z1_key='eigenfreq_real', default_color='black', )
-    # 绘制一条y=0.54的水平线
-    plotter.ax.axhline(y=0.575, color='red', linestyle='--', linewidth=1)
+    for i in range(15):
+        plotter.plot(
+            index=i, x_key=X_KEY, z1_key='eigenfreq_real', z2_key='eigenfreq_imag',
+            enable_fill=True, default_color='gray', alpha_fill=0.3, scale=1
+        )
+    for i in range(15):
+        plotter.plot(
+            index=i, x_key=X_KEY, z1_key='eigenfreq_real', z3_key='qlog', cmap='hot',
+            enable_dynamic_color=True, global_color_vmin=2, global_color_vmax=7, linewidth_base=2
+        )
     plotter.add_annotations()
     plotter.save_and_show()
-
