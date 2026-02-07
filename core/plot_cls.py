@@ -290,7 +290,7 @@ class OneDimFieldVisualizer(LinePlotter, ABC):
     def plot(self, index, x_key, z1_key, z2_key=None, z3_key=None, **params_bg) -> None:
         x = self.coordinates[x_key]
         z1 = self.raw_datasets["data_list"][index][z1_key]
-        z2 = self.raw_datasets["data_list"][index][z2_key] if z2_key is not None else z1
+        z2 = self.raw_datasets["data_list"][index][z2_key] if z2_key is not None else None
         z3 = self.raw_datasets["data_list"][index][z3_key] if z3_key is not None else None
         self.plot_line(x, z1=z1, z2=z2, z3=z3, **params_bg)
 

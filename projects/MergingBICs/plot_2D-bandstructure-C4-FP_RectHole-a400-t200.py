@@ -1,7 +1,6 @@
 from core.data_postprocess.data_filter import advanced_filter_eigensolution
 from core.data_postprocess.data_grouper import *
 from core.plot_3D_params_space_plt import *
-from core.plot_3D_params_space_pv import plot_Z_diff_pyvista
 from core.prepare_plot import prepare_plot_data
 from core.process_multi_dim_params_space import *
 

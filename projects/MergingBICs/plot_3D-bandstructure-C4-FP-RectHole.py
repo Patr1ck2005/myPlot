@@ -48,6 +48,7 @@ if __name__ == '__main__':
     )
 
     # 测试3D散点绘图, 颜色映射取决于虚部
+    from matplotlib import pyplot as plt
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(8, 12))
     xs = []
     ys = []
@@ -57,7 +58,6 @@ if __name__ == '__main__':
         for j, m2 in enumerate(new_coords['m2']):
             lst_ij = Z_filtered[i][j]
             for freq in lst_ij[0]:
-                print(freq)
                 xs.append(m1)
                 ys.append(m2)
                 zs.append(freq.real)
@@ -149,7 +149,7 @@ if __name__ == '__main__':
     from core.process_multi_dim_params_space import extract_basic_analysis_fields
     import matplotlib.pyplot as plt
     from core.data_postprocess.momentum_space_toolkits import complete_C4_polarization, geom_complete
-    from core.plot_cls import MomentumSpaceEigenPolarizationPlotter
+    from core.plot_cls import MomentumSpaceEigenVisualizer
     from core.plot_workflow import PlotConfig
     from core.prepare_plot import prepare_plot_data
 
@@ -181,13 +181,33 @@ if __name__ == '__main__':
         annotations={},
     )
     config.update(figsize=(1.25, 1.25), tick_direction='in')
-    plotter = MomentumSpaceEigenPolarizationPlotter(config=config, data_path=data_path)
+    plotter = MomentumSpaceEigenVisualizer(config=config, data_path=data_path)
     plotter.load_data()
     plotter.prepare_data()
 
     plotter.new_2d_fig()
-    plotter.plot_polarization_ellipses(index=0)
-    plotter.plot_isofreq_contours2D(index=0, levels=(0.451, 0.455, 0.460))
+    plotter.plot_polarization_ellipses(index=0, step=(1, 1), scale=0.001)
+    # plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig()
+    plotter.imshow_field(index=0, field_key='s1', cmap='coolwarm', vmin=-1, vmax=1)
+    # plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig()
+    plotter.imshow_field(index=0, field_key='s2', cmap='coolwarm', vmin=-1, vmax=1)
+    # plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig()
+    plotter.imshow_field(index=0, field_key='s3', cmap='coolwarm', vmin=-1, vmax=1)
+    # plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig()
+    plotter.imshow_field(index=0, field_key='qlog', cmap='nipy_spectral', vmin=2, vmax=7)
+    # plotter.add_annotations()
     plotter.save_and_show()
 
     plotter.new_2d_fig()

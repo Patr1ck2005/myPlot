@@ -7,8 +7,8 @@ import numpy as np
 c_const = 299792458
 
 if __name__ == '__main__':
-    # data_path = 'data/FP_PhC-full-14eigens-400nmP-L211,212nm.csv'
-    data_path = 'data/FP_PhC-full-14eigens-400P-L211.8nm.csv'
+    data_path = 'data/FP_PhC-full-14eigens-400nmP-L211,212nm.csv'
+    # data_path = 'data/FP_PhC-full-14eigens-400P-L211.8nm.csv'
     # data_path = 'data/FP_PhC-full-14eigens-400nmP-L214nm.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
@@ -45,8 +45,9 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
+            'buffer (nm)': 211,
+            # 'buffer (nm)': 211.8,
             # 'buffer (nm)': 214,
-            'buffer (nm)': 211.8,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 1},  # 筛选
@@ -76,7 +77,8 @@ if __name__ == '__main__':
         additional_data=Z_filtered,
         value_weights=value_weights,
         deriv_weights=deriv_weights,
-        max_m=9
+        max_m=9,
+        auto_split_streams=False
     )
 
     # 假设你已经得到了 grid_coords, Z
@@ -127,7 +129,7 @@ if __name__ == '__main__':
 
     from core.process_multi_dim_params_space import extract_basic_analysis_fields
     from core.data_postprocess.momentum_space_toolkits import complete_C4_polarization, geom_complete
-    from core.plot_cls import MomentumSpaceEigenPolarizationPlotter
+    from core.plot_cls import MomentumSpaceEigenVisualizer
     from core.plot_workflow import PlotConfig
     from core.prepare_plot import prepare_plot_data
 
@@ -159,13 +161,33 @@ if __name__ == '__main__':
         annotations={},
     )
     config.update(figsize=(1.25, 1.25), tick_direction='in')
-    plotter = MomentumSpaceEigenPolarizationPlotter(config=config, data_path=data_path)
+    plotter = MomentumSpaceEigenVisualizer(config=config, data_path=data_path)
     plotter.load_data()
     plotter.prepare_data()
 
     plotter.new_2d_fig()
-    plotter.plot_polarization_ellipses(index=0)
-    plotter.plot_isofreq_contours2D(index=0, levels=(0.509, 0.510, 0.511))
+    plotter.plot_polarization_ellipses(index=0, step=(1, 1), scale=0.001)
+    # plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig()
+    plotter.imshow_field(index=0, field_key='s1', cmap='coolwarm', vmin=-1, vmax=1)
+    # plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig()
+    plotter.imshow_field(index=0, field_key='s2', cmap='coolwarm', vmin=-1, vmax=1)
+    # plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig()
+    plotter.imshow_field(index=0, field_key='s3', cmap='coolwarm', vmin=-1, vmax=1)
+    # plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig()
+    plotter.imshow_field(index=0, field_key='qlog', cmap='nipy_spectral', vmin=2, vmax=7)
+    # plotter.add_annotations()
     plotter.save_and_show()
 
     plotter.new_2d_fig()

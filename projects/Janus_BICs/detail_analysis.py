@@ -2,11 +2,12 @@ if __name__ == '__main__':
     from core.plot_cls import MomentumSpaceEigenVisualizer
     from core.plot_workflow import PlotConfig
 ####################################################################################################################
-    data_path = './manual/Asym_1.2vs1-520T-aroundFWBIC-upward.pkl'
+    # data_path = './manual/Asym_1.2vs1-520T-aroundFWBIC-upward.pkl'
     # data_path = './manual/Asym_1.2vs1-520T-aroundFWBIC-downward.pkl'
     # data_path = './manual/Asym_0.9vs1-520T-aroundFWBIC-upward.pkl'
     # data_path = './manual/Asym_0.9vs1-520T-aroundFWBIC-downward.pkl'
     # data_path = './manual/Asym_1vs1-520T-aroundFWBIC-upward.pkl'
+    data_path = './manual/StrB-around_X_BIC.pkl'
     BAND_INDEX = 0
     config = PlotConfig(
         plot_params={},
@@ -29,7 +30,12 @@ if __name__ == '__main__':
 
     plotter.new_2d_fig(figsize=(1.5, 1.5))
     plotter.imshow_field(index=BAND_INDEX, field_key='s3', cmap='coolwarm', vmin=-1, vmax=1)
-    plotter.add_annotations()
+    # plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig(figsize=(1.5, 1.5))
+    plotter.imshow_field(index=BAND_INDEX, field_key='qlog', cmap='nipy_spectral', vmin=2, vmax=8)
+    # plotter.add_annotations()
     plotter.save_and_show()
 
     BIC_KX = 0.1156

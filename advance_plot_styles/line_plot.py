@@ -50,7 +50,7 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, index=0, **kwargs):
     default_line_color = kwargs.get('default_color', 'blue')
     default_fill_color = kwargs.get('default_fill_color', 'gray')
     default_linestyle = kwargs.get('default_linestyle', '-')
-    edge_color = kwargs.get('edge_color', 'gray')
+    edge_color = kwargs.get('edge_color', 'none')  # 填充边界颜色，默认为无色
     add_colorbar = kwargs.get('add_colorbar', False)
     linewidth_base = kwargs.get('linewidth_base', 1)
     global_color_vmax = kwargs.get('global_color_vmax', None)
