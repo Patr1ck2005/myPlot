@@ -17,22 +17,27 @@ if __name__ == '__main__':
     # data_path = 'data/AsymEnv-ultra_mesh-geo_FW_QBIC-0.2k.csv'
     # data_path = 'data/inappro-SOSenv-norm_mesh-geo_FW_QBIC-0.2k.csv'
     # data_path = 'data/SOSenv-ultra_mesh-search0.40-geo_FW_QBIC-0.2k-1.csv'
-    # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_FW_BIC-0.2k.csv'
+    data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_FW_BIC-0.2k.csv'  # marked
     # data_path = 'data/VacuumEnv-norm_mesh-geo_FW_QBIC-0.2k.csv'
     # data_path = 'data/VacuumEnv-norm_mesh-search0.45-geo_FW_QBIC-0.2k.csv'  # marked
     # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_FW_QBIC-0.2k.csv'  # marked
     # data_path = 'data/AsymEnv-ultra_mesh-search0.40-various_geo_FW_BIC-0.2k.csv'
     # data_path = 'data/1.67env-ultra_mesh-search0.40-various_geo_FW_BIC-0.2k.csv'
-    # data_path = 'data/VaccumEnv-ultra_mesh-search0.40-various_geo_FW_BIC-0.2k.csv'
-    data_path = 'data/AsymEnv-ultra_mesh-search0.40-T510_520-0.2k.csv'
+    # data_path = 'data/VaccumEnv-ultra_mesh-search0.40-various_geo_FW_BIC-0.2k.csv'  # marked
+    # data_path = 'data/AsymEnv-ultra_mesh-search0.40-T510_520-0.2k.csv'  # marked
+    # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-0.2k0.05k.csv'  # to be continued
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
     df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq,
                                                                                            period=period * 1e-9 * 1e12)
     df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period * 1e-9)
-    df_sample = df_sample[df_sample["m1"] <= 0.2]
-    df_sample = df_sample[df_sample["m2"] <= 0.2]
+    df_sample["up_cx (V/m)"] = df_sample["up_cx (V/m)"].apply(convert_complex)
+    df_sample["up_cy (V/m)"] = df_sample["up_cy (V/m)"].apply(convert_complex)
+    df_sample["down_cx (V/m)"] = df_sample["down_cx (V/m)"].apply(convert_complex)
+    df_sample["down_cy (V/m)"] = df_sample["down_cy (V/m)"].apply(convert_complex)
+    # df_sample = df_sample[df_sample["m1"] <= 0.2]
+    # df_sample = df_sample[df_sample["m2"] <= 0.2]
     # 指定用于构造网格的参数以及目标数据列
     param_keys = ["m1", "m2", "t_ridge (nm)", "fill", "t_tot (nm)", "substrate_n"]
     z_keys = [
@@ -40,7 +45,7 @@ if __name__ == '__main__':
         "up_tanchi (1)", "up_phi (rad)",
         "down_tanchi (1)", "down_phi (rad)",
         "fake_factor (1)", "频率 (Hz)",
-        "U_factor (1)",
+        "U_factor (1)", "up_cx (V/m)", "up_cy (V/m)", "down_cx (V/m)", "down_cy (V/m)"
     ]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
@@ -57,11 +62,11 @@ if __name__ == '__main__':
         fixed_params={
             # "t_tot (nm)": 520,
             # "t_ridge (nm)": 500,
-            "t_tot (nm)": 510,
-            "t_ridge (nm)": 510,
+            "t_tot (nm)": 520,
+            "t_ridge (nm)": 520,
             "fill": 0.5,
             # "substrate_n": 1.67,
-            "substrate_n": 1.3,
+            "substrate_n": 1.0,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 2},  # 筛选
@@ -70,31 +75,31 @@ if __name__ == '__main__':
     )
 
     ###############################################################################################################
-    # from matplotlib import pyplot as plt
-    # fig, ax = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(8, 12))
-    # xs = []
-    # ys = []
-    # zs = []
-    # colors = []
-    # for i, m1 in enumerate(new_coords['m1']):
-    #     for j, m2 in enumerate(new_coords['m2']):
-    #         lst_ij = Z_filtered[i][j]
-    #         for freq in lst_ij[0]:
-    #             xs.append(m1)
-    #             ys.append(m2)
-    #             zs.append(freq.real)
-    #             colors.append(freq.imag)
-    # sc = ax.scatter(xs, ys, zs, c=colors, cmap='viridis', marker='o', alpha=0.8, s=1)
-    # # set aspect
-    # ax.set_box_aspect([1, 1, 3])
-    # # set view angle
-    # ax.view_init(elev=15, azim=45)
-    # plt.colorbar(sc, label='Imaginary Part of Frequency (THz)')
-    # ax.set_xlabel('m1')
-    # ax.set_ylabel('m2')
-    # ax.set_zlabel('Frequency (THz)')
-    # plt.title('3D Scatter Plot of Eigenfrequencies')
-    # plt.show()
+    from matplotlib import pyplot as plt
+    fig, ax = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(8, 12))
+    xs = []
+    ys = []
+    zs = []
+    colors = []
+    for i, m1 in enumerate(new_coords['m1']):
+        for j, m2 in enumerate(new_coords['m2']):
+            lst_ij = Z_filtered[i][j]
+            for freq in lst_ij[0]:
+                xs.append(m1)
+                ys.append(m2)
+                zs.append(freq.real)
+                colors.append(freq.imag)
+    sc = ax.scatter(xs, ys, zs, c=colors, cmap='viridis', marker='o', alpha=0.8, s=1)
+    # set aspect
+    ax.set_box_aspect([1, 1, 3])
+    # set view angle
+    ax.view_init(elev=15, azim=45)
+    plt.colorbar(sc, label='Imaginary Part of Frequency (THz)')
+    ax.set_xlabel('m1')
+    ax.set_ylabel('m2')
+    ax.set_zlabel('Frequency (THz)')
+    plt.title('3D Scatter Plot of Eigenfrequencies')
+    plt.show()
     ###############################################################################################################
 
     deltas = (1e-3, 1e-3)  # n个维度的网格间距
@@ -161,12 +166,14 @@ if __name__ == '__main__':
     from core.prepare_plot import prepare_plot_data
     from core.data_postprocess.data_package import package_stad_C4_data
 
-    eigenfreq1, qfactor1, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor1 = extract_adjacent_fields(
+    (eigenfreq1, qfactor1, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor1,
+     up_cx1, up_cy1, down_cx1, down_cy1) = extract_adjacent_fields(
         additional_Z_grouped,
         z_keys=z_keys,
         band_index=0
     )
-    eigenfreq2, qfactor2, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor2 = extract_adjacent_fields(
+    (eigenfreq2, qfactor2, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor2,
+     up_cx2, up_cy2, down_cx2, down_cy2) = extract_adjacent_fields(
         additional_Z_grouped,
         z_keys=z_keys,
         band_index=1
@@ -182,6 +189,17 @@ if __name__ == '__main__':
     # ax.set_ylabel('m2')
     # ax.set_title('U_factor for Band 2')
     # plt.show()
+    fig, ax = plt.subplots(figsize=(1.25, 1.25))
+    phase_diff = (np.angle(up_cx2) - np.angle(up_cy2) + np.pi)%(2*np.pi) - np.pi
+    c = ax.imshow(phase_diff.T, origin='lower', extent=(
+        new_coords['m1'][0], new_coords['m1'][-1],
+        new_coords['m2'][0], new_coords['m2'][-1],
+    ), aspect='auto', cmap='RdBu', vmin=-np.pi, vmax=np.pi)
+    fig.colorbar(c, ax=ax)
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    plt.savefig('./c.svg', dpi=300, bbox_inches='tight', transparent=True)
+    plt.show()
 
     band_index_A = 0
     Z_target_A = eigenfreq1
@@ -209,7 +227,7 @@ if __name__ == '__main__':
     )
 
     ####################################################################################################################
-    BAND_INDEX = 1
+    BAND_INDEX = 0
     config = PlotConfig(
         plot_params={},
         annotations={},

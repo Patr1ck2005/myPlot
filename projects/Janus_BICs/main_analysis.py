@@ -8,14 +8,18 @@ if __name__ == '__main__':
     # data_path = './manual/SOS-450T520-0.2k-downward.pkl'
     # data_path = './manual/SOS-520T-0.2k-upward.pkl'
     # data_path = './manual/SOS-520T-0.2k-downward.pkl'
-    # data_path = './manual/Vacuum-500T520-0.2k-upward.pkl'
-    # data_path = './manual/Vacuum-500T520-0.2k-downward.pkl'
-    # data_path = './manual/Vacuum-515T520-0.2k-upward.pkl'
+    # data_path = './manual/Vacuum-507T520-0.2k-upward.pkl'
+    # data_path = './manual/Vacuum-505T520-0.2k-downward.pkl'
+    # data_path = './manual/Vacuum-520T520-0.2k-upward.pkl'
+    # data_path = './manual/Vacuum-520T520-0.2k-upward.pkl'
     # data_path = './manual/Asym_1.67vs1-520T-0.2k-upward.pkl'
     # data_path = './manual/Asym_1.67vs1-520T-0.2k-downward.pkl'
-    data_path = './manual/Vacuum-520T_Parity_0.1-0.2k-upward.pkl'
+    # data_path = './manual/Vacuum-502T-0.2k-upward.pkl'
+    data_path = './manual/Vacuum-505T520-0.2k0.05k-upward.pkl'
+    # data_path = './manual/Vacuum-520T_Parity_0.05-0.2k-upward.pkl'
     # data_path = './manual/Vacuum-520T_Parity_0.1-0.2k-downward.pkl'
-    BAND_INDEX = 0
+    # data_path = './manual/Vacuum-520T_Arrow_0.15-0.2k-upward.pkl'
+    BAND_INDEX = 1
     config = PlotConfig(
         plot_params={},
         annotations={},
@@ -25,9 +29,24 @@ if __name__ == '__main__':
     plotter = MomentumSpaceEigenVisualizer(config=config, data_path=data_path)
     plotter.load_data()
 
+    plotter.new_2d_fig(figsize=(1.5, 1.5))
+    plotter.imshow_field(index=BAND_INDEX, field_key='s1', cmap='coolwarm', vmin=-1, vmax=1)
+    plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig(figsize=(1.5, 1.5))
+    plotter.imshow_field(index=BAND_INDEX, field_key='s2', cmap='coolwarm', vmin=-1, vmax=1)
+    plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig(figsize=(1.5, 1.5))
+    plotter.imshow_field(index=BAND_INDEX, field_key='s3', cmap='coolwarm', vmin=-1, vmax=1)
+    plotter.add_annotations()
+    plotter.save_and_show()
+
     plotter.new_3d_fig(figsize=(2, 2))
     plotter.plot_on_poincare_sphere_along_around_path(
-        index=BAND_INDEX, center=(0, 0), radius=0.03, cmap='rainbow',
+        index=BAND_INDEX, center=(0, 0), radius=0.05, cmap='rainbow',
         sphere_style='wire', arrow_length_ratio=1
     )
     # 去掉3D绘图的背景和背景网格线
@@ -41,12 +60,25 @@ if __name__ == '__main__':
 
     plotter.new_2d_fig(figsize=(1.5, 1.5))
     print("mesh step", plotter.coordinates['m1'][0]-plotter.coordinates['m1'][1])
-    # plotter.plot_field_regimes(index=BAND_INDEX, z_key='s2')
-    # plotter.plot_field_splits(index=BAND_INDEX, s1_key='s2', s2_key='s1')
-    # plotter.plot_field_regimes(index=BAND_INDEX, z_key='s1')
-    # plotter.plot_field_splits(index=BAND_INDEX, s1_key='s1', s2_key='s2')
     plotter.plot_field_regimes(index=BAND_INDEX, z_key='s3', colors=("lightcoral", "lightblue"))
     plotter.plot_field_splits(index=BAND_INDEX, s1_key='s3', s2_key='s1')
+    plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig(figsize=(1.5, 1.5))
+    print("mesh step", plotter.coordinates['m1'][0]-plotter.coordinates['m1'][1])
+    plotter.plot_field_regimes(index=BAND_INDEX, z_key='s2')
+    plotter.plot_field_splits(index=BAND_INDEX, s1_key='s2', s2_key='s1')
+    plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig(figsize=(1.5, 1.5))
+    plotter.plot_polarization_ellipses(index=BAND_INDEX, step=(1, 1), scale=1e-2, cmap='coolwarm', s1_key='s1', s2_key='s3', s3_key='s2')
+    plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig(figsize=(1.5, 1.5))
+    plotter.plot_polarization_ellipses(index=BAND_INDEX, step=(1, 1), scale=1e-2, cmap='coolwarm', s1_key='s1', s2_key='s2', s3_key='s3')
     plotter.add_annotations()
     plotter.save_and_show()
 

@@ -509,7 +509,7 @@ class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
         return np.meshgrid(x, y, indexing="ij")
 
     def plot_polarization_ellipses(
-            self, index, x_key="m1", y_key="m2", step=(1, 1), scale=1e-2, cmap="RdBu",
+            self, index, x_key="m1", y_key="m2", step=(1, 1), scale=1e-2, cmap="coolwarm",
             s1_key='s1', s2_key='s2', s3_key='s3'
     ):
         Mx, My = self._mesh(x_key, y_key)

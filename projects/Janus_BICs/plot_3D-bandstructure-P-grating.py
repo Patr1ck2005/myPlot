@@ -10,7 +10,8 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    data_path = 'data/VacuumEnv-ultra_mesh-search0.40-P-0.2k.csv'  # marked
+    # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-P-0.2k.csv'  # marked
+    data_path = 'data/VacuumEnv-ultra_mesh-search0.40-Arrowed-0.2k.csv'  # to be continued
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
@@ -20,13 +21,14 @@ if __name__ == '__main__':
     df_sample = df_sample[df_sample["m1"] <= 0.2]
     df_sample = df_sample[df_sample["m2"] <= 0.2]
     # 指定用于构造网格的参数以及目标数据列
-    param_keys = ["m1", "m2", "t_ridge (nm)", "fill", "t_tot (nm)", "substrate_n", "M_asym_factor", "P_asym_factor"]
+    # param_keys = ["m1", "m2", "t_ridge (nm)", "fill", "t_tot (nm)", "substrate_n", "M_asym_factor", "P_asym_factor"]
+    param_keys = ["m1", "m2", "t_ridge (nm)", "fill", "t_tot (nm)", "substrate_n", "M_asym_factor", "P_asym_factor", "Z_asym_factor"]
     z_keys = [
         "特征频率 (THz)", "品质因子 (1)",
         "up_tanchi (1)", "up_phi (rad)",
         "down_tanchi (1)", "down_phi (rad)",
         "fake_factor (1)", "频率 (Hz)",
-        "U_factor (1)",
+        "U_factor (1)", "up_cx (V/m)", "up_cy (V/m)", "down_cx (V/m)", "down_cy (V/m)"
     ]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
@@ -46,7 +48,8 @@ if __name__ == '__main__':
             "fill": 0.5,
             "substrate_n": 1,
             "M_asym_factor": 0,
-            "P_asym_factor": 0.02,
+            "P_asym_factor": 0,
+            "Z_asym_factor": 0.02,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 2},  # 筛选
@@ -146,12 +149,14 @@ if __name__ == '__main__':
     from core.prepare_plot import prepare_plot_data
     from core.data_postprocess.data_package import package_stad_C2_data
 
-    eigenfreq1, qfactor1, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor1 = extract_adjacent_fields(
+    (eigenfreq1, qfactor1, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor1,
+     up_cx1, up_cy1, down_cx1, down_cy1) = extract_adjacent_fields(
         additional_Z_grouped,
         z_keys=z_keys,
         band_index=0
     )
-    eigenfreq2, qfactor2, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor2 = extract_adjacent_fields(
+    (eigenfreq2, qfactor2, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor2,
+     up_cx2, up_cy2, down_cx2, down_cy2) = extract_adjacent_fields(
         additional_Z_grouped,
         z_keys=z_keys,
         band_index=1
@@ -167,6 +172,19 @@ if __name__ == '__main__':
     # ax.set_ylabel('m2')
     # ax.set_title('U_factor for Band 2')
     # plt.show()
+
+    # imshow up_cx
+    from matplotlib import pyplot as plt
+    fig, ax = plt.subplots(figsize=(6, 5))
+    c = ax.imshow(up_cx2.real.T, origin='lower', extent=(
+        new_coords['m1'][0], new_coords['m1'][-1],
+        new_coords['m2'][0], new_coords['m2'][-1],
+    ), aspect='auto', cmap='viridis')
+    fig.colorbar(c, ax=ax, label='up_cx (1)')
+    ax.set_xlabel('m1')
+    ax.set_ylabel('m2')
+    ax.set_title('up_cx for Band 2')
+    plt.show()
 
     band_index_A = 0
     Z_target_A = eigenfreq1

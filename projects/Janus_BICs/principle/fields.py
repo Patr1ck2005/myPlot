@@ -94,11 +94,42 @@ def jones_C_pair(X, Y, dx=0.0, dy=0.0):
     """V 点（q=1）沿动量空间分裂成两 C 点（q=1/2）的最简物理基底。"""
     # EL = (X - kxc) + 1j*(Y - kyc)/np.sqrt(X**2+Y**2+1e-12)  # q=-1
     # ER = (X + kxc) - 1j*(Y - kyc)/np.sqrt(X**2+Y**2+1e-12)  # q=-1
-    ER = ((X - dx) + 1j*(Y - dy))/np.sqrt(X**2+Y**2+1e-12)  # q=1
-    EL = ((X + dx) - 1j*(Y - dy))/np.sqrt(X**2+Y**2+1e-12)  # q=1
+    # ER = ((X - dx) + 1j*(Y - dy))/np.sqrt(X**2+Y**2+1e-12)  # q=1
+    # EL = ((X + dx) - 1j*(Y - dy))/np.sqrt(X**2+Y**2+1e-12)  # q=1
+    ER = ((X - dx) + 1j*(Y - dy))  # q=1
+    EL = ((X + dx) - 1j*(Y - dy))  # q=1
     Ex = (EL + ER)/np.sqrt(2.0)
     Ey = 1j*(EL - ER)/np.sqrt(2.0)
     return Ex, Ey
+
+def jones_test(X, Y):
+    # Ex = X
+    # Ey = Y*1j
+    epsilon = 0.05
+    # TE in grating
+    Ey = X+0.0*X**2+0.0*Y**2-(epsilon+epsilon*1j)
+    Ex = (-2*Y+0.0*X*Y+0.0*Y**3)*1j-epsilon*Y
+    # # TM in grating
+    # Ex = X+0.1*epsilon-100*epsilon*1j*Y**2
+    # Ey = 2*Y*1j
+    # # TM in grating
+    # Ex = X-(epsilon**2+epsilon*1j)
+    # Ey = 2*Y*1j
+    # return Ex, Ey
+    return Ex, Ey
+
+# def jones_C_pair(X, Y, dx=0.0, dy=0.0):
+#     phi_R = np.arctan2(Y - dy, X - dx)
+#     phi_L = np.arctan2(Y - dy, X + dx)
+#
+#     ER = np.exp(1j * phi_R)   # 只有相位
+#     EL = np.exp(-1j * phi_L)
+#
+#     Ex = (EL + ER)/np.sqrt(2.0)
+#     Ey = 1j*(EL - ER)/np.sqrt(2.0)
+#
+#     return Ex, Ey
+
 
 
 def stokes_from_jones(Ex, Ey):

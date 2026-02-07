@@ -145,8 +145,8 @@ if __name__ == "__main__":
     plot_complex_rgb(Ex_k, Ey_k, extent_k)
     plot_polarization_ellipses(KX, KY, S0_k, S1_k, S2_k, S3_k, scale=0.2)
 
-    # plot_stokes_maps(S0, S1, S2, S3, extent)
-    # plot_complex_rgb(Ex, Ey, extent)
-    # plot_polarization_ellipses(X, Y, S0, S1, S2, S3, scale=2)
+    plot_stokes_maps(S0, S1, S2, S3, extent)
+    plot_complex_rgb(Ex, Ey, extent)
+    plot_polarization_ellipses(X, Y, S0, S1, S2, S3, scale=2)
 
     plt.show()

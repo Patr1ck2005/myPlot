@@ -243,10 +243,10 @@ def track_polarization_field(ax, xl, yl, S1, S2, S3, S0):
 
 
 if __name__ == "__main__":
-    grid = np.linspace(-1, 1, 4 * 20 + 1)
+    grid = np.linspace(-1, 1, 4 * 20 + 1, endpoint=True)
     X, Y = np.meshgrid(grid, grid)
 
-    jones_field = poincare_beam
+    jones_field = jones_test
     # stokes_field = stokes_skyrmion
 
     Ex, Ey = jones_field(X, Y)
@@ -259,15 +259,14 @@ if __name__ == "__main__":
         S0, S1, S2, S3,
         w0=0.5
     )
-
-    # → Jones(k)
-    Ex, Ey = jones_from_stokes(S1, S2, S3, S0)
-
+    #
+    # # → Jones(k)
+    # Ex, Ey = jones_from_stokes(S1, S2, S3, S0)
     # # → real space
     # Ex, Ey = jones_k_to_x(Ex, Ey)
 
     # → Stokes
-    S0, S1, S2, S3 = stokes_from_jones(Ex, Ey)
+    # S0, S1, S2, S3 = stokes_from_jones(Ex, Ey)
 
     fig, ax = plt.subplots(figsize=(6, 6))
     ax.set_aspect("equal")
@@ -275,7 +274,7 @@ if __name__ == "__main__":
     ax = plot_polarization_field(
         ax, X, Y, S1, S2, S3, S0,
     )
-    xl, yl = circular_loop(center=(0.4, 0), radius=0.2)
+    xl, yl = circular_loop(center=(0.0, 0), radius=0.2)
     # 在ax上绘制loop, 渐变色
     cmap = plt.get_cmap("rainbow")
     for i in range(len(xl) - 1):
@@ -284,6 +283,33 @@ if __name__ == "__main__":
             color=cmap(i / len(xl)),
             linewidth=2
         )
+
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.imshow(S2, origin="lower", extent=(-1, 1, -1, 1), cmap='coolwarm', vmin=-1, vmax=1)
+    # 在ax上绘制loop, 渐变色
+    cmap = plt.get_cmap("rainbow")
+    for i in range(len(xl) - 1):
+        ax.plot(
+            xl[i:i + 2], yl[i:i + 2],
+            color=cmap(i / len(xl)),
+            linewidth=2
+        )
+
+    import matplotlib.colors as mcolors
+    fig, ax = plt.subplots(figsize=(6, 6))
+    bounds = [-1, -0.995, -0.99, -0.95, -0.5, -0.05, 0.05, 0.5, 0.95, 0.99, 0.995, 1]
+    norm = mcolors.BoundaryNorm(bounds, ncolors=256)
+    ax.imshow(S3, origin="lower", extent=(-1, 1, -1, 1), cmap='coolwarm', norm=norm)
+    # 在ax上绘制loop, 渐变色
+    cmap = plt.get_cmap("rainbow")
+    for i in range(len(xl) - 1):
+        ax.plot(
+            xl[i:i + 2], yl[i:i + 2],
+            color=cmap(i / len(xl)),
+            linewidth=2
+        )
+
+
     Exl, Eyl = jones_field(xl, yl)
     S0l, S1l, S2l, S3l = stokes_from_jones(Exl, Eyl)
     # S0l, S1l, S2l, S3l = stokes_C_pair(xl, yl)
