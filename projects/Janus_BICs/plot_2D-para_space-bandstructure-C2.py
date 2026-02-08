@@ -10,7 +10,8 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    data_path = 'data/VacuumEnv-1Dms-ultra_mesh-search0.40-various_T-0.2k.csv'
+    # data_path = 'data/VacuumEnv-1Dms-ultra_mesh-search0.45-various_T-0.2k.csv'
+    data_path = 'data/VacuumEnv-1Dms-ultra_mesh-search0.45-various_Fill-0.2k.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
@@ -43,9 +44,12 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            "t_tot (nm)": 500,
-            "t_ridge (nm)": 500,
-            "fill": 0.5,
+            # "t_tot (nm)": 540,
+            # "t_ridge (nm)": 540,
+            # "fill": 0.50,
+            "t_tot (nm)": 600,
+            "t_ridge (nm)": 600,
+            "fill": 0.6,
             "substrate_n": 1.0,
         },  # 固定
         filter_conditions={
@@ -137,7 +141,7 @@ if __name__ == '__main__':
         annotations={
             'xlabel': '', 'ylabel': '',
             'show_axis_labels': True, 'show_tick_labels': True,
-            'ylim': (0.35, 0.65),
+            'ylim': (0.30, 0.60),
         },
     )
     config.update(figsize=(1.25, 3), tick_direction='in')
@@ -151,7 +155,7 @@ if __name__ == '__main__':
         )
     for i in range(15):
         plotter.plot(
-            index=i, x_key=X_KEY, z1_key='eigenfreq_real', z3_key='qlog', cmap='hot',
+            index=i, x_key=X_KEY, z1_key='eigenfreq_real', z3_key='qlog', cmap='nipy_spectral',
             enable_dynamic_color=True, global_color_vmin=2, global_color_vmax=7, linewidth_base=2
         )
     plotter.add_annotations()

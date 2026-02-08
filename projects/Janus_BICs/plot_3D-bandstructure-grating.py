@@ -27,6 +27,7 @@ if __name__ == '__main__':
     # data_path = 'data/AsymEnv-ultra_mesh-search0.40-T510_520-0.2k.csv'  # marked
     # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-0.2k0.05k.csv'  # to be continued
     # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-0.2k0.05k-supp1.csv'  # to be continued
+    # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-around_Γ.csv'  # marked detailed
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
@@ -77,6 +78,7 @@ if __name__ == '__main__':
 
     ###############################################################################################################
     from matplotlib import pyplot as plt
+
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(8, 12))
     xs = []
     ys = []
@@ -169,12 +171,23 @@ if __name__ == '__main__':
     # ax.set_title('U_factor for Band 2')
     # plt.show()
     fig, ax = plt.subplots(figsize=(1.25, 1.25))
-    phase_diff = (np.angle(up_cx2) - np.angle(up_cy2) + np.pi)%(2*np.pi) - np.pi
+    # phase_diff = (np.angle(up_cx2) - np.angle(up_cy2) + np.pi)%(2*np.pi) - np.pi
+    # 通过kx, ky, 变换 (x, y) -> (s, p)
+    kx, ky = np.meshgrid(new_coords['m1'], new_coords['m2'], indexing='ij')  # 或 new_coords['m1'], new_coords['m2']
+    k_par = np.sqrt(kx ** 2 + ky ** 2)
+    # 避免除零
+    k_par = np.where(k_par == 0, 1.0, k_par)
+    up_cs = (-ky * up_cx2 + kx * up_cy2) / k_par
+    up_cp = (kx * up_cx2 + ky * up_cy2) / k_par
+    phase_diff = (np.angle(up_cs) - np.angle(up_cp) + np.pi) % (2*np.pi) - np.pi
+
     c = ax.imshow(phase_diff.T, origin='lower', extent=(
         new_coords['m1'][0], new_coords['m1'][-1],
         new_coords['m2'][0], new_coords['m2'][-1],
-    ), aspect='auto', cmap='RdBu', vmin=-np.pi, vmax=np.pi)
-    fig.colorbar(c, ax=ax)
+    ), aspect='auto', cmap='twilight', vmin=-np.pi, vmax=np.pi)
+    # fig.colorbar(c, ax=ax)
+    # 绘制等高线 phase_diff == ±pi/2
+    cs = ax.contour(kx, ky, phase_diff, levels=[-np.pi/2, np.pi/2], colors=['r', 'b'], linewidths=0.5)
     ax.set_xticklabels([])
     ax.set_yticklabels([])
     plt.savefig('./c.svg', dpi=300, bbox_inches='tight', transparent=True)
@@ -211,6 +224,53 @@ if __name__ == '__main__':
     plotter.load_data()
 
     plotter.new_2d_fig(figsize=(1.5, 1.5))
+    plotter.imshow_field(index=BAND_INDEX, field_key='s1', cmap='coolwarm', vmin=-1, vmax=1)
+    plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig(figsize=(1.5, 1.5))
+    plotter.imshow_field(index=BAND_INDEX, field_key='s2', cmap='coolwarm', vmin=-1, vmax=1)
+    plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig(figsize=(1.5, 1.5))
+    plotter.imshow_field(index=BAND_INDEX, field_key='s3', cmap='coolwarm', vmin=-1, vmax=1)
+    plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig(figsize=(1.5, 1.5))
+    plotter.imshow_field(index=BAND_INDEX, field_key='qlog', cmap='nipy_spectral', vmin=2, vmax=7)
+    # plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig(figsize=(1.5, 1.5))
+    plotter.imshow_compare_datas(
+        index_A=0, index_B=1,
+        field_key='eigenfreq_real',
+        cmap='nipy_spectral',
+        vmin=0,
+    )
+    plotter.save_and_show()
+
+    plotter.new_2d_fig(figsize=(1.5, 1.5))
+    plotter.imshow_compare_datas(
+        index_A=0, index_B=1,
+        field_key='eigenfreq_imag',
+        cmap='nipy_spectral',
+        vmin=0,
+    )
+    plotter.save_and_show()
+
+    plotter.new_2d_fig(figsize=(1.5, 1.5))
+    plotter.imshow_compare_datas(
+        index_A=0, index_B=1,
+        field_key='eigenfreq',
+        cmap='nipy_spectral',
+        vmin=0,
+    )
+    plotter.save_and_show()
+
+    plotter.new_2d_fig(figsize=(1.5, 1.5))
     # plotter.plot_field_regimes(index=BAND_INDEX, z_key='s2')
     # plotter.plot_field_splits(index=BAND_INDEX, s1_key='s2', s2_key='s1')
     # plotter.plot_field_regimes(index=BAND_INDEX, z_key='s1')
@@ -239,11 +299,6 @@ if __name__ == '__main__':
     norm = mcolors.BoundaryNorm(bounds, ncolors=256)
     plotter.imshow_field(index=BAND_INDEX, field_key='s3', cmap='coolwarm', norm=norm)
     plotter.add_annotations()
-    plotter.save_and_show()
-
-    plotter.new_2d_fig(figsize=(1.5, 1.5))
-    # plotter.imshow_field(index=BAND_INDEX, field_key='qlog', cmap='hot', vmin=2, vmax=7)
-    plotter.imshow_field(index=BAND_INDEX, field_key='qlog', cmap='nipy_spectral', vmin=2, vmax=7)
     plotter.save_and_show()
 
     plotter.new_3d_fig(figsize=(3, 3))
@@ -286,32 +341,5 @@ if __name__ == '__main__':
                                         alpha=0.5)
     plotter.plot_field_along_round_path(index=BAND_INDEX, center=(0, 0), radius=0.07, color='b', field_key='s3',
                                         alpha=0.5)
-    plotter.save_and_show()
-
-    plotter.new_2d_fig(figsize=(1.5, 1.5))
-    plotter.imshow_compare_datas(
-        index_A=0, index_B=1,
-        field_key='eigenfreq_real',
-        cmap='nipy_spectral',
-        vmin=0,
-    )
-    plotter.save_and_show()
-
-    plotter.new_2d_fig(figsize=(1.5, 1.5))
-    plotter.imshow_compare_datas(
-        index_A=0, index_B=1,
-        field_key='eigenfreq_imag',
-        cmap='nipy_spectral',
-        vmin=0,
-    )
-    plotter.save_and_show()
-
-    plotter.new_2d_fig(figsize=(1.5, 1.5))
-    plotter.imshow_compare_datas(
-        index_A=0, index_B=1,
-        field_key='eigenfreq',
-        cmap='nipy_spectral',
-        vmin=0,
-    )
     plotter.save_and_show()
     ####################################################################################################################

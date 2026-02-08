@@ -11,15 +11,21 @@ c_const = 299792458
 
 if __name__ == '__main__':
     # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-P-0.2k.csv'  # marked
-    data_path = 'data/VacuumEnv-ultra_mesh-search0.40-Arrowed-0.2k.csv'  # to be continued
+    # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-Arrowed-0.2k.csv'  # to be continued
+    data_path = 'data/AsymEnv-ultra_mesh-search0.40-502T-0.2k.csv'  #
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
     df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq,
                                                                                            period=period * 1e-9 * 1e12)
     df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period * 1e-9)
-    df_sample = df_sample[df_sample["m1"] <= 0.2]
-    df_sample = df_sample[df_sample["m2"] <= 0.2]
+    df_sample["up_cx (V/m)"] = df_sample["up_cx (V/m)"].apply(convert_complex)
+    df_sample["up_cy (V/m)"] = df_sample["up_cy (V/m)"].apply(convert_complex)
+    df_sample["down_cx (V/m)"] = df_sample["down_cx (V/m)"].apply(convert_complex)
+    df_sample["down_cy (V/m)"] = df_sample["down_cy (V/m)"].apply(convert_complex)
+    # 如果没有"Z_asym_factor", 可以先创建一个全0的列
+    if "Z_asym_factor" not in df_sample.columns:
+        df_sample["Z_asym_factor"] = 0.0
     # 指定用于构造网格的参数以及目标数据列
     # param_keys = ["m1", "m2", "t_ridge (nm)", "fill", "t_tot (nm)", "substrate_n", "M_asym_factor", "P_asym_factor"]
     param_keys = ["m1", "m2", "t_ridge (nm)", "fill", "t_tot (nm)", "substrate_n", "M_asym_factor", "P_asym_factor", "Z_asym_factor"]
@@ -43,13 +49,13 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            "t_tot (nm)": 520,
-            "t_ridge (nm)": 520,
+            "t_tot (nm)": 502,
+            "t_ridge (nm)": 502,
             "fill": 0.5,
             "substrate_n": 1,
             "M_asym_factor": 0,
-            "P_asym_factor": 0,
-            "Z_asym_factor": 0.02,
+            "P_asym_factor": 0.05,
+            "Z_asym_factor": 0.0,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 2},  # 筛选

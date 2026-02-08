@@ -6,8 +6,9 @@ if __name__ == '__main__':
     # data_path = './manual/Asym_1.2vs1-520T-aroundFWBIC-downward.pkl'
     # data_path = './manual/Asym_0.9vs1-520T-aroundFWBIC-upward.pkl'
     # data_path = './manual/Asym_0.9vs1-520T-aroundFWBIC-downward.pkl'
-    data_path = './manual/Asym_1vs1-520T-aroundFWBIC-upward.pkl'
-    # data_path = './manual/StrB-around_X_BIC.pkl'
+    # data_path = './manual/Asym_1vs1-520T-aroundFWBIC-upward.pkl'
+    # data_path = './manual/Vacuum-520T-0.015k-upward.pkl'
+    data_path = './manual/StrB-around_X_BIC.pkl'
     BAND_INDEX = 0
     config = PlotConfig(
         plot_params={},
@@ -18,24 +19,24 @@ if __name__ == '__main__':
     plotter = MomentumSpaceEigenVisualizer(config=config, data_path=data_path)
     plotter.load_data()
 
-    plotter.new_2d_fig(figsize=(1.25, 1.25))
+    plotter.new_2d_fig(figsize=(1.5, 1.5))
     plotter.imshow_field(index=BAND_INDEX, field_key='s1', cmap='coolwarm', vmin=-1, vmax=1)
     plotter.add_annotations()
     plotter.save_and_show()
 
-    plotter.new_2d_fig(figsize=(1.25, 1.25))
+    plotter.new_2d_fig(figsize=(1.5, 1.5))
     plotter.imshow_field(index=BAND_INDEX, field_key='s2', cmap='coolwarm', vmin=-1, vmax=1)
     plotter.add_annotations()
     plotter.save_and_show()
 
     plotter.new_2d_fig(figsize=(1.5, 1.5))
     plotter.imshow_field(index=BAND_INDEX, field_key='s3', cmap='coolwarm', vmin=-1, vmax=1)
-    # plotter.add_annotations()
+    plotter.add_annotations()
     plotter.save_and_show()
 
     plotter.new_2d_fig(figsize=(1.5, 1.5))
     plotter.imshow_field(index=BAND_INDEX, field_key='qlog', cmap='nipy_spectral', vmin=2, vmax=8)
-    # plotter.add_annotations()
+    plotter.add_annotations()
     plotter.save_and_show()
 
     BIC_KX = 0.1156
@@ -68,19 +69,20 @@ if __name__ == '__main__':
     plotter.add_annotations()
     plotter.save_and_show()
 
-    # plotter.new_3d_fig(figsize=(2, 2))
-    # plotter.plot_on_poincare_sphere_along_around_path(
-    #     index=BAND_INDEX, center=(BIC_KX, 0), radius=0.015, cmap='rainbow',
-    #     sphere_style='surface', arrow_length_ratio=1
-    # )
-    # # 去掉3D绘图的背景和背景网格线
-    # plotter.ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
-    # plotter.ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
-    # plotter.ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
-    # plotter.ax.grid(False)
-    # plotter.ax.view_init(elev=20, azim=30)
-    # plotter.add_annotations()
-    # plotter.save_and_show()
+    plotter.new_3d_fig(figsize=(2, 2))
+    plotter.plot_on_poincare_sphere_along_around_path(
+        # index=BAND_INDEX, center=(BIC_KX, 0), radius=0.015, cmap='rainbow',
+        index=BAND_INDEX, center=(0, 0), radius=0.005, cmap='rainbow',
+        sphere_style='wire', arrow_length_ratio=1
+    )
+    # 去掉3D绘图的背景和背景网格线
+    plotter.ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    plotter.ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    plotter.ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    plotter.ax.grid(False)
+    plotter.ax.view_init(elev=20, azim=30)
+    plotter.add_annotations()
+    plotter.save_and_show()
 
     import matplotlib.colors as mcolors
     plotter.new_2d_fig(figsize=(1.25, 1.25))

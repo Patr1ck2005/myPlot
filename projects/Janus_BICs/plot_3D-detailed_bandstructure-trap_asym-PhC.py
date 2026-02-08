@@ -10,10 +10,7 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    # data_path = "data/StrB-ultra_mesh-around_X.csv"
-    # data_path = "data/StrB-ultra_mesh-around_X-supp1.csv"
-    # data_path = "data/StrB-ultra_mesh_0.6-around_X.csv"
-    data_path = "data/StrB-ultra_mesh_div1.2-around_X.csv"
+    data_path = "data/StrB-ultra_mesh-geo_merging_trap_asym-around_Γ.csv"
     df_sample = pd.read_csv(data_path, sep='\t')
 
     # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
@@ -28,7 +25,7 @@ if __name__ == '__main__':
     # # 筛选m1<0.1的成分
     # df_sample = df_sample[df_sample["m1"] < 0.05]
     # 指定用于构造网格的参数以及目标数据列
-    param_keys = ["m1", "m2", "buffer (nm)"]
+    param_keys = ["m1", "m2", "buffer (nm)", "trap_factor", "rot_angle"]
     z_keys = ["特征频率 (THz)", "品质因子 (1)", "tanchi (1)", "phi (rad)", "fake_factor (1)", "频率 (Hz)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
@@ -44,6 +41,8 @@ if __name__ == '__main__':
         z_keys=z_keys,
         fixed_params={
             'buffer (nm)': 180,
+            'trap_factor': 0.05,
+            'rot_angle': 0,
             # 'buffer (nm)': 600,
         },  # 固定
         filter_conditions={
@@ -141,7 +140,7 @@ if __name__ == '__main__':
         q_key='品质因子 (1)',
         tanchi_key='tanchi (1)',
         phi_key='phi (rad)',
-        axis='y',
+        axis='x',
     )
     data_path = prepare_plot_data(
         coords=full_coords, data_class='Eigensolution', dataset_list=[dataset_A], fixed_params={},

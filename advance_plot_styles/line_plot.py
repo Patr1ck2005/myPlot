@@ -22,7 +22,7 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, index=0, **kwargs):
         - gradient_fill: bool, 是否使用 imshow 渐变填充 (默认 False，优先于样式 A/B)。
         - gradient_direction: str, 渐变方向 ('horizontal', 'vertical', 'z3') (默认 'horizontal')。
         - scale: float, 宽度缩放因子 (默认 0.5)。
-        - alpha_line: float, 线透明度 (默认 0.8)。
+        - alpha_line: float, 线透明度 (默认 1)。
         - alpha_fill: float, 填充透明度 (默认 0.3)。
         - cmap: str 或 Colormap, 自定义颜色表 (默认 'RdBu' for 动态颜色, 'Blues' for 纯色/渐变)。
         - default_line_color: str, 默认线颜色 (默认 'blue')。
@@ -41,7 +41,7 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, index=0, **kwargs):
     gradient_fill = kwargs.get('gradient_fill', False)
     gradient_direction = kwargs.get('gradient_direction', 'horizontal')  # 新增：渐变方向
     scale = kwargs.get('scale', 0.5)
-    alpha_line = kwargs.get('alpha_line', 0.8)
+    alpha_line = kwargs.get('alpha_line', 1)
     alpha_fill = kwargs.get('alpha_fill', 0.3)
     fill_cmap = kwargs.get('cmap', 'viridis')
     if isinstance(fill_cmap, str):
@@ -169,10 +169,10 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, index=0, **kwargs):
             cbar = plt.colorbar(sm, ax=ax)
             cbar.set_label('z3 (controls color)')
 
-    # 设置轴限（连续调用时，最后一次覆盖为当前范围；若需全局，函数外手动调整）
-    if any(x_vals):
-        ax.set_xlim(x_vals.min(), x_vals.max())
-        ax.set_ylim(np.nanmin(y_lower) if enable_fill else np.nanmin(z1), np.nanmax(y_upper) if enable_fill else np.nanmax(z1))
+    # # 设置轴限（连续调用时，最后一次覆盖为当前范围；若需全局，函数外手动调整）
+    # if any(x_vals):
+    #     ax.set_xlim(x_vals.min(), x_vals.max())
+    #     ax.set_ylim(np.nanmin(y_lower) if enable_fill else np.nanmin(z1), np.nanmax(y_upper) if enable_fill else np.nanmax(z1))
 
     return ax
 

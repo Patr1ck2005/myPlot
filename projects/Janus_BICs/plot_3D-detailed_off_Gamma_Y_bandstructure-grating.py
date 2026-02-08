@@ -10,26 +10,28 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    # data_path = "data/StrB-ultra_mesh-around_X.csv"
-    # data_path = "data/StrB-ultra_mesh-around_X-supp1.csv"
-    # data_path = "data/StrB-ultra_mesh_0.6-around_X.csv"
-    data_path = "data/StrB-ultra_mesh_div1.2-around_X.csv"
+    data_path = 'data/VacuumEnv-ultra_mesh-search0.40-0.015k-around_Y_BIC.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
-    # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
-    def convert_complex(freq_str):
-        return complex(freq_str.replace('i', 'j'))
-    def norm_freq(freq, period):
-        return freq/(c_const/period)
-    period = 400
-    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq, period=period*1e-9*1e12)
-    df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period*1e-9)
-    df_sample["phi (rad)"] = df_sample["phi (rad)"].apply(lambda x: x % np.pi)
-    # # 筛选m1<0.1的成分
-    # df_sample = df_sample[df_sample["m1"] < 0.05]
+    period = 500
+    df_sample["特征频率 (THz)"] = (df_sample["特征频率 (THz)"].apply(convert_complex)
+                                   .apply(norm_freq, period=period * 1e-9 * 1e12))
+    df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period * 1e-9)
+    df_sample["up_cx (V/m)"] = df_sample["up_cx (V/m)"].apply(convert_complex)
+    df_sample["up_cy (V/m)"] = df_sample["up_cy (V/m)"].apply(convert_complex)
+    df_sample["down_cx (V/m)"] = df_sample["down_cx (V/m)"].apply(convert_complex)
+    df_sample["down_cy (V/m)"] = df_sample["down_cy (V/m)"].apply(convert_complex)
+    # df_sample = df_sample[df_sample["m1"] <= 0.2]
+    # df_sample = df_sample[df_sample["m2"] <= 0.2]
     # 指定用于构造网格的参数以及目标数据列
-    param_keys = ["m1", "m2", "buffer (nm)"]
-    z_keys = ["特征频率 (THz)", "品质因子 (1)", "tanchi (1)", "phi (rad)", "fake_factor (1)", "频率 (Hz)"]
+    param_keys = ["m1", "m2", "t_ridge (nm)", "fill", "t_tot (nm)", "substrate_n"]
+    z_keys = [
+        "特征频率 (THz)", "品质因子 (1)",
+        "up_tanchi (1)", "up_phi (rad)",
+        "down_tanchi (1)", "down_phi (rad)",
+        "fake_factor (1)", "频率 (Hz)",
+        "U_factor (1)", "up_cx (V/m)", "up_cy (V/m)", "down_cx (V/m)", "down_cy (V/m)"
+    ]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
     grid_coords, Z = create_data_grid(df_sample, param_keys, z_keys, deduplication=False)
@@ -43,12 +45,15 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            'buffer (nm)': 180,
-            # 'buffer (nm)': 600,
+            "t_tot (nm)": 520,
+            "t_ridge (nm)": 520,
+            "fill": 0.5,
+            "substrate_n": 1.0,
+            # "substrate_n": 1.0,
         },  # 固定
         filter_conditions={
-            "fake_factor (1)": {"<": 1},  # 筛选
-            "频率 (Hz)": {">": 0.0, "<": 0.5},  # 筛选
+            "fake_factor (1)": {"<": 2},  # 筛选
+            # "频率 (Hz)": {">": 0.32, "<": 0.45},  # 筛选
         }
     )
 
@@ -103,15 +108,15 @@ if __name__ == '__main__':
         additional_data=Z_filtered,
         value_weights=value_weights,
         deriv_weights=deriv_weights,
-        max_m=8,
+        max_m=14,
         auto_split_streams=False
     )
 
     Z_targets = []
-    for band_index in range(8):
+    for freq_index in range(5):
         new_coords, Z_target = group_solution(
             new_coords, Z_grouped,
-            freq_index=band_index  # 第n个频率
+            freq_index=freq_index  # 第n个频率
         )
         Z_targets.append(Z_target)
 
@@ -119,32 +124,84 @@ if __name__ == '__main__':
     from core.process_multi_dim_params_space import extract_adjacent_fields
     from core.prepare_plot import prepare_plot_data
     from core.data_postprocess.data_package import package_stad_C2_data
-    from core.prepare_plot import prepare_plot_data
-
     datasets = []
     for i, Z_target in enumerate(Z_targets):
         dataset = {'eigenfreq_real': Z_target.real, 'eigenfreq_imag': Z_target.imag}
-        eigenfreq, qfactor, tanchi, phi, fake_factor, freq = extract_adjacent_fields(
+        eigenfreq, qfactor, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor, \
+        up_cx, up_cy, down_cx, down_cy = extract_adjacent_fields(
             additional_Z_grouped,
             z_keys=z_keys,
             band_index=i
         )
         qlog = np.log10(qfactor)
-        dataset['qlog'] = qlog.real.ravel()
+        dataset['qlog'] = qlog.real
+        dataset['up_cx (V/m)'] = up_cx
+        dataset['up_cy (V/m)'] = up_cy
+        dataset['down_cx (V/m)'] = up_cx
+        dataset['down_cy (V/m)'] = up_cy
         print(f"Band {i}: qlog range = [{dataset['qlog'].min()}, {dataset['qlog'].max()}]")
         datasets.append(dataset)
 
-    band_index_A = 5
-    Z_target_A = Z_targets[band_index_A]
-    full_coords, dataset_A = package_stad_C2_data(
-        new_coords, band_index_A, Z_target_A, additional_Z_grouped, z_keys,
-        q_key='品质因子 (1)',
-        tanchi_key='tanchi (1)',
-        phi_key='phi (rad)',
-        axis='y',
-    )
+    up_cx1 = datasets[0]['up_cx (V/m)']
+    up_cy1 = datasets[0]['up_cy (V/m)']
+    # imshow up_cx
+    from matplotlib import pyplot as plt
+    fig, ax = plt.subplots(figsize=(1.25, 1.25))
+    normed_up_cx = up_cx1 / (np.abs(up_cx1)+np.abs(up_cy1))
+    # normed_up_cy = up_cy1 / (np.abs(up_cx1)+np.abs(up_cy1))
+    normed_up_cy = up_cy1
+    c = ax.imshow(np.imag(normed_up_cy).T, origin='lower', extent=(
+        new_coords['m1'][0], new_coords['m1'][-1],
+        new_coords['m2'][0], new_coords['m2'][-1],
+    ), aspect='auto', cmap='viridis')
+    fig.colorbar(c, ax=ax)
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    plt.savefig('./c.svg', dpi=300, bbox_inches='tight', transparent=True)
+    plt.show()
+
+    fig, ax = plt.subplots(figsize=(1.25, 1.25))
+    normed_up_cx = up_cx1 / (np.abs(up_cx1)+np.abs(up_cy1))
+    normed_up_cy = up_cy1 / (np.abs(up_cx1)+np.abs(up_cy1))
+    phase_diff = (np.angle(up_cx1) - np.angle(up_cy1) + np.pi)%(2*np.pi) - np.pi
+    c = ax.imshow(phase_diff.T, origin='lower', extent=(
+        new_coords['m1'][0], new_coords['m1'][-1],
+        new_coords['m2'][0], new_coords['m2'][-1],
+    ), aspect='auto', cmap='viridis')
+    fig.colorbar(c, ax=ax)
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    plt.savefig('./c.svg', dpi=300, bbox_inches='tight', transparent=True)
+    plt.show()
+
+    fig, ax = plt.subplots(figsize=(1.25, 1.25))
+    # 取m2=0处的切片, 在复数平面上绘制normed_up_cy的实部和虚部
+    m2_index = np.argmin(np.abs(new_coords['m2'] - 0))
+    plt.scatter(np.real(normed_up_cy[:, m2_index]), np.imag(normed_up_cy[:, m2_index]), s=5, marker='+', color='k')
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    ax.axhline(0, color='gray', linestyle='-', linewidth=0.5)
+    ax.axvline(0, color='gray', linestyle='-', linewidth=0.5)
+    plt.savefig('./c.svg', dpi=300, bbox_inches='tight', transparent=True)
+    plt.show()
+
+    datasets = []
+    selected_bands = [0, 1]
+    for i in selected_bands:
+        Z_target = Z_targets[i]
+        full_coords, dataset = package_stad_C2_data(
+            new_coords, i, Z_target, additional_Z_grouped, z_keys,
+            q_key='品质因子 (1)',
+            tanchi_key='up_tanchi (1)',
+            phi_key='up_phi (rad)',
+            # tanchi_key='down_tanchi (1)',
+            # phi_key='down_phi (rad)',
+            axis='x',
+        )
+        datasets.append(dataset)
+
     data_path = prepare_plot_data(
-        coords=full_coords, data_class='Eigensolution', dataset_list=[dataset_A], fixed_params={},
+        coords=full_coords, data_class='Eigensolution', dataset_list=datasets, fixed_params={},
         save_dir='./rsl/2_para_space',
     )
 
@@ -152,7 +209,7 @@ if __name__ == '__main__':
     from core.plot_cls import MomentumSpaceEigenVisualizer
     from core.plot_workflow import PlotConfig
 
-    BAND_INDEX = 0
+    BAND_INDEX = 1
     config = PlotConfig(
         plot_params={},
         annotations={},
@@ -181,6 +238,5 @@ if __name__ == '__main__':
     plotter.imshow_field(index=BAND_INDEX, field_key='qlog', cmap='nipy_spectral', vmin=2, vmax=8)
     plotter.add_annotations()
     plotter.save_and_show()
-
     print("绘图已经整理到其他文件中")
     ####################################################################################################################
