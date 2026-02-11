@@ -304,6 +304,12 @@ class TwoDimFieldVisualizer(HeatmapPlotter, ABC):
     def prepare_data(self) -> None:  # 手动重写
         pass
 
+    def _get_coord_field(self, index, key, x_key, y_key, x_key_lim=None, y_key_lim=None):
+        """
+        获取字段；如果不存在且 key 是可派生物理量，则即时计算
+        """
+        return self.coordinates[x_key], self.coordinates[y_key], self.raw_datasets["data_list"][index][key]
+
     def plot(self) -> None:
         pass
 
@@ -345,10 +351,10 @@ class TwoDimFieldVisualizer(HeatmapPlotter, ABC):
     def imshow_field(
             self, index, x_key, y_key, field_key, **kwargs
     ) -> None:
-        x = self.coordinates[x_key]
-        y = self.coordinates[y_key]
+        # x = self.coordinates[x_key]
+        # y = self.coordinates[y_key]
         # z1 = self.raw_datasets["data_list"][index][field_key]
-        z1 = self.raw_datasets["data_list"][index][field_key]
+        x, y, z1 = self._get_coord_field(index, field_key, x_key, y_key)
         self.ax.imshow(
             z1.T,
             extent=(x.min(), x.max(), y.min(), y.max()),
@@ -442,14 +448,14 @@ class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
         super().imshow_field(x_key=x_key, y_key=y_key, **kwargs)
 
     def plot_3d_surfaces(
-            self, indexs, z1_key, z2_key, x_key='m1', y_key='m1', **kwargs
+            self, indexs, z1_key, z2_key, x_key='m1', y_key='m2', **kwargs
     ) -> None:
         super().plot_3d_surfaces(
             indexs, x_key, y_key, z1_key, z2_key, **kwargs
         )
 
     def plot_3d_surface(
-            self, index, z1_key, x_key='m1', y_key='m1', **kwargs
+            self, index, z1_key, x_key='m1', y_key='m2', **kwargs
     ) -> None:
         super().plot_3d_surface(
             index, x_key, y_key, z1_key, **kwargs
@@ -500,6 +506,11 @@ class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
             qlog = np.log10(np.abs(data["eigenfreq_real"] / (2 * data["eigenfreq_imag"])))
             data["qlog"] = qlog
             return x, y, qlog
+
+        if key in ("eigenfreq_real", "eigenfreq_imag") and key not in data:
+            data["eigenfreq_real"] = data["eigenfreq"].real
+            data["eigenfreq_imag"] = data["eigenfreq"].imag
+            return x, y, data[key]
 
         raise KeyError(f"Field '{key}' not found and not derivable.")
 

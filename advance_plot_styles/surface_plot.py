@@ -62,7 +62,7 @@ def plot_advanced_surface(
 
     # 网格，按 (i,j) 对齐
     Mx, My = np.meshgrid(x, y, indexing='ij')
-    assert z1.shape == z2.shape == Mx.shape, "z1/z2 与网格尺寸不一致"
+    assert z1.shape == z2.shape == Mx.shape, "z1/z2 与网格尺寸不一致: {} vs {}".format(z1.shape, Mx.shape)
     if z3 is not None:
         assert z3.shape == z1.shape, "z3 与网格尺寸不一致"
 

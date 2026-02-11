@@ -211,6 +211,11 @@ if __name__ == '__main__':
     plotter.save_and_show()
 
     plotter.new_2d_fig()
+    plotter.imshow_field(index=0, field_key='eigenfreq_real', cmap='nipy_spectral')
+    # plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig()
     plotter.prepare_chi_phi_data()
     plotter.plot_phi_families_regimes(index=0)
     plotter.plot_phi_families_split(index=0)
