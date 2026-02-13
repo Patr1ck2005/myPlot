@@ -10,8 +10,10 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_FW_BIC-around.csv'
-    data_path = 'data/AsymEnv-ultra_mesh-search0.40-geo_FW_QBIC-around.csv'
+    data_path = 'data/AsymEnv-ultra_mesh-search0.40-geo_520T-around.csv'
+    # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_Arrow-around_X_BIC.csv'
+    # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_Trap-around_X_BIC.csv'
+    # data_path = 'data/Vacuum-ultra_mesh-search0.40-geo540T-around_X_BIC_0.015k.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
@@ -25,7 +27,10 @@ if __name__ == '__main__':
     # df_sample = df_sample[df_sample["m1"] <= 0.2]
     # df_sample = df_sample[df_sample["m2"] <= 0.2]
     # 指定用于构造网格的参数以及目标数据列
-    param_keys = ["m1", "m2", "t_ridge (nm)", "fill", "t_tot (nm)", "substrate_n"]
+    param_keys = [
+        "m1", "m2", "t_ridge (nm)", "fill", "t_tot (nm)", "substrate_n",
+        # "M_asym_factor", "P_asym_factor", "Z_asym_factor"
+    ]
     z_keys = [
         "特征频率 (THz)", "品质因子 (1)",
         "up_tanchi (1)", "up_phi (rad)",
@@ -49,8 +54,10 @@ if __name__ == '__main__':
             "t_tot (nm)": 520,
             "t_ridge (nm)": 520,
             "fill": 0.5,
-            "substrate_n": 1.2,
-            # "substrate_n": 1.0,
+            "substrate_n": 1.0,
+            # "M_asym_factor": 0.00,
+            # "P_asym_factor": 0.00,
+            # "Z_asym_factor": 0.00,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 2},  # 筛选
@@ -125,66 +132,65 @@ if __name__ == '__main__':
     from core.process_multi_dim_params_space import extract_adjacent_fields
     from core.prepare_plot import prepare_plot_data
     from core.data_postprocess.data_package import package_stad_C2_data
-    datasets = []
+
+    raw_datasets = []
     for i, Z_target in enumerate(Z_targets):
-        dataset = {'eigenfreq_real': Z_target.real, 'eigenfreq_imag': Z_target.imag}
+        raw_dataset = {'eigenfreq_real': Z_target.real, 'eigenfreq_imag': Z_target.imag}
         eigenfreq, qfactor, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor, \
-        up_cx, up_cy, down_cx, down_cy = extract_adjacent_fields(
+            up_cx, up_cy, down_cx, down_cy = extract_adjacent_fields(
             additional_Z_grouped,
             z_keys=z_keys,
             band_index=i
         )
         qlog = np.log10(qfactor)
-        dataset['qlog'] = qlog.real
-        dataset['up_cx (V/m)'] = up_cx
-        dataset['up_cy (V/m)'] = up_cy
-        dataset['down_cx (V/m)'] = up_cx
-        dataset['down_cy (V/m)'] = up_cy
-        print(f"Band {i}: qlog range = [{dataset['qlog'].min()}, {dataset['qlog'].max()}]")
-        datasets.append(dataset)
-
-    up_cx1 = datasets[0]['up_cx (V/m)']
-    up_cy1 = datasets[0]['up_cy (V/m)']
-    # imshow up_cx
+        raw_dataset['qlog'] = qlog.real
+        raw_dataset['up_cx (V/m)'] = up_cx
+        raw_dataset['up_cy (V/m)'] = up_cy
+        raw_dataset['down_cx (V/m)'] = up_cx
+        raw_dataset['down_cy (V/m)'] = up_cy
+        print(f"Band {i}: qlog range = [{raw_dataset['qlog'].min()}, {raw_dataset['qlog'].max()}]")
+        raw_datasets.append(raw_dataset)
+    # # imshow up_cx
     from matplotlib import pyplot as plt
-    fig, ax = plt.subplots(figsize=(1.25, 1.25))
-    normed_up_cx = up_cx1 / (np.abs(up_cx1)+np.abs(up_cy1))
+
+    # fig, ax = plt.subplots(figsize=(1.25, 1.25))
+    # normed_up_cx = up_cx1 / (np.abs(up_cx1)+np.abs(up_cy1))
+    # # normed_up_cy = up_cy1 / (np.abs(up_cx1)+np.abs(up_cy1))
+    # normed_up_cy = up_cy1
+    # c = ax.imshow(np.imag(normed_up_cy).T, origin='lower', extent=(
+    #     new_coords['m1'][0], new_coords['m1'][-1],
+    #     new_coords['m2'][0], new_coords['m2'][-1],
+    # ), aspect='auto', cmap='viridis')
+    # fig.colorbar(c, ax=ax)
+    # ax.set_xticklabels([])
+    # ax.set_yticklabels([])
+    # plt.savefig('./c.svg', dpi=300, bbox_inches='tight', transparent=True)
+    # plt.show()
+    #
+    # fig, ax = plt.subplots(figsize=(1.25, 1.25))
+    # normed_up_cx = up_cx1 / (np.abs(up_cx1)+np.abs(up_cy1))
     # normed_up_cy = up_cy1 / (np.abs(up_cx1)+np.abs(up_cy1))
-    normed_up_cy = up_cy1
-    c = ax.imshow(np.imag(normed_up_cy).T, origin='lower', extent=(
-        new_coords['m1'][0], new_coords['m1'][-1],
-        new_coords['m2'][0], new_coords['m2'][-1],
-    ), aspect='auto', cmap='viridis')
-    fig.colorbar(c, ax=ax)
-    ax.set_xticklabels([])
-    ax.set_yticklabels([])
-    plt.savefig('./c.svg', dpi=300, bbox_inches='tight', transparent=True)
-    plt.show()
-
-    fig, ax = plt.subplots(figsize=(1.25, 1.25))
-    normed_up_cx = up_cx1 / (np.abs(up_cx1)+np.abs(up_cy1))
-    normed_up_cy = up_cy1 / (np.abs(up_cx1)+np.abs(up_cy1))
-    phase_diff = (np.angle(up_cx1) - np.angle(up_cy1) + np.pi)%(2*np.pi) - np.pi
-    c = ax.imshow(phase_diff.T, origin='lower', extent=(
-        new_coords['m1'][0], new_coords['m1'][-1],
-        new_coords['m2'][0], new_coords['m2'][-1],
-    ), aspect='auto', cmap='viridis')
-    fig.colorbar(c, ax=ax)
-    ax.set_xticklabels([])
-    ax.set_yticklabels([])
-    plt.savefig('./c.svg', dpi=300, bbox_inches='tight', transparent=True)
-    plt.show()
-
-    fig, ax = plt.subplots(figsize=(1.25, 1.25))
-    # 取m2=0处的切片, 在复数平面上绘制normed_up_cy的实部和虚部
-    m2_index = np.argmin(np.abs(new_coords['m2'] - 0))
-    plt.scatter(np.real(normed_up_cy[:, m2_index]), np.imag(normed_up_cy[:, m2_index]), s=5, marker='+', color='k')
-    ax.set_xticklabels([])
-    ax.set_yticklabels([])
-    ax.axhline(0, color='gray', linestyle='-', linewidth=0.5)
-    ax.axvline(0, color='gray', linestyle='-', linewidth=0.5)
-    plt.savefig('./c.svg', dpi=300, bbox_inches='tight', transparent=True)
-    plt.show()
+    # phase_diff = (np.angle(up_cx1) - np.angle(up_cy1) + np.pi)%(2*np.pi) - np.pi
+    # c = ax.imshow(phase_diff.T, origin='lower', extent=(
+    #     new_coords['m1'][0], new_coords['m1'][-1],
+    #     new_coords['m2'][0], new_coords['m2'][-1],
+    # ), aspect='auto', cmap='viridis')
+    # fig.colorbar(c, ax=ax)
+    # ax.set_xticklabels([])
+    # ax.set_yticklabels([])
+    # plt.savefig('./c.svg', dpi=300, bbox_inches='tight', transparent=True)
+    # plt.show()
+    #
+    # fig, ax = plt.subplots(figsize=(1.25, 1.25))
+    # # 取m2=0处的切片, 在复数平面上绘制normed_up_cy的实部和虚部
+    # m2_index = np.argmin(np.abs(new_coords['m2'] - 0))
+    # plt.scatter(np.real(normed_up_cy[:, m2_index]), np.imag(normed_up_cy[:, m2_index]), s=5, marker='+', color='k')
+    # ax.set_xticklabels([])
+    # ax.set_yticklabels([])
+    # ax.axhline(0, color='gray', linestyle='-', linewidth=0.5)
+    # ax.axvline(0, color='gray', linestyle='-', linewidth=0.5)
+    # plt.savefig('./c.svg', dpi=300, bbox_inches='tight', transparent=True)
+    # plt.show()
 
     datasets = []
     selected_bands = [0, 1]
@@ -217,6 +223,25 @@ if __name__ == '__main__':
     )
     config.update(figsize=(1.5, 1.5), tick_direction='in')
 
+    fig, ax = plt.subplots(figsize=(1.25, 1.25))
+    # phase_diff = (np.angle(up_cx2) - np.angle(up_cy2) + np.pi)%(2*np.pi) - np.pi
+    # 通过kx, ky, 变换 (x, y) -> (s, p)
+    kx, ky = np.meshgrid(new_coords['m1'], new_coords['m2'], indexing='ij')  # 或 new_coords['m1'], new_coords['m2']
+    k_par = np.sqrt(kx ** 2 + ky ** 2)
+    up_cs = (-ky * raw_datasets[BAND_INDEX]['up_cx (V/m)'] + kx * raw_datasets[BAND_INDEX]['up_cy (V/m)']) / k_par
+    up_cp = (kx * raw_datasets[BAND_INDEX]['up_cx (V/m)'] + ky * raw_datasets[BAND_INDEX]['up_cy (V/m)']) / k_par
+    phase_diff = (np.angle(up_cs) - np.angle(up_cp) + np.pi) % (2 * np.pi) - np.pi
+    c = ax.imshow(phase_diff.T, origin='lower', extent=(
+        new_coords['m1'][0], new_coords['m1'][-1],
+        new_coords['m2'][0], new_coords['m2'][-1],
+    ), cmap='twilight', vmin=-np.pi, vmax=np.pi)
+    # cs = ax.contour(kx, ky, phase_diff, levels=[-np.pi / 2, np.pi / 2], colors=['r', 'b'], linewidths=0.5)
+    cs = ax.contour(kx, ky, np.real(up_cs*np.conj(up_cp)), levels=[0], colors=['k'], linewidths=0.5)
+    # ax.set_xticklabels([])
+    # ax.set_yticklabels([])
+    plt.savefig('./c.svg', dpi=300, bbox_inches='tight', transparent=True)
+    plt.show()
+
     plotter = MomentumSpaceEigenVisualizer(config=config, data_path=data_path)
     plotter.load_data()
 
@@ -231,7 +256,12 @@ if __name__ == '__main__':
     plotter.save_and_show()
 
     plotter.new_2d_fig(figsize=(1.5, 1.5))
-    plotter.imshow_field(index=BAND_INDEX, field_key='s3', cmap='coolwarm', vmin=-1, vmax=1)
+    import matplotlib.colors as mcolors
+
+    bounds = [-1, -0.995, -0.99, -0.95, -0.5, -0.05, 0.05, 0.5, 0.95, 0.99, 0.995, 1]
+    norm = mcolors.BoundaryNorm(bounds, ncolors=256)
+    plotter.imshow_field(index=BAND_INDEX, field_key='s3', cmap='coolwarm', norm=norm)
+    # plotter.imshow_field(index=BAND_INDEX, field_key='s3', cmap='coolwarm', vmin=-1, vmax=1)
     plotter.add_annotations()
     plotter.save_and_show()
 

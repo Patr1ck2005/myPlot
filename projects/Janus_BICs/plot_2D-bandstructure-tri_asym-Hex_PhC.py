@@ -10,27 +10,23 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    data_path = 'data/VacuumEnv-1Dms-ultra_mesh-search0.45-various_T-0.2k.csv'
-    # data_path = 'data/VacuumEnv-1Dms-ultra_mesh-search0.45-various_Fill-0.2k.csv'
-    # data_path = 'data/VacuumEnv-1Dms-ultra_mesh-search0.45-group_600T-0.2k.csv'
-    # data_path = 'data/VacuumEnv-1Dms-ultra_mesh-search0.45-group_600T-0.4k.csv'
+    data_path = "data/Hex-ultra_mesh-geo_tri_asym-0.1k.csv"
     df_sample = pd.read_csv(data_path, sep='\t')
 
-    period = 500
-    df_sample["特征频率 (THz)"] = (df_sample["特征频率 (THz)"].apply(convert_complex)
-                                   .apply(norm_freq, period=period * 1e-9 * 1e12))
-    df_sample["频率 (Hz)"] = np.real(df_sample["特征频率 (THz)"])
-    df_sample["up_cx (V/m)"] = df_sample["up_cx (V/m)"].apply(convert_complex)
-    df_sample["up_cy (V/m)"] = df_sample["up_cy (V/m)"].apply(convert_complex)
-    df_sample["down_cx (V/m)"] = df_sample["down_cx (V/m)"].apply(convert_complex)
-    df_sample["down_cy (V/m)"] = df_sample["down_cy (V/m)"].apply(convert_complex)
-    df_sample["k"] = df_sample["m1"] - df_sample["m2"]
-    param_keys = ["k", "t_ridge (nm)", "fill", "t_tot (nm)", "substrate_n"]
-    z_keys = ["特征频率 (THz)", "品质因子 (1)",
-              "up_tanchi (1)", "up_phi (rad)",
-              "down_tanchi (1)", "down_phi (rad)",
-              "fake_factor (1)", "频率 (Hz)",
-              "U_factor (1)", "up_cx (V/m)", "up_cy (V/m)", "down_cx (V/m)", "down_cy (V/m)"]
+    period = 400
+    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq,
+                                                                                           period=period * 1e-9 * 1e12)
+    df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period * 1e-9)
+    df_sample["phi (rad)"] = df_sample["phi (rad)"].apply(lambda x: x % np.pi)
+    df_sample["cx (V/m)"] = df_sample["cx (V/m)"].apply(convert_complex)
+    df_sample["cy (V/m)"] = df_sample["cy (V/m)"].apply(convert_complex)
+    df_sample["k"] = df_sample["m1"]-df_sample["m2"]
+    # 指定用于构造网格的参数以及目标数据列
+    param_keys = [
+        "k", "t_tot (nm)", "r1 (nm)", "r2 (nm)", "substrate (nm)",
+        "asym_y_scaling", "tri_factor", "rot_angle (deg)"
+    ]
+    z_keys = ["特征频率 (THz)", "品质因子 (1)", "tanchi (1)", "phi (rad)", "频率 (Hz)", "cx (V/m)", "cy (V/m)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
     grid_coords, Z = create_data_grid(df_sample, param_keys, z_keys, deduplication=False)
@@ -46,17 +42,17 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            # "t_tot (nm)": 540,
-            # "t_ridge (nm)": 540,
-            # "fill": 0.50,
-            "t_tot (nm)": 510,
-            "t_ridge (nm)": 510,
-            "fill": 0.5,
-            "substrate_n": 1.0,
+            't_tot (nm)': 150,
+            'r1 (nm)': 150,
+            'r2 (nm)': 0,
+            'substrate (nm)': 500,
+            'asym_y_scaling': 1.0,
+            'tri_factor': 0.125,
+            'rot_angle (deg)': 0,
         },  # 固定
         filter_conditions={
-            "fake_factor (1)": {"<": 2},  # 筛选
-            # "特征频率 (THz)": {"<": 0.60, ">": 0},  # 筛选
+            # "fake_factor (1)": {"<": 1},  # 筛选
+            "频率 (Hz)": {">": 0.0, "<": 0.5},  # 筛选
         }
     )
 
@@ -118,8 +114,8 @@ if __name__ == '__main__':
     datasets = []
     for i, Z_target in enumerate(Z_targets):
         dataset = {'eigenfreq_real': Z_target.real, 'eigenfreq_imag': Z_target.imag}
-        eigenfreq, qfactor, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor, \
-        up_cx, up_cy, down_cx, down_cy = extract_adjacent_fields(
+        eigenfreq, qfactor, up_tanchi, up_phi, freq, \
+            up_cx, up_cy= extract_adjacent_fields(
             additional_Z_grouped,
             z_keys=z_keys,
             band_index=i

@@ -10,10 +10,9 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    data_path = 'data/VacuumEnv-1Dms-ultra_mesh-search0.45-various_T-0.2k.csv'
-    # data_path = 'data/VacuumEnv-1Dms-ultra_mesh-search0.45-various_Fill-0.2k.csv'
-    # data_path = 'data/VacuumEnv-1Dms-ultra_mesh-search0.45-group_600T-0.2k.csv'
-    # data_path = 'data/VacuumEnv-1Dms-ultra_mesh-search0.45-group_600T-0.4k.csv'
+    # data_path = 'data/FP-1Dms-ultra_mesh-search0.45-0.3k.csv'
+    data_path = 'data/FP-1Dms-ultra_mesh-search0.45-0.3k-supp1.csv'
+    # data_path = 'data/FP-1Dms-ultra_mesh-search0.45-0.3k-supp2.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
@@ -22,15 +21,11 @@ if __name__ == '__main__':
     df_sample["频率 (Hz)"] = np.real(df_sample["特征频率 (THz)"])
     df_sample["up_cx (V/m)"] = df_sample["up_cx (V/m)"].apply(convert_complex)
     df_sample["up_cy (V/m)"] = df_sample["up_cy (V/m)"].apply(convert_complex)
-    df_sample["down_cx (V/m)"] = df_sample["down_cx (V/m)"].apply(convert_complex)
-    df_sample["down_cy (V/m)"] = df_sample["down_cy (V/m)"].apply(convert_complex)
     df_sample["k"] = df_sample["m1"] - df_sample["m2"]
-    param_keys = ["k", "t_ridge (nm)", "fill", "t_tot (nm)", "substrate_n"]
+    param_keys = ["k", "t_ridge (nm)", "fill", "t_tot (nm)", "substrate (nm)", "substrate_n"]
     z_keys = ["特征频率 (THz)", "品质因子 (1)",
               "up_tanchi (1)", "up_phi (rad)",
-              "down_tanchi (1)", "down_phi (rad)",
-              "fake_factor (1)", "频率 (Hz)",
-              "U_factor (1)", "up_cx (V/m)", "up_cy (V/m)", "down_cx (V/m)", "down_cy (V/m)"]
+              "fake_factor (1)", "频率 (Hz)", "up_cx (V/m)", "up_cy (V/m)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
     grid_coords, Z = create_data_grid(df_sample, param_keys, z_keys, deduplication=False)
@@ -46,17 +41,15 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            # "t_tot (nm)": 540,
-            # "t_ridge (nm)": 540,
-            # "fill": 0.50,
-            "t_tot (nm)": 510,
-            "t_ridge (nm)": 510,
+            "t_tot (nm)": 200,
+            "t_ridge (nm)": 200,
             "fill": 0.5,
-            "substrate_n": 1.0,
+            "substrate (nm)": 590,
+            "substrate_n": 1.45,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 2},  # 筛选
-            # "特征频率 (THz)": {"<": 0.60, ">": 0},  # 筛选
+            "特征频率 (THz)": {"<": 0.60, ">": 0.35},  # 筛选
         }
     )
 
@@ -98,12 +91,12 @@ if __name__ == '__main__':
         additional_data=Z_filtered,
         value_weights=value_weights,
         deriv_weights=deriv_weights,
-        max_m=15,
+        max_m=20,
         auto_split_streams=False
     )
 
     Z_targets = []
-    for freq_index in range(15):
+    for freq_index in range(20):
         new_coords, Z_target = group_solution(
             new_coords, Z_grouped,
             freq_index=freq_index  # 第n个频率
@@ -118,8 +111,8 @@ if __name__ == '__main__':
     datasets = []
     for i, Z_target in enumerate(Z_targets):
         dataset = {'eigenfreq_real': Z_target.real, 'eigenfreq_imag': Z_target.imag}
-        eigenfreq, qfactor, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor, \
-        up_cx, up_cy, down_cx, down_cy = extract_adjacent_fields(
+        eigenfreq, qfactor, up_tanchi, up_phi, fake_factor, freq, \
+            up_cx, up_cy = extract_adjacent_fields(
             additional_Z_grouped,
             z_keys=z_keys,
             band_index=i
@@ -150,12 +143,12 @@ if __name__ == '__main__':
     plotter = OneDimFieldVisualizer(config=config, data_path=data_path)
     plotter.load_data()
     plotter.new_2d_fig()
-    for i in range(15):
+    for i in range(20):
         plotter.plot(
             index=i, x_key=X_KEY, z1_key='eigenfreq_real', z2_key='eigenfreq_imag',
             enable_fill=True, default_color='gray', alpha_fill=0.3, scale=1
         )
-    for i in range(15):
+    for i in range(20):
         plotter.plot(
             index=i, x_key=X_KEY, z1_key='eigenfreq_real', z3_key='qlog', cmap='nipy_spectral',
             enable_dynamic_color=True, global_color_vmin=2, global_color_vmax=7, linewidth_base=2

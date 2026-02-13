@@ -102,20 +102,22 @@ def jones_C_pair(X, Y, dx=0.0, dy=0.0):
     Ey = 1j*(EL - ER)/np.sqrt(2.0)
     return Ex, Ey
 
+# def jones_test(X, Y):
+#     epsilon = 0.1
+#     # TM in grating
+#     Ey = X+(0.0)*X**2-(0)*Y**2-(epsilon+epsilon*1j)
+#     Ex = (-2*Y+0.0*X*Y)*1j+2*epsilon*Y
+#     return Ex, Ey
+
 def jones_test(X, Y):
-    # Ex = X
-    # Ey = Y*1j
-    epsilon = 0.05
-    # TM in grating
-    Ey = X+0.0*X**2+0.0*Y**2-(epsilon+epsilon*1j)
-    Ex = (-2*Y+0.0*X*Y+0.0*Y**3)*1j+2*epsilon*Y
+    epsilon = 0.0
+    # TM in grating merging
+    kx0 = 0.7
+    Ey = X*(X**2-kx0**2)+(1)*X*Y**2-(epsilon+epsilon*1j)
+    Ex = (-2*Y+0.0*(X-kx0)*Y)*1j+0*epsilon*Y
     # # TE in grating
     # Ex = X+0.1*epsilon-100*epsilon*1j*Y**2
     # Ey = 2*Y*1j
-    # # TE in grating
-    # Ex = X-(epsilon**2+epsilon*1j)
-    # Ey = 2*Y*1j
-    # return Ex, Ey
     return Ex, Ey
 
 # def jones_C_pair(X, Y, dx=0.0, dy=0.0):

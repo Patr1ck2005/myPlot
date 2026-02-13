@@ -10,51 +10,21 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    # data_path = 'data/geo1-norm_mesh.csv'
-    # data_path = 'data/VacuumEnv-norm_mesh-geo_FW_BIC-0.2k.csv'
-    # data_path = 'data/PMMA_SOSenv-norm_mesh-geo_FW_QBIC-0.2k.csv'
-    # data_path = 'data/AsymEnv-norm_mesh-geo_FW_QBIC-0.2k.csv'
-    # data_path = 'data/AsymEnv-ultra_mesh-geo_FW_QBIC-0.2k.csv'
-    # data_path = 'data/inappro-SOSenv-norm_mesh-geo_FW_QBIC-0.2k.csv'
-    # data_path = 'data/SOSenv-ultra_mesh-search0.40-geo_FW_QBIC-0.2k-1.csv'
-    # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_FW_BIC-0.2k.csv'  # marked
-    # data_path = 'data/VacuumEnv-norm_mesh-geo_FW_QBIC-0.2k.csv'
-    # data_path = 'data/VacuumEnv-norm_mesh-search0.45-geo_FW_QBIC-0.2k.csv'  # marked
-    # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_FW_QBIC-0.2k.csv'  # marked
-    # data_path = 'data/AsymEnv-ultra_mesh-search0.40-various_geo_FW_BIC-0.2k.csv'
-    # data_path = 'data/1.67env-ultra_mesh-search0.40-various_geo_FW_BIC-0.2k.csv'
-    # data_path = 'data/VaccumEnv-ultra_mesh-search0.40-various_geo_FW_BIC-0.2k.csv'  # marked
-    # data_path = 'data/AsymEnv-ultra_mesh-search0.40-T510_520-0.2k.csv'  # marked
-    # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-0.2k0.05k.csv'  # to be continued
-    # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-0.2k0.05k-supp1.csv'  # to be continued
-    # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-around_Γ.csv'  # marked detailed
-    # data_path = 'data/VacuumEnv-ultra_mesh-search0.45-1_air-0.2k.csv'
-    # data_path = 'data/VacuumEnv-ultra_mesh_div2-search0.45-1_air-0.2k-supp1.csv'
-    # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_FW_BIC-0.2k-supp1.csv'
-    # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-0.2k0.05k-supp2.csv'
-    # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-0.2k0.05k-supp3.csv'
-    data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_T-0.2k.csv'
+    # data_path = 'data/FP-ultra_mesh-search0.40-geo-0.2k.csv'
+    # data_path = 'data/FP-ultra_mesh-search0.40-geo-0.2k-supp1.csv'
+    data_path = 'data/FP-ultra_mesh-search0.40-geo-0.2k-supp1.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
-    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq,
-                                                                                           period=period * 1e-9 * 1e12)
-    df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period * 1e-9)
+    df_sample["特征频率 (THz)"] = (df_sample["特征频率 (THz)"].apply(convert_complex)
+                                   .apply(norm_freq, period=period * 1e-9 * 1e12))
+    df_sample["频率 (Hz)"] = np.real(df_sample["特征频率 (THz)"])
     df_sample["up_cx (V/m)"] = df_sample["up_cx (V/m)"].apply(convert_complex)
     df_sample["up_cy (V/m)"] = df_sample["up_cy (V/m)"].apply(convert_complex)
-    df_sample["down_cx (V/m)"] = df_sample["down_cx (V/m)"].apply(convert_complex)
-    df_sample["down_cy (V/m)"] = df_sample["down_cy (V/m)"].apply(convert_complex)
-    # df_sample = df_sample[df_sample["m1"] <= 0.2]
-    # df_sample = df_sample[df_sample["m2"] <= 0.2]
-    # 指定用于构造网格的参数以及目标数据列
-    param_keys = ["m1", "m2", "t_ridge (nm)", "fill", "t_tot (nm)", "substrate_n"]
-    z_keys = [
-        "特征频率 (THz)", "品质因子 (1)",
-        "up_tanchi (1)", "up_phi (rad)",
-        "down_tanchi (1)", "down_phi (rad)",
-        "fake_factor (1)", "频率 (Hz)",
-        "U_factor (1)", "up_cx (V/m)", "up_cy (V/m)", "down_cx (V/m)", "down_cy (V/m)"
-    ]
+    param_keys = ["m1", "m2", "t_ridge (nm)", "fill", "t_tot (nm)", "substrate (nm)", "substrate_n"]
+    z_keys = ["特征频率 (THz)", "品质因子 (1)",
+              "up_tanchi (1)", "up_phi (rad)",
+              "fake_factor (1)", "频率 (Hz)", "up_cx (V/m)", "up_cy (V/m)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
     grid_coords, Z = create_data_grid(df_sample, param_keys, z_keys, deduplication=False)
@@ -68,18 +38,15 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            # "t_tot (nm)": 520,
-            # "t_ridge (nm)": 500,
-            "t_tot (nm)": 530,
-            "t_ridge (nm)": 530,
+            "t_tot (nm)": 200,
+            "t_ridge (nm)": 200,
             "fill": 0.5,
-            # "substrate_n": 1.67,
-            "substrate_n": 1.0,
+            "substrate (nm)": 590,
+            "substrate_n": 1.45,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 2},  # 筛选
-            # "频率 (Hz)": {">": 0.32, "<": 0.45},  # 筛选
-            "频率 (Hz)": {">": 0.35, },  # 筛选
+            "特征频率 (THz)": {"<": 0.60, ">": 0.35},  # 筛选
         }
     )
 
@@ -157,8 +124,8 @@ if __name__ == '__main__':
     raw_datasets = []
     for i, Z_target in enumerate(Z_targets):
         raw_dataset = {'eigenfreq_real': Z_target.real, 'eigenfreq_imag': Z_target.imag}
-        eigenfreq, qfactor, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor, \
-            up_cx, up_cy, down_cx, down_cy = extract_adjacent_fields(
+        eigenfreq, qfactor, up_tanchi, up_phi, fake_factor, freq, \
+            up_cx, up_cy = extract_adjacent_fields(
             additional_Z_grouped,
             z_keys=z_keys,
             band_index=i
@@ -167,10 +134,9 @@ if __name__ == '__main__':
         raw_dataset['qlog'] = qlog.real
         raw_dataset['up_cx (V/m)'] = up_cx
         raw_dataset['up_cy (V/m)'] = up_cy
-        raw_dataset['down_cx (V/m)'] = up_cx
-        raw_dataset['down_cy (V/m)'] = up_cy
         print(f"Band {i}: qlog range = [{raw_dataset['qlog'].min()}, {raw_dataset['qlog'].max()}]")
         raw_datasets.append(raw_dataset)
+
     # # imshow u_factor
     # fig, ax = plt.subplots(figsize=(6, 5))
     # c = ax.imshow(u_factor2.real.T, origin='lower', extent=(
@@ -184,7 +150,7 @@ if __name__ == '__main__':
     # plt.show()
 
     datasets = []
-    selected_bands = [0, 1]
+    selected_bands = [0, 1, 2]
     for i in selected_bands:
         Z_target = Z_targets[i]
         full_coords, dataset = package_stad_C4_data(

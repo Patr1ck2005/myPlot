@@ -10,11 +10,7 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    # data_path = "data/StrB-ultra_mesh-geo_merging_trap_asym-around_Γ_0.015k.csv"
-    data_path = "data/StrB-ultra_mesh-geo_merging_trap_asym.csv"  # DONE
-    # data_path = "data/StrB-ultra_mesh-geo_merging_trap_asym-around_Γ_0.015k - 副本.csv"
-    # data_path = "data/StrB-ultra_mesh-geo_merging_trap_asym-around_Γ_0.015k-supp2.csv"
-    # data_path = "data/StrB-ultra_mesh-geo_merging_trap_asym-0.1k-supp1.csv"  # DONE
+    data_path = "data/Hex-ultra_mesh-geo_tri_asym-0.1k.csv"
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 400
@@ -22,14 +18,12 @@ if __name__ == '__main__':
                                                                                            period=period * 1e-9 * 1e12)
     df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period * 1e-9)
     df_sample["phi (rad)"] = df_sample["phi (rad)"].apply(lambda x: x % np.pi)
-    # # 筛选 m1<0.1 的成分
-    # df_sample = df_sample[df_sample["m1"] < 0.05]
     # 指定用于构造网格的参数以及目标数据列
     param_keys = [
-        "m1", "m2", "buffer (nm)",
-        "trap_factor", "rot_angle (rad)"
+        "m1", "m2", "t_tot (nm)", "r1 (nm)", "r2 (nm)", "substrate (nm)",
+        "asym_y_scaling", "tri_factor", "rot_angle (deg)"
     ]
-    z_keys = ["特征频率 (THz)", "品质因子 (1)", "tanchi (1)", "phi (rad)", "fake_factor (1)", "频率 (Hz)"]
+    z_keys = ["特征频率 (THz)", "品质因子 (1)", "tanchi (1)", "phi (rad)", "频率 (Hz)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
     grid_coords, Z = create_data_grid(df_sample, param_keys, z_keys, deduplication=False)
@@ -43,13 +37,16 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            'buffer (nm)': 186.1,
-            'trap_factor': 0.05,
-            'rot_angle (rad)': 0,
-            # 'buffer (nm)': 600,
+            't_tot (nm)': 150,
+            'r1 (nm)': 150,
+            'r2 (nm)': 0,
+            'substrate (nm)': 200,
+            'asym_y_scaling': 1.0,
+            'tri_factor': 0.125,
+            'rot_angle (deg)': 0,
         },  # 固定
         filter_conditions={
-            "fake_factor (1)": {"<": 1},  # 筛选
+            # "fake_factor (1)": {"<": 1},  # 筛选
             "频率 (Hz)": {">": 0.0, "<": 0.5},  # 筛选
         }
     )
@@ -137,7 +134,7 @@ if __name__ == '__main__':
         print(f"Band {i}: qlog range = [{dataset['qlog'].min()}, {dataset['qlog'].max()}]")
         datasets.append(dataset)
 
-    band_index_A = 6
+    band_index_A = 5
     Z_target_A = Z_targets[band_index_A]
     full_coords, dataset_A = package_stad_C2_data(
         new_coords, band_index_A, Z_target_A, additional_Z_grouped, z_keys,

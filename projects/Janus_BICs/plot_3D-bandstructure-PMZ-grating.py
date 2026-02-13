@@ -12,7 +12,11 @@ c_const = 299792458
 if __name__ == '__main__':
     # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-P-0.2k.csv'  # marked
     # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-Arrowed-0.2k.csv'  # to be continued
-    data_path = 'data/AsymEnv-ultra_mesh-search0.40-502T-0.2k.csv'  #
+    # data_path = 'data/AsymEnv-ultra_mesh-search0.40-502T-0.2k.csv'  #
+    # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_Trap-0.2k.csv'  # marked
+    # data_path = 'data/Vacuum-ultra_mesh-search0.40-geo502T-around_Γ_0.015k.csv'
+    # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_Arrow-around_Γ_0.015k0.030k.csv'
+    data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_trap_asym-0.2k.csv'  # DONE
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
@@ -28,7 +32,8 @@ if __name__ == '__main__':
         df_sample["Z_asym_factor"] = 0.0
     # 指定用于构造网格的参数以及目标数据列
     # param_keys = ["m1", "m2", "t_ridge (nm)", "fill", "t_tot (nm)", "substrate_n", "M_asym_factor", "P_asym_factor"]
-    param_keys = ["m1", "m2", "t_ridge (nm)", "fill", "t_tot (nm)", "substrate_n", "M_asym_factor", "P_asym_factor", "Z_asym_factor"]
+    param_keys = ["m1", "m2", "t_ridge (nm)", "fill", "t_tot (nm)", "substrate_n",
+                  "M_asym_factor", "P_asym_factor", "Z_asym_factor"]
     z_keys = [
         "特征频率 (THz)", "品质因子 (1)",
         "up_tanchi (1)", "up_phi (rad)",
@@ -49,13 +54,13 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            "t_tot (nm)": 502,
-            "t_ridge (nm)": 502,
+            "t_tot (nm)": 530,
+            "t_ridge (nm)": 530,
             "fill": 0.5,
             "substrate_n": 1,
-            "M_asym_factor": 0,
-            "P_asym_factor": 0.05,
-            "Z_asym_factor": 0.0,
+            "M_asym_factor": 0.16,
+            "P_asym_factor": 0.00,
+            "Z_asym_factor": 0.00,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 2},  # 筛选
@@ -131,20 +136,25 @@ if __name__ == '__main__':
     from core.plot_cls import MomentumSpaceEigenVisualizer
     from core.plot_workflow import PlotConfig
     from core.prepare_plot import prepare_plot_data
-    from core.data_postprocess.data_package import package_stad_C2_data
+    from core.data_postprocess.data_package import package_stad_C2_data, package_stad_C4_data
 
-    (eigenfreq1, qfactor1, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor1,
-     up_cx1, up_cy1, down_cx1, down_cy1) = extract_adjacent_fields(
-        additional_Z_grouped,
-        z_keys=z_keys,
-        band_index=0
-    )
-    (eigenfreq2, qfactor2, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor2,
-     up_cx2, up_cy2, down_cx2, down_cy2) = extract_adjacent_fields(
-        additional_Z_grouped,
-        z_keys=z_keys,
-        band_index=1
-    )
+    raw_datasets = []
+    for i, Z_target in enumerate(Z_targets):
+        raw_dataset = {'eigenfreq_real': Z_target.real, 'eigenfreq_imag': Z_target.imag}
+        eigenfreq, qfactor, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor, \
+            up_cx, up_cy, down_cx, down_cy = extract_adjacent_fields(
+            additional_Z_grouped,
+            z_keys=z_keys,
+            band_index=i
+        )
+        qlog = np.log10(qfactor)
+        raw_dataset['qlog'] = qlog.real
+        raw_dataset['up_cx (V/m)'] = up_cx
+        raw_dataset['up_cy (V/m)'] = up_cy
+        raw_dataset['down_cx (V/m)'] = up_cx
+        raw_dataset['down_cy (V/m)'] = up_cy
+        print(f"Band {i}: qlog range = [{raw_dataset['qlog'].min()}, {raw_dataset['qlog'].max()}]")
+        raw_datasets.append(raw_dataset)
     # # imshow u_factor
     # fig, ax = plt.subplots(figsize=(6, 5))
     # c = ax.imshow(u_factor2.real.T, origin='lower', extent=(
@@ -157,31 +167,26 @@ if __name__ == '__main__':
     # ax.set_title('U_factor for Band 2')
     # plt.show()
 
-    # imshow up_cx
-    from matplotlib import pyplot as plt
-    fig, ax = plt.subplots(figsize=(6, 5))
-    c = ax.imshow(up_cx2.real.T, origin='lower', extent=(
-        new_coords['m1'][0], new_coords['m1'][-1],
-        new_coords['m2'][0], new_coords['m2'][-1],
-    ), aspect='auto', cmap='viridis')
-    fig.colorbar(c, ax=ax, label='up_cx (1)')
-    ax.set_xlabel('m1')
-    ax.set_ylabel('m2')
-    ax.set_title('up_cx for Band 2')
-    plt.show()
-
     datasets = []
     selected_bands = [0, 1]
     for i in selected_bands:
         Z_target = Z_targets[i]
-        full_coords, dataset = package_stad_C2_data(
+        # full_coords, dataset = package_stad_C2_data(
+        #     new_coords, i, Z_target, additional_Z_grouped, z_keys,
+        #     q_key='品质因子 (1)',
+        #     # tanchi_key='up_tanchi (1)',
+        #     # phi_key='up_phi (rad)',
+        #     tanchi_key='down_tanchi (1)',
+        #     phi_key='down_phi (rad)',
+        #     axis='y',
+        # )
+        full_coords, dataset = package_stad_C4_data(
             new_coords, i, Z_target, additional_Z_grouped, z_keys,
             q_key='品质因子 (1)',
-            tanchi_key='up_tanchi (1)',
-            phi_key='up_phi (rad)',
-            # tanchi_key='down_tanchi (1)',
-            # phi_key='down_phi (rad)',
-            axis='y',
+            # tanchi_key='up_tanchi (1)',
+            # phi_key='up_phi (rad)',
+            tanchi_key='down_tanchi (1)',
+            phi_key='down_phi (rad)',
         )
         datasets.append(dataset)
 
@@ -191,12 +196,15 @@ if __name__ == '__main__':
     )
 
     ####################################################################################################################
-    BAND_INDEX = 0
+    BAND_INDEX = 1
     config = PlotConfig(
         plot_params={},
         annotations={},
     )
     config.update(figsize=(1.5, 1.5), tick_direction='in')
+
+    from projects.Janus_BICs.temp_utils import plot_phase_diff
+    plot_phase_diff(raw_datasets, new_coords, BAND_INDEX)
 
     plotter = MomentumSpaceEigenVisualizer(config=config, data_path=data_path)
     plotter.load_data()
