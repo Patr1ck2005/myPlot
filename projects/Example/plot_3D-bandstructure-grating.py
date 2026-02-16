@@ -179,7 +179,7 @@ if __name__ == '__main__':
     plotter.prepare_data()
 
     plotter.new_3d_fig(figsize=(3, 3))
-    plotter.plot_3d_surfaces(indexs=(0, 1), elev=45)
+    plotter.plot_3d_surfaces(indices=(0, 1), elev=45)
     plotter.add_annotations()
     plotter.save_and_show()
 

@@ -16,7 +16,8 @@ if __name__ == '__main__':
     # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_Trap-0.2k.csv'  # marked
     # data_path = 'data/Vacuum-ultra_mesh-search0.40-geo502T-around_Γ_0.015k.csv'
     # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_Arrow-around_Γ_0.015k0.030k.csv'
-    data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_trap_asym-0.2k.csv'  # DONE
+    # data_path = 'data/VacuumEnv-ultra_mesh-search0.45-geo_trap_asym-0.2k.csv'  # DONE
+    data_path = 'data/VacuumEnv-ultra_mesh-search0.45-geo_trap_asym-0.2k-supp1.csv'  # DONE
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
@@ -183,10 +184,10 @@ if __name__ == '__main__':
         full_coords, dataset = package_stad_C4_data(
             new_coords, i, Z_target, additional_Z_grouped, z_keys,
             q_key='品质因子 (1)',
-            # tanchi_key='up_tanchi (1)',
-            # phi_key='up_phi (rad)',
-            tanchi_key='down_tanchi (1)',
-            phi_key='down_phi (rad)',
+            tanchi_key='up_tanchi (1)',
+            phi_key='up_phi (rad)',
+            # tanchi_key='down_tanchi (1)',
+            # phi_key='down_phi (rad)',
         )
         datasets.append(dataset)
 
@@ -245,7 +246,7 @@ if __name__ == '__main__':
 
     plotter.new_3d_fig(figsize=(3, 3))
     # plotter.plot_3d_surfaces(
-    #     indexs=(0, 1), z1_key='eigenfreq_real', z2_key='qlog', cmap='rainbow', elev=45, vmin=2, vmax=7, shade=False
+    #     indices=(0, 1), z1_key='eigenfreq_real', z2_key='qlog', cmap='rainbow', elev=45, vmin=2, vmax=7, shade=False
     # )
     # rbga = plotter.get_advanced_color_mapping(index=BAND_INDEX)
     # plotter.plot_3d_surface(index=BAND_INDEX, z1_key='eigenfreq_real', rgba=rbga, cmap='rainbow', elev=45, shade=False)
