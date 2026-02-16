@@ -33,7 +33,7 @@ if __name__ == '__main__':
     # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_FW_BIC-0.2k-supp1.csv'
     # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-0.2k0.05k-supp2.csv'
     # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-0.2k0.05k-supp3.csv'
-    data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_T-0.2k.csv'
+    data_path = 'data/VacuumEnv-ultra_mesh-search0.45-geo_T-0.2k.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
@@ -296,7 +296,7 @@ if __name__ == '__main__':
 
     plotter.new_3d_fig(figsize=(3, 3))
     # plotter.plot_3d_surfaces(
-    #     indexs=(0, 1), z1_key='eigenfreq_real', z2_key='qlog', cmap='rainbow', elev=45, vmin=2, vmax=7, shade=False
+    #     indices=(0, 1), z1_key='eigenfreq_real', z2_key='qlog', cmap='rainbow', elev=45, vmin=2, vmax=7, shade=False
     # )
     # rbga = plotter.get_advanced_color_mapping(index=BAND_INDEX)
     # plotter.plot_3d_surface(index=BAND_INDEX, z1_key='eigenfreq_real', rgba=rbga, cmap='rainbow', elev=45, shade=False)

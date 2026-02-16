@@ -393,7 +393,7 @@ class TwoDimFieldVisualizer(HeatmapPlotter, ABC):
         # for color rending
         z2_lst = [self.raw_datasets["data_list"][i][z2_key] for i in indexs] if z2_key is not None else z1_lst
         # # for alpha rending
-        # z3_lst = [self.raw_datasets["data_list"][i][z3_key] for i in indexs] if z3_key is not None else None
+        # z3_lst = [self.raw_datasets["data_list"][i][z3_key] for i in indices] if z3_key is not None else None
         self.ax, combined_surface, mappable = s3d_plot_multi_surfaces_combined(
             self.ax,
             x=x, y=y,
@@ -448,10 +448,10 @@ class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
         super().imshow_field(x_key=x_key, y_key=y_key, **kwargs)
 
     def plot_3d_surfaces(
-            self, indexs, z1_key, z2_key, x_key='m1', y_key='m2', **kwargs
+            self, indices, z1_key, z2_key, x_key='m1', y_key='m2', **kwargs
     ) -> None:
         super().plot_3d_surfaces(
-            indexs, x_key, y_key, z1_key, z2_key, **kwargs
+            indices, x_key, y_key, z1_key, z2_key, **kwargs
         )
 
     def plot_3d_surface(

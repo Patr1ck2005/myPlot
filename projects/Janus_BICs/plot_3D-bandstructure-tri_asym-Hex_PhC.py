@@ -23,7 +23,7 @@ if __name__ == '__main__':
         "m1", "m2", "t_tot (nm)", "r1 (nm)", "r2 (nm)", "substrate (nm)",
         "asym_y_scaling", "tri_factor", "rot_angle (deg)"
     ]
-    z_keys = ["特征频率 (THz)", "品质因子 (1)", "tanchi (1)", "phi (rad)", "频率 (Hz)"]
+    z_keys = ["特征频率 (THz)", "品质因子 (1)", "tanchi (1)", "phi (rad)", "fake_factor (1)", "频率 (Hz)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
     grid_coords, Z = create_data_grid(df_sample, param_keys, z_keys, deduplication=False)
@@ -40,13 +40,13 @@ if __name__ == '__main__':
             't_tot (nm)': 150,
             'r1 (nm)': 150,
             'r2 (nm)': 0,
-            'substrate (nm)': 200,
+            'substrate (nm)': 500,
             'asym_y_scaling': 1.0,
             'tri_factor': 0.125,
             'rot_angle (deg)': 0,
         },  # 固定
         filter_conditions={
-            # "fake_factor (1)": {"<": 1},  # 筛选
+            "fake_factor (1)": {"<": 1},  # 筛选
             "频率 (Hz)": {">": 0.0, "<": 0.5},  # 筛选
         }
     )
@@ -103,12 +103,12 @@ if __name__ == '__main__':
         additional_data=Z_filtered,
         value_weights=value_weights,
         deriv_weights=deriv_weights,
-        max_m=8,
+        max_m=14,
         auto_split_streams=False
     )
 
     Z_targets = []
-    for band_index in range(8):
+    for band_index in range(14):
         new_coords, Z_target = group_solution(
             new_coords, Z_grouped,
             freq_index=band_index  # 第n个频率
@@ -118,7 +118,7 @@ if __name__ == '__main__':
     ###################################################################################################################
     from core.process_multi_dim_params_space import extract_adjacent_fields
     from core.prepare_plot import prepare_plot_data
-    from core.data_postprocess.data_package import package_stad_C2_data
+    from core.data_postprocess.data_package import package_stad_C6_data
     from core.prepare_plot import prepare_plot_data
 
     datasets = []
@@ -134,17 +134,31 @@ if __name__ == '__main__':
         print(f"Band {i}: qlog range = [{dataset['qlog'].min()}, {dataset['qlog'].max()}]")
         datasets.append(dataset)
 
-    band_index_A = 5
-    Z_target_A = Z_targets[band_index_A]
-    full_coords, dataset_A = package_stad_C2_data(
-        new_coords, band_index_A, Z_target_A, additional_Z_grouped, z_keys,
-        q_key='品质因子 (1)',
-        tanchi_key='tanchi (1)',
-        phi_key='phi (rad)',
-        axis='x',
-    )
+    # band_index_A = 8
+    # Z_target_A = Z_targets[band_index_A]
+    # full_coords, dataset_A = package_stad_C6_data(
+    #     new_coords, band_index_A, Z_target_A, additional_Z_grouped, z_keys,
+    #     q_key='品质因子 (1)',
+    #     tanchi_key='tanchi (1)',
+    #     phi_key='phi (rad)',
+    # )
+    # data_path = prepare_plot_data(
+    #     coords=full_coords, data_class='Eigensolution', dataset_list=[dataset_A], fixed_params={},
+    #     save_dir='./rsl/2_para_space',
+    # )
+    band_indices = (0, 1, 2, 3, 4)
+    dataset_list = []
+    for band_index in band_indices:
+        Z_target = Z_targets[band_index]
+        full_coords, dataset = package_stad_C6_data(
+            new_coords, band_index, Z_target, additional_Z_grouped, z_keys,
+            q_key='品质因子 (1)',
+            tanchi_key='tanchi (1)',
+            phi_key='phi (rad)',
+        )
+        dataset_list.append(dataset)
     data_path = prepare_plot_data(
-        coords=full_coords, data_class='Eigensolution', dataset_list=[dataset_A], fixed_params={},
+        coords=full_coords, data_class='Eigensolution', dataset_list=dataset_list, fixed_params={},
         save_dir='./rsl/2_para_space',
     )
 
@@ -152,7 +166,7 @@ if __name__ == '__main__':
     from core.plot_cls import MomentumSpaceEigenVisualizer
     from core.plot_workflow import PlotConfig
 
-    BAND_INDEX = 0
+    BAND_INDEX = 1
     config = PlotConfig(
         plot_params={},
         annotations={},
@@ -161,6 +175,11 @@ if __name__ == '__main__':
 
     plotter = MomentumSpaceEigenVisualizer(config=config, data_path=data_path)
     plotter.load_data()
+
+    # plotter.new_3d_fig(figsize=(3, 3))
+    # plotter.plot_3d_surfaces(indices=(0, 1, 2, 3), z1_key='eigenfreq_real', z2_key='qlog', cmap='magma')
+    # plotter.add_annotations()
+    # plotter.save_and_show()
 
     plotter.new_2d_fig(figsize=(1.5, 1.5))
     plotter.imshow_field(index=BAND_INDEX, field_key='s1', cmap='coolwarm', vmin=-1, vmax=1)

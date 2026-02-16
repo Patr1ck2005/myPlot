@@ -262,7 +262,7 @@ if __name__ == '__main__':
 
     plotter.new_3d_fig(figsize=(3, 3))
     # plotter.plot_3d_surfaces(
-    #     indexs=(0, 1), z1_key='eigenfreq_real', z2_key='qlog', cmap='rainbow', elev=45, vmin=2, vmax=7, shade=False
+    #     indices=(0, 1), z1_key='eigenfreq_real', z2_key='qlog', cmap='rainbow', elev=45, vmin=2, vmax=7, shade=False
     # )
     # rbga = plotter.get_advanced_color_mapping(index=BAND_INDEX)
     # plotter.plot_3d_surface(index=BAND_INDEX, z1_key='eigenfreq_real', rgba=rbga, cmap='rainbow', elev=45, shade=False)

@@ -10,7 +10,7 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    data_path = "data/Hex-ultra_mesh-geo_tri_asym-0.1k.csv"
+    data_path = "data/Hex-1Dms-ultra_mesh-geo_tri_asym-0.1k.csv"
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 400
