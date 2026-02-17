@@ -47,7 +47,7 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, index=0, **kwargs):
     if isinstance(fill_cmap, str):
         fill_cmap = cm.get_cmap(fill_cmap)
     # line_cmap = kwargs.get('line_cmap', 'RdBu')
-    default_line_color = kwargs.get('default_color', 'blue')
+    default_line_color = kwargs.get('default_line_color', 'blue')
     default_fill_color = kwargs.get('default_fill_color', 'gray')
     default_linestyle = kwargs.get('default_linestyle', '-')
     edge_color = kwargs.get('edge_color', 'none')  # 填充边界颜色，默认为无色
@@ -89,15 +89,8 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, index=0, **kwargs):
         segments = np.concatenate([points[:-1], points[1:]], axis=1)
         lc = LineCollection(segments, array=color_vals, cmap=fill_cmap, norm=norm_color, linewidth=linewidth_base, alpha=alpha_line)
         ax.add_collection(lc)
-    else:
-        # 基础样式或填充模式的细线
-        if not kwargs.get('default_color', False):
-            # assign default color according to index
-            default_line_color = plt.cm.tab10(index % 10)
-        ax.plot(x_vals, z1, color=default_line_color, linewidth=linewidth_base, alpha=alpha_line, label=f'{index}', linestyle=default_linestyle)
-
     # 填充模式
-    if enable_fill:
+    elif enable_fill:
         if z2 is None:
             raise ValueError("启用 fill 需要 z2")
         if gradient_fill:
@@ -159,6 +152,12 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, index=0, **kwargs):
             else:
                 # 样式 B：纯色填充 (fill_between)
                 ax.fill_between(x_vals, y_lower, y_upper, color=default_fill_color, alpha=alpha_fill, label='Fill Width', edgecolor=edge_color)
+    else:
+        # 基础样式或填充模式的细线
+        if kwargs.get('default_line_color', False) is False:
+            # assign default color according to index
+            default_line_color = plt.cm.tab10(index % 10)
+        ax.plot(x_vals, z1, color=default_line_color, linewidth=linewidth_base, alpha=alpha_line, label=f'{index}', linestyle=default_linestyle)
 
     # 添加颜色条
     if add_colorbar:
@@ -193,7 +192,7 @@ if __name__ == '__main__':
         gradient_direction='z3',  # 指定渐变
         cmap='magma',
         alpha_fill=0.5,
-        default_color='gray',
+        default_line_color='gray',
         add_colorbar=False,  # 先不加颜色条
     )
     # ax = plot_line_advanced(
@@ -203,7 +202,7 @@ if __name__ == '__main__':
     #     gradient_direction='z3',  # 指定渐变
     #     cmap='magma',
     #     alpha_fill=0.5,
-    #     default_color='gray',
+    #     default_line_color='gray',
     #     add_colorbar=True  # 只在最后加颜色条
     # )
     ax.set_xlabel('X')

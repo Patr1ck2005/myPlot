@@ -2,7 +2,8 @@ from typing import Optional, Dict, Any, Tuple, Sequence, List
 
 import numpy as np
 from matplotlib import pyplot as plt
-from matplotlib.cm import get_cmap, ScalarMappable
+from matplotlib.cm import ScalarMappable
+import matplotlib as mpl
 from matplotlib.colors import Normalize
 
 
@@ -26,25 +27,26 @@ def _auto_norm(data: np.ndarray, vmin: Optional[float], vmax: Optional[float]) -
                 vmax += eps
     return Normalize(vmin=vmin, vmax=vmax, clip=True)
 
+
 def plot_advanced_surface(
-    ax: plt.Axes,
-    x: np.ndarray,
-    y: np.ndarray,
-    z1: np.ndarray,  # 高度
-    z2: np.ndarray,  # 颜色值
-    z3: Optional[np.ndarray] = None,  # 透明度值(可选；未给则全不透明)
-    rgba: Optional[np.ndarray] = None,  # 直接给出颜色映射
-    *,
-    mapping: Dict[str, Any],
-    elev: float = 30,
-    azim: float = 25,
-    x_key: str = '',
-    y_key: str = '',
-    z_label: str = '',
-    rstride: int = 1,
-    cstride: int = 1,
-    box_aspect: list = [1, 1, 1],
-    **kwargs
+        ax: plt.Axes,
+        x: np.ndarray,
+        y: np.ndarray,
+        z1: np.ndarray,  # 高度
+        z2: np.ndarray,  # 颜色值
+        z3: Optional[np.ndarray] = None,  # 透明度值(可选；未给则全不透明)
+        rgba: Optional[np.ndarray] = None,  # 直接给出颜色映射
+        *,
+        mapping: Dict[str, Any],
+        elev: float = 30,
+        azim: float = 25,
+        x_key: str = '',
+        y_key: str = '',
+        z_label: str = '',
+        rstride: int = 1,
+        cstride: int = 1,
+        box_aspect: list = [1, 1, 1],
+        **kwargs
 ) -> Tuple[plt.Axes, ScalarMappable]:
     """
     在同一张 3D 图上绘制一个带面：z1 控制高度，z2 控制颜色，z3 控制 alpha。
@@ -68,7 +70,7 @@ def plot_advanced_surface(
 
     # colormap & normalize
     cmap_name = mapping.get('cmap', 'hot')
-    cmap = get_cmap(cmap_name)
+    cmap = mpl.colormaps.get_cmap(cmap_name)
 
     z2_cfg = mapping.get('z2', {})
     norm_z2 = _auto_norm(z2, z2_cfg.get('vmin'), z2_cfg.get('vmax'))
@@ -82,7 +84,6 @@ def plot_advanced_surface(
         alphas = np.full_like(z2, fill_value=alpha_val, dtype=float)
     else:
         alphas = np.ones_like(z2, dtype=float)
-
 
     if rgba is None:
         # 生成 RGBA Facecolors
@@ -116,24 +117,25 @@ def plot_advanced_surface(
 
 
 import s3dlib.surface as s3d
+import s3dlib.cmap_utilities as s3dcmap
 
 
 def s3d_build_planar_surface_from_arrays(
-    x: np.ndarray,
-    y: np.ndarray,
-    z1: np.ndarray,
-    z2: np.ndarray,
-    rez,
-    basetype,
-    cmap,
-    alpha,
-    shade,
-    hilite,
-    cname: str = "Value",
-    geom_scale: float = 1.0,
-    z_offset: float = 0.0,
+        x: np.ndarray,
+        y: np.ndarray,
+        z1: np.ndarray,
+        z2: np.ndarray,
+        rez,
+        basetype,
+        cmap,
+        alpha,
+        shade,
+        hilite,
+        cname: str = "Value",
+        geom_scale: float = 1.0,
+        z_offset: float = 0.0,
+        norm_z2: Optional[Normalize] = None,
 ) -> s3d.PlanarSurface:
-
     if z1.shape != (x.size, y.size):
         raise ValueError(f"z1 shape {z1.shape} must be (len(mx), len(my))={(x.size, y.size)}")
     if z2.shape != z1.shape:
@@ -150,9 +152,31 @@ def s3d_build_planar_surface_from_arrays(
     surface = s3d.PlanarSurface(rez, basetype=basetype, cmap=cmap)
     surface.cname = cname
 
-    surface.map_cmap_from_datagrid(z2_f)
+    cmap_func = mpl.colormaps.get_cmap(cmap) if isinstance(cmap, str) else cmap
 
-    surface.map_geom_from_datagrid(z1_f, scale=float(geom_scale))
+    dmin = np.nanmin(z2_f)
+    dmax = np.nanmax(z2_f)
+    dspan = dmax - dmin
+
+    cmap_i = s3dcmap.op_cmap(
+        lambda t: cmap_func(norm_z2(dmin + t * dspan))[:, :3].T,
+        rgb=True,
+        name=None,
+    )
+    surface.map_cmap_from_datagrid(z2_f, cmap=cmap_i)
+
+    surface.map_geom_from_datagrid(z1_f, scale=geom_scale)
+    # ---- xy: map from native [-1, 1] to physical [xmin, xmax], [ymin, ymax] ----
+    x_min = np.nanmin(x)
+    x_max = np.nanmax(x)
+    y_min = np.nanmin(y)
+    y_max = np.nanmax(y)
+    x_center = 0.5 * (x_min + x_max)
+    y_center = 0.5 * (y_min + y_max)
+    x_halfspan = 0.5 * (x_max - x_min)
+    y_halfspan = 0.5 * (y_max - y_min)
+    surface.transform(scale=[x_halfspan, y_halfspan, 1.0])
+    surface.transform(translate=[x_center, y_center, 0.0])
 
     surface.transform(translate=[0.0, 0.0, float(z_offset)])
 
@@ -165,9 +189,9 @@ def s3d_build_planar_surface_from_arrays(
 
 
 def export_obj(
-    filename: str,
-    vertices: np.ndarray,   # (N, 3)
-    faces: np.ndarray       # (M, 3) index from 0
+        filename: str,
+        vertices: np.ndarray,  # (N, 3)
+        faces: np.ndarray  # (M, 3) index from 0
 ):
     with open(filename, "w") as f:
         f.write("# exported mesh\n")
@@ -177,6 +201,7 @@ def export_obj(
             # OBJ 是 1-based
             i, j, k = face + 1
             f.write(f"f {i} {j} {k}\n")
+
 
 def grid_to_tri_mesh(x, y, z):
     z = np.asarray(z)
@@ -210,25 +235,23 @@ def grid_to_tri_mesh(x, y, z):
 
 
 def s3d_plot_multi_surfaces_combined(
-    ax: plt.Axes,
-    x: np.ndarray,
-    y: np.ndarray,
-    z1_list: Sequence[np.ndarray],
-    z2_list: Optional[Sequence[np.ndarray]] = None,
-    *,
-    rez: int = 3,
-    basetype: str = "oct1",
-    cmap: str = "hot",
-    vmin=None,
-    vmax=None,
-    elev: float = 30,
-    azim: float = 25,
-    shade: bool = False,
-    hilite: float = 0,
-    alpha_default: float = 1.0,
-    z_span_plot: float = 1.0,
+        ax: plt.Axes,
+        x: np.ndarray,
+        y: np.ndarray,
+        z1_list: Sequence[np.ndarray],
+        z2_list: Optional[Sequence[np.ndarray]] = None,
+        *,
+        rez: int = 4,
+        basetype: str = "oct1",
+        cmap: str = "hot",
+        vmin=None,
+        vmax=None,
+        elev: float = 30,
+        azim: float = 25,
+        shade: bool = False,
+        hilite: float = 0,
+        alpha_default: float = 1.0,
 ) -> Tuple[plt.Axes, Any, ScalarMappable]:
-
     if z2_list is None:
         z2_list = z1_list
 
@@ -241,8 +264,6 @@ def s3d_plot_multi_surfaces_combined(
     all_z2 = np.concatenate([np.asarray(z).ravel() for z in z2_list])
     all_z2 = all_z2[np.isfinite(all_z2)]
     norm_z2 = _auto_norm(all_z2, vmin=vmin, vmax=vmax)
-    # 应用到各个 z2
-    z2_list = [norm_z2(z2) for z2 in z2_list]
 
     # ---- 全局 z 范围（决定统一坐标系）----
     zmins = []
@@ -255,10 +276,6 @@ def s3d_plot_multi_surfaces_combined(
         zmins.append(float(a.min()))
         zmaxs.append(float(a.max()))
 
-    zmin_all = float(np.min(zmins))
-    zmax_all = float(np.max(zmaxs))
-    zrange_all = max(zmax_all - zmin_all, 1e-12)
-
     combined = None
 
     all_vertices = []
@@ -266,39 +283,35 @@ def s3d_plot_multi_surfaces_combined(
     v_offset = 0
 
     for z1, z2, zmin_i, zmax_i in zip(z1_list, z2_list, zmins, zmaxs):
-        zrange_i = max(zmax_i - zmin_i, 1e-12)
-
-        geom_scale_i = float(z_span_plot) * (zrange_i / zrange_all)
-
-        z_offset_i = float(z_span_plot) * ((zmin_i - zmin_all) / zrange_all)
-
+        zrange_i = zmax_i - zmin_i
+        geom_scale_i = zrange_i
+        z_offset_i = zmin_i
         surf = s3d_build_planar_surface_from_arrays(
             x, y, z1, z2,
             rez=rez, basetype=basetype, cmap=cmap,
-            alpha=float(alpha_default),
+            alpha=alpha_default,
             shade=shade, hilite=hilite,
             geom_scale=geom_scale_i,
             z_offset=z_offset_i,
+            norm_z2=norm_z2,
         )
         combined = surf if combined is None else (combined + surf)
+        z_plot = (
+                z_offset_i +
+                geom_scale_i * (z1 - zmin_i) / zrange_i
+        )
 
-        if True:
-            z_plot = (
-                    z_offset_i +
-                    geom_scale_i * (z1 - zmin_i) / zrange_i
-            )
+        verts, faces = grid_to_tri_mesh(x, y, z_plot)
 
-            verts, faces = grid_to_tri_mesh(x, y, z_plot)
-
-            all_vertices.append(verts)
-            all_faces.append(faces + v_offset)
-            v_offset += verts.shape[0]
+        all_vertices.append(verts)
+        all_faces.append(faces + v_offset)
+        v_offset += verts.shape[0]
 
     ax.add_collection3d(combined)
     ax.view_init(elev=elev, azim=azim)
 
     # ---- colorbar mappable（数值解释权威）----
-    mappable = ScalarMappable(norm=norm_z2, cmap=get_cmap(cmap))
+    mappable = ScalarMappable(norm=norm_z2, cmap=mpl.colormaps.get_cmap(cmap))
     mappable.set_array([])
 
     if True:
@@ -307,3 +320,88 @@ def s3d_plot_multi_surfaces_combined(
 
         export_obj("surface.obj", vertices, faces)
     return ax, combined, mappable
+
+
+if __name__ == '__main__':
+    def make_demo_bands(kx: np.ndarray, ky: np.ndarray):
+        """
+        生成 3 条“合理但合成”的能带数据：
+        - z1: 频率实部（随 k 变化的平滑曲面）
+        - z2: Q 因子（给出跨 1e3~1e5 的变化，适合做颜色）
+        返回: (z1_list, z2_list)
+        """
+        # 注意：这里 z 的 shape 需要是 (len(kx), len(ky))
+        KX, KY = np.meshgrid(kx, ky, indexing="ij")
+
+        # --- 三条能带的频率实部（z1） ---
+        # band 1: 近似余弦色散
+        f1 = 1.00 + 0.18 * np.cos(KX) + 0.10 * np.cos(KY) + 0.03 * np.cos(KX + KY)
+        # band 2: 近似鞍点/交叉形色散
+        f2 = 1.55 + 0.12 * np.sin(KX) * np.cos(KY) + 0.05 * np.cos(2 * KY)
+        # band 3: 更高频的“二倍谐波”特征
+        f3 = 2.05 + 0.10 * np.cos(2 * KX) + 0.08 * np.sin(2 * KY) + 0.02 * np.cos(KX - 2 * KY)
+
+        # --- 三条能带的 Q 因子（z2） ---
+        # 做一个“中心高Q、边缘低Q”的模式，并叠加一些各向异性，让图更像真数据
+        def q_field(cx, cy, s, base=2e3, peak=9e4):
+            r2 = (KX - cx) ** 2 + (KY - cy) ** 2
+            core = np.exp(-r2 / (2 * s * s))
+            ripple = 0.15 * np.cos(2 * KX) * np.cos(KY)  # 小幅纹理
+            Q = base + peak * np.clip(core * (1.0 + ripple), 0.0, None)
+            return Q
+
+        Q1 = q_field(cx=0.3, cy=-0.2, s=1.3, base=1e3, peak=1e3)
+        Q2 = q_field(cx=-0.8, cy=0.4, s=1.0, base=1e3, peak=7e4)
+        Q3 = q_field(cx=0.5, cy=1.0, s=0.9, base=3e3, peak=1.0e5)
+
+        z1_list = [f1, f2, f3]
+        z2_list = [Q1, Q2, Q3]
+        return z1_list, z2_list
+
+
+    def demo_multisurface_bandstructure():
+        # k-space 网格
+        kx = np.linspace(-np.pi, np.pi, 70)
+        ky = np.linspace(-np.pi, np.pi, 70)
+
+        z1_list, z2_list = make_demo_bands(kx, ky)
+
+        fig = plt.figure(figsize=(10, 7))
+        ax = fig.add_subplot(111, projection="3d")
+
+        # 画多表面能带
+        ax, combined, mappable = s3d_plot_multi_surfaces_combined(
+            ax=ax,
+            x=kx,
+            y=ky,
+            z1_list=z1_list,  # 高度：频率实部
+            z2_list=z2_list,  # 颜色：Q
+            rez=4,
+            basetype="oct1",
+            cmap="hot",  # 也可用 "viridis" 等
+            # vmin/vmax 不传则自动取 Q 的全局 min/max；也可手动指定：
+            vmin=1e2, vmax=1e5,
+            elev=28,
+            azim=35,
+            shade=False,
+            hilite=0.6,
+            alpha_default=1.0,
+        )
+
+        # 轴标签
+        ax.set_xlabel(r"$k_x$")
+        ax.set_ylabel(r"$k_y$")
+        ax.set_zlabel(r"$\Re(\omega)$ (arb.)")
+        ax.set_title("3-band surface (height=Re(freq), color=Q)")
+
+        # Q 的颜色条（解释的是原始 Q 的数值语义）
+        cbar = fig.colorbar(mappable, ax=ax, shrink=0.65, pad=0.08)
+        cbar.set_label("Mode Q factor")
+
+        plt.tight_layout()
+        plt.show()
+
+        print("Done. Note: surface.obj has been exported in current directory (by your function).")
+
+
+    demo_multisurface_bandstructure()
