@@ -23,7 +23,11 @@ if __name__ == '__main__':
     # data_path = './manual/Vacuum-502T_Trap_0.005-around_Γ-0.03k0.015k-upward.pkl'
     # data_path = './manual/Vacuum-502T_Trap_0.05-around_Γ-0.03k0.015k-downward.pkl'
     # data_path = './manual/Vacuum-530T_Trap_0.05-0.2k-upward.pkl'
-    data_path = './manual/Vacuum-530T_Trap_0.05-0.2k-downward.pkl'
+    # data_path = './manual/Vacuum-530T_Trap_0.05-0.2k-downward.pkl'
+    # data_path = './manual/SOS-530T_Trap_0.00-0.2k-upward.pkl'
+    # data_path = './manual/SOS-530T_Trap_0.00-0.2k-downward.pkl'
+    data_path = './manual/SOS-530T_Trap_0.00-0.4k-upward.pkl'
+    # data_path = './manual/SOS-530T_Trap_0.00-0.4k-downward.pkl'
     BAND_INDEX = 1
     config = PlotConfig(
         plot_params={},

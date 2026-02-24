@@ -385,13 +385,13 @@ class TwoDimFieldVisualizer(HeatmapPlotter, ABC):
         )
 
     def plot_3d_surfaces(
-            self, indexs, x_key, y_key, z1_key, z2_key=None, z3_key=None, cmap='hot', vmin=None, vmax=None, **kwargs
+            self, indices, x_key, y_key, z1_key, z2_key=None, z3_key=None, cmap='hot', vmin=None, vmax=None, **kwargs
     ) -> None:
         x = self.coordinates[x_key]
         y = self.coordinates[y_key]
-        z1_lst = [self.raw_datasets["data_list"][i][z1_key] for i in indexs]
+        z1_lst = [self.raw_datasets["data_list"][i][z1_key] for i in indices]
         # for color rending
-        z2_lst = [self.raw_datasets["data_list"][i][z2_key] for i in indexs] if z2_key is not None else z1_lst
+        z2_lst = [self.raw_datasets["data_list"][i][z2_key] for i in indices] if z2_key is not None else z1_lst
         # # for alpha rending
         # z3_lst = [self.raw_datasets["data_list"][i][z3_key] for i in indices] if z3_key is not None else None
         self.ax, combined_surface, mappable = s3d_plot_multi_surfaces_combined(

@@ -17,7 +17,9 @@ if __name__ == '__main__':
     # data_path = 'data/Vacuum-ultra_mesh-search0.40-geo502T-around_Γ_0.015k.csv'
     # data_path = 'data/VacuumEnv-ultra_mesh-search0.40-geo_Arrow-around_Γ_0.015k0.030k.csv'
     # data_path = 'data/VacuumEnv-ultra_mesh-search0.45-geo_trap_asym-0.2k.csv'  # DONE
-    data_path = 'data/VacuumEnv-ultra_mesh-search0.45-geo_trap_asym-0.2k-supp1.csv'  # DONE
+    # data_path = 'data/VacuumEnv-ultra_mesh-search0.45-geo_trap_asym-0.2k-supp1.csv'  # DONE
+    # data_path = 'data/SOSEnv-ultra_mesh-search0.45-geo_trap_asym-0.2k.csv'  # DONE
+    data_path = 'data/SOSEnv-ultra_mesh-search0.45-geo_trap_asym-0.4k.csv'  #
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
@@ -50,6 +52,9 @@ if __name__ == '__main__':
         print(f"  {key}: {arr}")
     print("数据网格 Z 的形状：", Z.shape)
 
+    X_KEY = 'm1'
+    Y_KEY = 'm2'
+
     # 假设已得到grid_coords, Z
     new_coords, Z_filtered, min_lens = advanced_filter_eigensolution(
         grid_coords, Z,
@@ -58,8 +63,8 @@ if __name__ == '__main__':
             "t_tot (nm)": 530,
             "t_ridge (nm)": 530,
             "fill": 0.5,
-            "substrate_n": 1,
-            "M_asym_factor": 0.16,
+            "substrate_n": 1.75,
+            "M_asym_factor": 0.00,  # [0.    0.005 0.01  0.015 0.02  0.03  0.04  0.05  0.08  0.1   0.15  0.2  ]
             "P_asym_factor": 0.00,
             "Z_asym_factor": 0.00,
         },  # 固定
@@ -76,8 +81,8 @@ if __name__ == '__main__':
     # ys = []
     # zs = []
     # colors = []
-    # for i, m1 in enumerate(new_coords['m1']):
-    #     for j, m2 in enumerate(new_coords['m2']):
+    # for i, m1 in enumerate(new_coords[X_KEY]):
+    #     for j, m2 in enumerate(new_coords[Y_KEY]):
     #         lst_ij = Z_filtered[i][j]
     #         for freq in lst_ij[0]:
     #             xs.append(m1)
@@ -120,6 +125,7 @@ if __name__ == '__main__':
         additional_data=Z_filtered,
         value_weights=value_weights,
         deriv_weights=deriv_weights,
+        nan_cost_penalty=1e1,
         max_m=14,
         auto_split_streams=False
     )

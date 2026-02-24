@@ -10,10 +10,11 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    data_path = "data/Hex-1Dms-ultra_mesh-geo_tri_asym-0.1k.csv"
+    # data_path = "data/Hex-1Dms-ultra_mesh-geo_tri_asym-0.3k.csv"
+    data_path = "data/Hex-1Dms-ultra_mesh-geo_tri_asym-0.3k-supp1.csv"
     df_sample = pd.read_csv(data_path, sep='\t')
 
-    period = 400
+    period = 500*np.sqrt(3)/2
     df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq,
                                                                                            period=period * 1e-9 * 1e12)
     df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period * 1e-9)
@@ -45,14 +46,15 @@ if __name__ == '__main__':
             't_tot (nm)': 150,
             'r1 (nm)': 150,
             'r2 (nm)': 0,
-            'substrate (nm)': 500,
+            'substrate (nm)': 201,
             'asym_y_scaling': 1.0,
             'tri_factor': 0.125,
+            # 'tri_factor': 0,
             'rot_angle (deg)': 0,
         },  # 固定
         filter_conditions={
             # "fake_factor (1)": {"<": 1},  # 筛选
-            "频率 (Hz)": {">": 0.0, "<": 0.5},  # 筛选
+            "频率 (Hz)": {">": 0.0, "<": 0.6},  # 筛选
         }
     )
 
@@ -72,34 +74,35 @@ if __name__ == '__main__':
     for i in range(Z_filtered.shape[0]):
         Z_new[i] = Z_filtered[i][0]  # 提取每个 lst_ij 的第 b 列
 
-    ###############################################################################################################
-    from matplotlib import pyplot as plt
-
-    fig, ax = plt.subplots(figsize=(6, 10))
-    # 通过散点的方式绘制出来，看看效果
-    for i in range(Z_new.shape[0]):
-        z_vals = Z_new[i]
-        for val in z_vals:
-            if val is not None:
-                plt.scatter(new_coords[X_KEY][i], np.real(val), color='blue', s=10)
-    plt.xlabel(X_KEY)
-    plt.ylabel('Re(eigenfreq) (THz)')
-    plt.title('Filtered Eigenfrequencies before Grouping')
-    plt.grid(True)
-    plt.show()
-    ###############################################################################################################
-
+    # ###############################################################################################################
+    # from matplotlib import pyplot as plt
+    #
+    # fig, ax = plt.subplots(figsize=(6, 10))
+    # # 通过散点的方式绘制出来，看看效果
+    # for i in range(Z_new.shape[0]):
+    #     z_vals = Z_new[i]
+    #     for val in z_vals:
+    #         if val is not None:
+    #             plt.scatter(new_coords[X_KEY][i], np.real(val), color='blue', s=10)
+    # plt.xlabel(X_KEY)
+    # plt.ylabel('Re(eigenfreq) (THz)')
+    # plt.title('Filtered Eigenfrequencies before Grouping')
+    # plt.grid(True)
+    # plt.show()
+    # ###############################################################################################################
+    BAND_NUM = 15
     Z_grouped, additional_Z_grouped = group_vectors_one_sided_hungarian(
         [Z_new], deltas,
         additional_data=Z_filtered,
         value_weights=value_weights,
         deriv_weights=deriv_weights,
-        max_m=15,
+        nan_cost_penalty=1e1,
+        max_m=BAND_NUM,
         auto_split_streams=False
     )
 
     Z_targets = []
-    for freq_index in range(15):
+    for freq_index in range(BAND_NUM):
         new_coords, Z_target = group_solution(
             new_coords, Z_grouped,
             freq_index=freq_index  # 第n个频率
@@ -139,19 +142,19 @@ if __name__ == '__main__':
         annotations={
             'xlabel': '', 'ylabel': '',
             'show_axis_labels': True, 'show_tick_labels': True,
-            'ylim': (0.30, 0.60),
+            'ylim': (0.45, 0.58),
         },
     )
     config.update(figsize=(1.25, 3), tick_direction='in')
     plotter = OneDimFieldVisualizer(config=config, data_path=data_path)
     plotter.load_data()
     plotter.new_2d_fig()
-    for i in range(15):
+    for i in range(BAND_NUM):
         plotter.plot(
             index=i, x_key=X_KEY, z1_key='eigenfreq_real', z2_key='eigenfreq_imag',
             enable_fill=True, default_color='gray', alpha_fill=0.3, scale=1
         )
-    for i in range(15):
+    for i in range(BAND_NUM):
         plotter.plot(
             index=i, x_key=X_KEY, z1_key='eigenfreq_real', z3_key='qlog', cmap='nipy_spectral',
             enable_dynamic_color=True, global_color_vmin=2, global_color_vmax=7, linewidth_base=2

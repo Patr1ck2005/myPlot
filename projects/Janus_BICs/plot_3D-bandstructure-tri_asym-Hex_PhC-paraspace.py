@@ -10,9 +10,7 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    # data_path = "data/Hex-ultra_mesh-geo_tri_asym-0.2k.csv"
-    # data_path = "data/Hex-ultra_mesh-geo_tri_asym-0.2k-supp1.csv"
-    data_path = "data/Hex-ultra_mesh-geo_tri_asym-0.1k.csv"
+    data_path = "data/Hex-1Dms-ultra_mesh-geo_tri_asym-sweep_L-0.3k.csv"
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500*np.sqrt(3)/2
@@ -20,9 +18,10 @@ if __name__ == '__main__':
                                                                                            period=period * 1e-9 * 1e12)
     df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period * 1e-9)
     df_sample["phi (rad)"] = df_sample["phi (rad)"].apply(lambda x: x % np.pi)
+    df_sample["k"] = df_sample["m1"]-df_sample["m2"]
     # 指定用于构造网格的参数以及目标数据列
     param_keys = [
-        "m1", "m2", "t_tot (nm)", "r1 (nm)", "r2 (nm)", "substrate (nm)",
+        "k", "t_tot (nm)", "r1 (nm)", "r2 (nm)", "substrate (nm)",
         "asym_y_scaling", "tri_factor", "rot_angle (deg)"
     ]
     z_keys = ["特征频率 (THz)", "品质因子 (1)", "tanchi (1)", "phi (rad)", "fake_factor (1)", "频率 (Hz)"]
@@ -34,8 +33,8 @@ if __name__ == '__main__':
         print(f"  {key}: {arr}")
     print("数据网格 Z 的形状：", Z.shape)
 
-    X_KEY = 'm1'
-    Y_KEY = 'm2'
+    X_KEY = 'k'
+    Y_KEY = 'substrate (nm)'
 
     # 假设已得到grid_coords, Z
     new_coords, Z_filtered, min_lens = advanced_filter_eigensolution(
@@ -45,7 +44,6 @@ if __name__ == '__main__':
             't_tot (nm)': 150,
             'r1 (nm)': 150,
             'r2 (nm)': 0,
-            'substrate (nm)': 200.3,
             'asym_y_scaling': 1.0,
             'tri_factor': 0.125,
             'rot_angle (deg)': 0,
@@ -78,8 +76,8 @@ if __name__ == '__main__':
     # set view angle
     ax.view_init(elev=15, azim=45)
     plt.colorbar(sc, label='Imaginary Part of Frequency (THz)')
-    ax.set_xlabel('m1')
-    ax.set_ylabel('m2')
+    ax.set_xlabel(X_KEY)
+    ax.set_ylabel(Y_KEY)
     ax.set_zlabel('Frequency (THz)')
     plt.title('3D Scatter Plot of Eigenfrequencies')
     plt.show()
@@ -127,37 +125,27 @@ if __name__ == '__main__':
     from core.data_postprocess.data_package import package_stad_C6_data
     from core.prepare_plot import prepare_plot_data
 
-    raw_dataset_list = []
-    for i, Z_target in enumerate(Z_targets):
-        dataset = {'eigenfreq_real': Z_target.real, 'eigenfreq_imag': Z_target.imag}
-        eigenfreq, qfactor, tanchi, phi, fake_factor, freq = extract_adjacent_fields(
-            additional_Z_grouped,
-            z_keys=z_keys,
-            band_index=i
-        )
-        qlog = np.log10(qfactor)
-        dataset['qlog'] = qlog.real.ravel()
-        print(f"Band {i}: qlog range = [{dataset['qlog'].min()}, {dataset['qlog'].max()}]")
-        raw_dataset_list.append(dataset)
-
     band_indices = (0, 1, 2, 3, 4)
     dataset_list = []
     for band_index in band_indices:
         Z_target = Z_targets[band_index]
-        full_coords, dataset = package_stad_C6_data(
-            new_coords, band_index, Z_target, additional_Z_grouped, z_keys,
-            q_key='品质因子 (1)',
-            tanchi_key='tanchi (1)',
-            phi_key='phi (rad)',
+        dataset = {'eigenfreq_real': Z_target.real, 'eigenfreq_imag': Z_target.imag}
+        eigenfreq, qfactor, tanchi, phi, fake_factor, freq = extract_adjacent_fields(
+            additional_Z_grouped,
+            z_keys=z_keys,
+            band_index=band_index
         )
+        qlog = np.log10(qfactor)
+        dataset['qlog'] = qlog.real
+        print(f"Band {band_index}: qlog range = [{dataset['qlog'].min()}, {dataset['qlog'].max()}]")
         dataset_list.append(dataset)
     data_path = prepare_plot_data(
-        coords=full_coords, data_class='Eigensolution', dataset_list=dataset_list, fixed_params={},
+        coords=new_coords, data_class='Eigensolution', dataset_list=dataset_list, fixed_params={},
         save_dir='./rsl/2_para_space',
     )
 
     ####################################################################################################################
-    from core.plot_cls import MomentumSpaceEigenVisualizer
+    from core.plot_cls import TwoDimFieldVisualizer
     from core.plot_workflow import PlotConfig
 
     BAND_INDEX = 2  # 1, 2
@@ -167,12 +155,17 @@ if __name__ == '__main__':
     )
     config.update(figsize=(1.5, 1.5), tick_direction='in')
 
-    plotter = MomentumSpaceEigenVisualizer(config=config, data_path=data_path)
+    plotter = TwoDimFieldVisualizer(config=config, data_path=data_path)
     plotter.load_data()
 
     plotter.new_3d_fig(figsize=(3, 3))
-    plotter.plot_3d_surfaces(indices=(2, 3, 4), z1_key='eigenfreq_real', z2_key='qlog', cmap='nipy_spectral', vmin=2, vmax=7, alpha_default=0.5)
+    plotter.plot_3d_surfaces(indices=(2, 3), x_key='k', y_key='substrate (nm)', z1_key='eigenfreq_real', z2_key='qlog', cmap='nipy_spectral', vmin=2, vmax=9)
     plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig(figsize=(1.5, 1.5))
+    plotter.imshow_field(index=BAND_INDEX, x_key='k', y_key='substrate (nm)', field_key='qlog', cmap='nipy_spectral', vmin=2, vmax=9, aspect='auto')
+    # plotter.add_annotations()
     plotter.save_and_show()
 
     plotter.new_2d_fig(figsize=(1.5, 1.5))
@@ -187,11 +180,6 @@ if __name__ == '__main__':
 
     plotter.new_2d_fig(figsize=(1.5, 1.5))
     plotter.imshow_field(index=BAND_INDEX, field_key='s3', cmap='coolwarm', vmin=-1, vmax=1)
-    plotter.add_annotations()
-    plotter.save_and_show()
-
-    plotter.new_2d_fig(figsize=(1.5, 1.5))
-    plotter.imshow_field(index=BAND_INDEX, field_key='qlog', cmap='nipy_spectral', vmin=2, vmax=7)
     plotter.add_annotations()
     plotter.save_and_show()
 

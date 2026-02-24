@@ -178,9 +178,9 @@ def s3d_build_planar_surface_from_arrays(
     surface.transform(scale=[x_halfspan, y_halfspan, 1.0])
     surface.transform(translate=[x_center, y_center, 0.0])
 
-    surface.transform(translate=[0.0, 0.0, float(z_offset)])
+    surface.transform(translate=[0.0, 0.0, z_offset])
 
-    surface.set_alpha(float(alpha))
+    surface.set_alpha(alpha)
 
     if shade:
         surface.shade().hilite(hilite)
