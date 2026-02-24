@@ -10,32 +10,32 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    data_path = "data/Rect-1Dms-simple_Annular-various_DC-Asym_analysis.csv"
+    # data_path = "data/Rect-simple_Annular-ENZ-various_geo.csv"
+    # data_path = "data/Rect-simple_Annular-ENZ-various_geo-supp1.csv"
+    # data_path = "data/Rect-simple_Annular-ENZ-various_geo-supp2_145,150R.csv"
+    # data_path = "data/Rect-simple_Annular-ENZ-various_geo-supp3_overlap.csv"
+    # data_path = "data/Rect-simple_Annular-ENZ-various_geo-supp4.csv"
+    data_path = "data/Rect-simple_Annular-ENZ-various_geo-supp5.csv"
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
     df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq,
                                                                                            period=period * 1e-9 * 1e12)
     df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period * 1e-9)
-    df_sample["up_cx (V/m)"] = df_sample["up_cx (V/m)"].apply(convert_complex)
-    df_sample["up_cy (V/m)"] = df_sample["up_cy (V/m)"].apply(convert_complex)
-    df_sample["down_cx (V/m)"] = df_sample["down_cx (V/m)"].apply(convert_complex)
-    df_sample["down_cy (V/m)"] = df_sample["down_cy (V/m)"].apply(convert_complex)
+    df_sample["phi (rad)"] = df_sample["phi (rad)"].apply(lambda x: x % np.pi)
+    df_sample["cx (V/m)"] = df_sample["cx (V/m)"].apply(convert_complex)
+    df_sample["cy (V/m)"] = df_sample["cy (V/m)"].apply(convert_complex)
     df_sample["k"] = df_sample.apply(lambda row: row["k_r"] if row["k_azimu"] == 0 else -row["k_r"], axis=1)
     # 转化成实数
     df_sample["k"] = df_sample["k"].apply(lambda x: np.real(x))
     # 指定用于构造网格的参数以及目标数据列
     param_keys = [
         "main_n", "pattern_n", "substrate_n", "above_n",
-        "k", "fill", "t_tot (nm)", "r1 (nm)",
+        "slab_n", "slab_k",
+        "k", "fill", "t_tot (nm)", "t_slab (nm)", "r1 (nm)",
     ]
-    z_keys = [
-        "特征频率 (THz)", "品质因子 (1)",
-        "up_tanchi (1)", "up_phi (rad)",
-        "down_tanchi (1)", "down_phi (rad)",
-        "fake_factor (1)", "频率 (Hz)",
-        "U_factor (1)", "up_cx (V/m)", "up_cy (V/m)", "down_cx (V/m)", "down_cy (V/m)"
-    ]
+    z_keys = ["特征频率 (THz)", "品质因子 (1)", "tanchi (1)", "phi (rad)", "fake_factor (1)", "频率 (Hz)", "cx (V/m)", "cy (V/m)"]
+
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
     grid_coords, Z = create_data_grid(df_sample, param_keys, z_keys, deduplication=False)
     print("网格参数：")
@@ -54,9 +54,14 @@ if __name__ == '__main__':
             'pattern_n': 3.5,
             'substrate_n': 1.45,
             'above_n': 1.,
-            'fill': 0.60,
-            't_tot (nm)': 250,
-            'r1 (nm)': 100,
+            'slab_n': 0.34,
+            'slab_k': 0.5,
+            # 'slab_n': 1.55,
+            # 'slab_k': 0.42,
+            'fill': 0.6,
+            't_tot (nm)': 400,
+            't_slab (nm)': 100,
+            'r1 (nm)': 70,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 1},  # 筛选
@@ -96,7 +101,7 @@ if __name__ == '__main__':
     # plt.grid(True)
     # plt.show()
     # ###############################################################################################################
-    BAND_NUM = 20
+    BAND_NUM = 15
     Z_grouped, additional_Z_grouped = group_vectors_one_sided_hungarian(
         [Z_new], deltas,
         additional_data=Z_filtered,
@@ -123,8 +128,8 @@ if __name__ == '__main__':
     datasets = []
     for i, Z_target in enumerate(Z_targets):
         dataset = {'eigenfreq_real': Z_target.real, 'eigenfreq_imag': Z_target.imag}
-        eigenfreq, qfactor, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor, \
-            up_cx, up_cy, down_cx, down_cy = extract_adjacent_fields(
+        eigenfreq, qfactor, up_tanchi, up_phi, fake_factor, freq, \
+            up_cx, up_cy = extract_adjacent_fields(
             additional_Z_grouped,
             z_keys=z_keys,
             band_index=i
@@ -132,7 +137,6 @@ if __name__ == '__main__':
         qlog = np.log10(qfactor)
         dataset['qlog'] = qlog.real.ravel()
         print(f"Band {i}: qlog range = [{dataset['qlog'].min()}, {dataset['qlog'].max()}]")
-        dataset['u_factor'] = -u_factor.real.ravel()
         datasets.append(dataset)
 
     data_path = prepare_plot_data(
@@ -149,6 +153,7 @@ if __name__ == '__main__':
         annotations={
             'xlabel': '', 'ylabel': '',
             'show_axis_labels': True, 'show_tick_labels': True,
+            'ylim': (0.40, 1/1.45),
         },
     )
     config.update(figsize=(1.25, 5), tick_direction='in')
@@ -158,29 +163,12 @@ if __name__ == '__main__':
     for i in range(BAND_NUM):
         plotter.plot(
             index=i, x_key=X_KEY, z1_key='eigenfreq_real', z2_key='eigenfreq_imag',
-            enable_fill=True, default_fill_color='gray', alpha_fill=0.3, scale=1
+            enable_fill=True, default_color='gray', alpha_fill=0.3, scale=1
         )
-    # # 设置循环颜色映射参数
-    # from matplotlib import pyplot as plt
-    # colors = plt.cm.tab10(np.arange(BAND_NUM) % 10)  # 循环使用 tab10 的颜色
-    # for i in range(BAND_NUM):
-    #     plotter.plot(
-    #         index=i, x_key=X_KEY, z1_key='eigenfreq_real', default_line_color=colors[i], linewidth_base=2
-    #     )
     for i in range(BAND_NUM):
         plotter.plot(
             index=i, x_key=X_KEY, z1_key='eigenfreq_real', z3_key='qlog', cmap='magma',
-            enable_dynamic_color=True, global_color_vmin=2, global_color_vmax=7, linewidth_base=2
+            enable_dynamic_color=True, global_color_vmin=1, global_color_vmax=3, linewidth_base=2
         )
-    plotter.ax.set_ylim(0.40, 1/1.45)
     plotter.add_annotations()
     plotter.save_and_show()
-
-    # plotter.new_2d_fig()
-    # for i in range(BAND_NUM):
-    #     plotter.plot(
-    #         index=i, x_key=X_KEY, z1_key='u_factor', default_line_color=colors[i], linewidth_base=2
-    #     )
-    # plotter.ax.set_yscale('log')
-    # plotter.add_annotations()
-    # plotter.save_and_show()

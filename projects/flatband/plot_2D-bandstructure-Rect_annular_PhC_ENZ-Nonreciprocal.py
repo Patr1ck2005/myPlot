@@ -10,7 +10,10 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    data_path = "data/Rect-1Dms-simple_Annular-various_DC-Asym_analysis.csv"
+    # data_path = "data/Rect-simple_Annular-ENZ-various_geo-Asym_analysis.csv"
+    # data_path = "data/Rect-1Dms-simple_Annular-ENZ-350T92.5R-Asym_analysis.csv"
+    # data_path = "data/Rect-1Dms-simple_Annular-ENZ-various_DC-Asym_analysis.csv"
+    data_path = "data/Rect-1Dms-simple_Annular-ENZ-various_DC-Asym_analysis-supp1.csv"
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
@@ -27,7 +30,8 @@ if __name__ == '__main__':
     # 指定用于构造网格的参数以及目标数据列
     param_keys = [
         "main_n", "pattern_n", "substrate_n", "above_n",
-        "k", "fill", "t_tot (nm)", "r1 (nm)",
+        "slab_n", "slab_k",
+        "k", "fill", "t_tot (nm)", "t_slab (nm)", "r1 (nm)",
     ]
     z_keys = [
         "特征频率 (THz)", "品质因子 (1)",
@@ -54,9 +58,14 @@ if __name__ == '__main__':
             'pattern_n': 3.5,
             'substrate_n': 1.45,
             'above_n': 1.,
-            'fill': 0.60,
-            't_tot (nm)': 250,
-            'r1 (nm)': 100,
+            'slab_n': 0.34,
+            'slab_k': 0.5,
+            # 'slab_n': 1.55,
+            # 'slab_k': 0.42,
+            'fill': 0.65,
+            't_tot (nm)': 300,
+            't_slab (nm)': 100,
+            'r1 (nm)': 90,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 1},  # 筛选
@@ -96,7 +105,7 @@ if __name__ == '__main__':
     # plt.grid(True)
     # plt.show()
     # ###############################################################################################################
-    BAND_NUM = 20
+    BAND_NUM = 11
     Z_grouped, additional_Z_grouped = group_vectors_one_sided_hungarian(
         [Z_new], deltas,
         additional_data=Z_filtered,
@@ -170,7 +179,7 @@ if __name__ == '__main__':
     for i in range(BAND_NUM):
         plotter.plot(
             index=i, x_key=X_KEY, z1_key='eigenfreq_real', z3_key='qlog', cmap='magma',
-            enable_dynamic_color=True, global_color_vmin=2, global_color_vmax=7, linewidth_base=2
+            enable_dynamic_color=True, global_color_vmin=1, global_color_vmax=3, linewidth_base=2
         )
     plotter.ax.set_ylim(0.40, 1/1.45)
     plotter.add_annotations()
