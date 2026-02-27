@@ -6,12 +6,34 @@ class MyScriptPlotter(BandPlotterOneDim):
     pass
 
 
+# plot_params={
+#     'zlabel': "f", 'enable_line_fill': True, 'alpha': 0.3, 'legend': False,
+#     'line_colors': ['blue', 'red', 'red', 'blue', 'red']
+# },
+# plot_params={
+#     'figsize': (3, 3),
+#     'zlabel': "freq (c/P)", 'xlabel': r"k ($2\pi/P$)",
+#     'enable_fill': True, 'enable_line_fill': True, 'cmap': 'magma',
+#     'add_colorbar': False,
+#     "global_color_vmin": 0, "global_color_vmax": 0.02, "default_color": 'gray', 'legend': False,
+#     'alpha_fill': 0.5,
+#     'edge_color': 'none', 'title': False,
+# },
+# plot_params = {
+#     'figsize': (3, 3),
+#     'zlabel': "freq (c/P)", 'xlabel': r"k ($2\pi/P$)",
+#     'enable_fill': True, 'gradient_fill': True, 'gradient_direction': 'z3', 'cmap': 'magma', 'add_colorbar': False,
+#     "global_color_vmin": 0, "global_color_vmax": 0.02, "default_color": 'gray', 'legend': False, 'alpha_fill': 0.5,
+#     'edge_color': 'none', 'title': False,
+# },
+
 def main(data_path):
     config = PlotConfig(
-        plot_params={'scale': 1},
+        plot_params={'scale': 0.5},
         annotations={
             'xlabel': 'k (2$\pi$/P)', 'ylabel': 'f (c/P)', 'show_axis_labels': True, 'show_tick_labels': True,
             # 'ylim': (0.51, 0.57),
+            'ylim': (0.41, 0.57),
             'y_log_scale': False,
         },
     )
@@ -22,9 +44,10 @@ def main(data_path):
     plotter.prepare_data()
     plotter.new_2d_fig()
 
-    plotter.plot_thick_bg()
+    # plotter.plot_thick_bg()
+    plotter.plot_colored_bg(vmin=0, vmax=0.02, alpha=0.5)
     # plotter.plot_colored_line(vmin=2, vmax=7, cmap='magma')
-    plotter.plot_ordered_line()
+    # plotter.plot_ordered_line()
 
     # plotter.plot_ordered_qfactor()
 

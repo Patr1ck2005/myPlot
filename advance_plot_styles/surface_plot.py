@@ -164,6 +164,7 @@ def s3d_build_planar_surface_from_arrays(
         name=None,
     )
     surface.map_cmap_from_datagrid(z2_f, cmap=cmap_i)
+    surface._facecolor3d[:, 3] = alpha
 
     surface.map_geom_from_datagrid(z1_f, scale=geom_scale)
     # ---- xy: map from native [-1, 1] to physical [xmin, xmax], [ymin, ymax] ----
@@ -179,8 +180,6 @@ def s3d_build_planar_surface_from_arrays(
     surface.transform(translate=[x_center, y_center, 0.0])
 
     surface.transform(translate=[0.0, 0.0, z_offset])
-
-    surface.set_alpha(alpha)
 
     if shade:
         surface.shade().hilite(hilite)
@@ -310,6 +309,11 @@ def s3d_plot_multi_surfaces_combined(
     ax.add_collection3d(combined)
     ax.view_init(elev=elev, azim=azim)
 
+    # combined.set_edgecolor('none')
+    # combined.set_edgecolor('face')
+    if alpha_default < 1.0:
+        combined._edgecolor3d[:, 3] = 0
+
     # ---- colorbar mappable（数值解释权威）----
     mappable = ScalarMappable(norm=norm_z2, cmap=mpl.colormaps.get_cmap(cmap))
     mappable.set_array([])
@@ -385,7 +389,7 @@ if __name__ == '__main__':
             azim=35,
             shade=False,
             hilite=0.6,
-            alpha_default=1.0,
+            alpha_default=0.5,
         )
 
         # 轴标签

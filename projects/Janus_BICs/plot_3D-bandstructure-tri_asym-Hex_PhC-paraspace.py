@@ -159,12 +159,12 @@ if __name__ == '__main__':
     plotter.load_data()
 
     plotter.new_3d_fig(figsize=(3, 3))
-    plotter.plot_3d_surfaces(indices=(2, 3), x_key='k', y_key='substrate (nm)', z1_key='eigenfreq_real', z2_key='qlog', cmap='nipy_spectral', vmin=2, vmax=9)
+    plotter.plot_3d_surfaces(indices=(2, 3), x_key='k', y_key='substrate (nm)', z1_key='eigenfreq_real', z2_key='qlog', cmap='nipy_spectral', vmin=2, vmax=8)
     plotter.add_annotations()
     plotter.save_and_show()
 
     plotter.new_2d_fig(figsize=(1.5, 1.5))
-    plotter.imshow_field(index=BAND_INDEX, x_key='k', y_key='substrate (nm)', field_key='qlog', cmap='nipy_spectral', vmin=2, vmax=9, aspect='auto')
+    plotter.imshow_field(index=BAND_INDEX, x_key='k', y_key='substrate (nm)', field_key='qlog', cmap='nipy_spectral', vmin=2, vmax=8, aspect='auto')
     # plotter.add_annotations()
     plotter.save_and_show()
 

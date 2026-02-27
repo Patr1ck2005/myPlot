@@ -67,8 +67,8 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            "delta_shrink (nm)": 60,
-            # "delta_shrink (nm)": 85,
+            # "delta_shrink (nm)": 60,
+            "delta_shrink (nm)": 85,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 10},  # 筛选

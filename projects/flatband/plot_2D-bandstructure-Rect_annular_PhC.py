@@ -55,7 +55,7 @@ if __name__ == '__main__':
             'substrate_n': 1.45,
             'above_n': 1.,
             'fill': 0.60,
-            't_tot (nm)': 250,
+            't_tot (nm)': 200,
             'r1 (nm)': 100,
         },  # 固定
         filter_conditions={

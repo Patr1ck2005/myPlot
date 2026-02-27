@@ -11,7 +11,8 @@ c_const = 299792458
 
 if __name__ == '__main__':
     # data_path = "data/Hex-1Dms-ultra_mesh-geo_tri_asym-0.3k.csv"
-    data_path = "data/Hex-1Dms-ultra_mesh-geo_tri_asym-0.3k-supp1.csv"
+    # data_path = "data/Hex-1Dms-ultra_mesh-geo_tri_asym-0.3k-supp1.csv"
+    data_path = "data/Hex-1Dms-ultra_mesh-geo-0.3k.csv"
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500*np.sqrt(3)/2
@@ -46,10 +47,10 @@ if __name__ == '__main__':
             't_tot (nm)': 150,
             'r1 (nm)': 150,
             'r2 (nm)': 0,
-            'substrate (nm)': 201,
+            'substrate (nm)': 200,
             'asym_y_scaling': 1.0,
-            'tri_factor': 0.125,
-            # 'tri_factor': 0,
+            # 'tri_factor': 0.125,
+            'tri_factor': 0,
             'rot_angle (deg)': 0,
         },  # 固定
         filter_conditions={
