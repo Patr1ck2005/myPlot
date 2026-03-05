@@ -1,0 +1,187 @@
+from core.data_postprocess.data_filter import advanced_filter_eigensolution
+from core.data_postprocess.data_grouper import group_vectors_one_sided_hungarian
+from core.process_multi_dim_params_space import create_data_grid, group_solution
+
+import numpy as np
+import pandas as pd
+
+from core.utils import norm_freq, convert_complex
+
+c_const = 299792458
+
+if __name__ == '__main__':
+    data_path = "data/Hex-1Dms-simple_Annular-various_DC-Asym_analysis.csv"
+    # data_path = "data/Hex-1Dms-simple_Annular-various_DC-Asym_analysis-supp1.csv"
+    df_sample = pd.read_csv(data_path, sep='\t')
+
+    period = 500
+    df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex).apply(norm_freq,
+                                                                                           period=period * 1e-9 * 1e12)
+    df_sample["频率 (Hz)"] = df_sample["频率 (Hz)"].apply(norm_freq, period=period * 1e-9)
+    df_sample["up_cx (V/m)"] = df_sample["up_cx (V/m)"].apply(convert_complex)
+    df_sample["up_cy (V/m)"] = df_sample["up_cy (V/m)"].apply(convert_complex)
+    df_sample["down_cx (V/m)"] = df_sample["down_cx (V/m)"].apply(convert_complex)
+    df_sample["down_cy (V/m)"] = df_sample["down_cy (V/m)"].apply(convert_complex)
+    df_sample["k"] = df_sample["m1"]-df_sample["m2"]
+    # 转化成实数
+    df_sample["k"] = df_sample["k"].apply(lambda x: np.real(x))
+    # 指定用于构造网格的参数以及目标数据列
+    param_keys = [
+        "main_n", "pattern_n", "substrate_n", "above_n",
+        "k", "fill", "t_tot (nm)", "r1 (nm)",
+    ]
+    z_keys = [
+        "特征频率 (THz)", "品质因子 (1)",
+        "up_tanchi (1)", "up_phi (rad)",
+        "down_tanchi (1)", "down_phi (rad)",
+        "fake_factor (1)", "频率 (Hz)",
+        "U_factor (1)", "up_cx (V/m)", "up_cy (V/m)", "down_cx (V/m)", "down_cy (V/m)"
+    ]
+    # 构造数据网格，此处不进行聚合，每个单元格保存列表
+    grid_coords, Z = create_data_grid(df_sample, param_keys, z_keys, deduplication=False)
+    print("网格参数：")
+    for key, arr in grid_coords.items():
+        print(f"  {key}: {arr}")
+    print("数据网格 Z 的形状：", Z.shape)
+
+    X_KEY = 'k'
+
+    # 假设已得到grid_coords, Z
+    new_coords, Z_filtered, min_lens = advanced_filter_eigensolution(
+        grid_coords, Z,
+        z_keys=z_keys,
+        fixed_params={
+            'main_n': 1,
+            'pattern_n': 3.5,
+            'substrate_n': 1.45,
+            'above_n': 1.,
+            'fill': 0.65,
+            't_tot (nm)': 300,
+            'r1 (nm)': 110,
+        },  # 固定
+        filter_conditions={
+            "fake_factor (1)": {"<": 1},  # 筛选
+            # "频率 (Hz)": {">": 0.0, "<": 1},  # 筛选
+        }
+    )
+
+    deltas = (1e-3,)  # n个维度的网格间距
+    # 当沿维度 d 生长时，值差权重矩阵（n×n）
+    # 例如：value_weights[d, j] = 在 grow_dir=d 时，对维度 j 的值差权重
+    value_weights = np.array([
+        [1, ],  # 沿维度生长时
+    ])
+    # 当沿维度 d 生长时，导数不连续权重矩阵（n×n）
+    deriv_weights = np.array([
+        [1, ],
+    ])
+    # 创建一个新的数组，用于存储更新后的结果
+    Z_new = np.empty_like(Z_filtered, dtype=object)
+    # 使用直接的循环来更新 Z_new
+    for i in range(Z_filtered.shape[0]):
+        Z_new[i] = Z_filtered[i][0]  # 提取每个 lst_ij 的第 b 列
+
+    # ###############################################################################################################
+    # from matplotlib import pyplot as plt
+    #
+    # fig, ax = plt.subplots(figsize=(6, 10))
+    # # 通过散点的方式绘制出来，看看效果
+    # for i in range(Z_new.shape[0]):
+    #     z_vals = Z_new[i]
+    #     for val in z_vals:
+    #         if val is not None:
+    #             plt.scatter(new_coords[X_KEY][i], np.real(val), color='blue', s=10)
+    # plt.xlabel(X_KEY)
+    # plt.ylabel('Re(eigenfreq) (THz)')
+    # plt.title('Filtered Eigenfrequencies before Grouping')
+    # plt.grid(True)
+    # plt.show()
+    # ###############################################################################################################
+    BAND_NUM = 20
+    Z_grouped, additional_Z_grouped = group_vectors_one_sided_hungarian(
+        [Z_new], deltas,
+        additional_data=Z_filtered,
+        value_weights=value_weights,
+        deriv_weights=deriv_weights,
+        nan_cost_penalty=1e1,
+        max_m=BAND_NUM,
+        auto_split_streams=False
+    )
+
+    Z_targets = []
+    for freq_index in range(BAND_NUM):
+        new_coords, Z_target = group_solution(
+            new_coords, Z_grouped,
+            freq_index=freq_index  # 第n个频率
+        )
+        Z_targets.append(Z_target)
+
+    ###################################################################################################################
+    from core.plot_workflow import PlotConfig
+    from core.prepare_plot import prepare_plot_data
+    from core.process_multi_dim_params_space import extract_adjacent_fields
+
+    datasets = []
+    for i, Z_target in enumerate(Z_targets):
+        dataset = {'eigenfreq_real': Z_target.real, 'eigenfreq_imag': Z_target.imag}
+        eigenfreq, qfactor, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor, \
+            up_cx, up_cy, down_cx, down_cy = extract_adjacent_fields(
+            additional_Z_grouped,
+            z_keys=z_keys,
+            band_index=i
+        )
+        qlog = np.log10(qfactor)
+        dataset['qlog'] = qlog.real.ravel()
+        print(f"Band {i}: qlog range = [{dataset['qlog'].min()}, {dataset['qlog'].max()}]")
+        dataset['u_factor'] = -u_factor.real.ravel()
+        datasets.append(dataset)
+
+    data_path = prepare_plot_data(
+        new_coords, data_class='Eigensolution', dataset_list=datasets, fixed_params={},
+        save_dir='./rsl/1_para_space',
+    )
+
+    # ============================================================================================================
+    from core.plot_workflow import PlotConfig
+    from core.plot_cls import OneDimFieldVisualizer
+
+    config = PlotConfig(
+        plot_params={'scale': 1},
+        annotations={
+            'xlabel': '', 'ylabel': '',
+            'show_axis_labels': True, 'show_tick_labels': True,
+        },
+    )
+    config.update(figsize=(1.25, 5), tick_direction='in')
+    plotter = OneDimFieldVisualizer(config=config, data_path=data_path)
+    plotter.load_data()
+    plotter.new_2d_fig()
+    for i in range(BAND_NUM):
+        plotter.plot(
+            index=i, x_key=X_KEY, z1_key='eigenfreq_real', z2_key='eigenfreq_imag',
+            enable_fill=True, default_fill_color='gray', alpha_fill=0.3, scale=1
+        )
+    # # 设置循环颜色映射参数
+    # from matplotlib import pyplot as plt
+    # colors = plt.cm.tab10(np.arange(BAND_NUM) % 10)  # 循环使用 tab10 的颜色
+    # for i in range(BAND_NUM):
+    #     plotter.plot(
+    #         index=i, x_key=X_KEY, z1_key='eigenfreq_real', default_line_color=colors[i], linewidth_base=2
+    #     )
+    for i in range(BAND_NUM):
+        plotter.plot(
+            index=i, x_key=X_KEY, z1_key='eigenfreq_real', z3_key='qlog', cmap='magma',
+            enable_dynamic_color=True, global_color_vmin=2, global_color_vmax=7, linewidth_base=2
+        )
+    plotter.ax.set_ylim(0.45, 0.70)
+    plotter.add_annotations()
+    plotter.save_and_show()
+
+    # plotter.new_2d_fig()
+    # for i in range(BAND_NUM):
+    #     plotter.plot(
+    #         index=i, x_key=X_KEY, z1_key='u_factor', default_line_color=colors[i], linewidth_base=2
+    #     )
+    # plotter.ax.set_yscale('log')
+    # plotter.add_annotations()
+    # plotter.save_and_show()

@@ -173,7 +173,7 @@ def group_vectors_one_sided_hungarian(
     additional_data=None,      # dtype=object，与 Z 前 n 维对齐；后续维度任意（如 [b][cand][...]）
     additional_selector=None,  # tuple，如 (), ('*',), ('*','*')；显式指定候选层（推荐）
     selector_resolve="deepest",  # 'deepest'|'shallowest'|'error'：自动推断多解时的处理策略
-    auto_split_streams: bool = True,  # 新增开关：是否启用自动拆分
+    auto_split_streams: bool = False,  # 新增开关：是否启用自动拆分
     min_segment_points: int = 3,  # 可选：子段最小点数（< 此值剔除）
     mad_multiplier: float = 5.0  # 异常检测倍数
 ):
