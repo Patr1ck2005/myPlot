@@ -292,7 +292,21 @@ class OneDimFieldVisualizer(LinePlotter, ABC):
         z1 = self.raw_datasets["data_list"][index][z1_key]
         z2 = self.raw_datasets["data_list"][index][z2_key] if z2_key is not None else None
         z3 = self.raw_datasets["data_list"][index][z3_key] if z3_key is not None else None
-        self.plot_line(x, z1=z1, z2=z2, z3=z3, **params_bg)
+        self.plot_line(x, z1=z1, z2=z2, z3=z3, **params_bg, index=index)
+        self.plot_xlims.append((np.nanmin(x), np.nanmax(x)))
+        self.plot_zlims.append((np.nanmin(z1), np.nanmax(z1)))
+
+    def adjust_view_2dim_auto(self) -> None:
+        if self.plot_xlims and self.plot_zlims:
+            x_min = min(x[0] for x in self.plot_xlims)
+            x_max = max(x[1] for x in self.plot_xlims)
+            z_min = min(z[0] for z in self.plot_zlims)
+            z_max = max(z[1] for z in self.plot_zlims)
+            self.xlim = (x_min, x_max)
+            self.ylim = (z_min, z_max)
+        print("自动调整视图范围：")
+        print(f"xlim = {self.xlim}, ylim = {self.ylim}")
+        self.adjust_view_2dim()
 
 
 class TwoDimFieldVisualizer(HeatmapPlotter, ABC):

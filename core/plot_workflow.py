@@ -59,6 +59,8 @@ class BasePlotter(ABC):
         self.data_list = None
         self.data_num = None
         self.coordinates: Optional[Dict] = None
+        self.plot_xlims = []
+        self.plot_zlims = []
         self.xlim = None
         self.ylim = None
         self.zlim = None
@@ -68,7 +70,7 @@ class BasePlotter(ABC):
         # plt.rcParams['xtick.direction'] = config.tick_direction  # 将x周的刻度线方向设置向内
         # plt.rcParams['ytick.direction'] = config.tick_direction  # 将y轴的刻度方向设置向内
 
-    def re_initialized(self, config: Optional[Union[PlotConfig, Dict]] = None, data_path: Optional[str] = None) -> None:
+    def re_initialized(self, config: Optional[Union[PlotConfig, Dict]] = None, data_path: Optional[str] = None):
         """优化：只重置config/data相关，不重置fig/ax，支持重叠绘图"""
         self.config = PlotConfig(**config) if isinstance(config, dict) else config or self.config
         self.data_path = data_path or self.data_path
@@ -78,6 +80,11 @@ class BasePlotter(ABC):
         # self.y_vals = None
         # self.subs = None
         print("Re-initialized data/config，fig/ax保留以支持重叠绘图 🔄")
+        return self
+
+    def re_initialized_plot(self, config: Optional[Union[PlotConfig, Dict]] = None):
+        self.plot_xlims = []
+        self.plot_zlims = []
         return self
 
     def load_data(self) -> None:

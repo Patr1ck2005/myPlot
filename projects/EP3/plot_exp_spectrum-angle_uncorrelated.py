@@ -59,14 +59,14 @@ class CustomPlotter(HeatmapPlotter):
         # renorm to 0-1
         # 使用 SG 平滑后的最大值进行归一化, 沿着 y 轴平滑
         smoothed_data = scipy.signal.savgol_filter(im_data, window_length=11*5, polyorder=3, axis=1)
-        # 随便绘制一条曲线看效果
-        plt.figure(figsize=(6, 4))
-        plt.plot(self.y_vals[y_mask], smoothed_data[40, :])
-        plt.scatter(self.y_vals[y_mask], im_data[40, :], s=1, color='red')
-        plt.xlabel('Wavelength (nm)')
-        plt.ylabel('Smoothed Intensity (a.u.)')
-        plt.title('Smoothed Spectrum at Angle Index 15')
-        plt.show()
+        # # 随便绘制一条曲线看效果
+        # plt.figure(figsize=(6, 4))
+        # plt.plot(self.y_vals[y_mask], smoothed_data[40, :])
+        # plt.scatter(self.y_vals[y_mask], im_data[40, :], s=1, color='red')
+        # plt.xlabel('Wavelength (nm)')
+        # plt.ylabel('Smoothed Intensity (a.u.)')
+        # plt.title('Smoothed Spectrum at Angle Index 15')
+        # plt.show()
         im_data /= np.max(smoothed_data)
         # clip 0-1
         im_data = np.clip(im_data, 0, 1)
@@ -99,18 +99,18 @@ class CustomPlotter(HeatmapPlotter):
         P = 894  # 周期
         # 调用函数
         f_grid, k_grid, Z_interp, _, _ = wavelength_angle_to_norm_freq_k_space(wavelengths, angles, im_data.T, P)
-        # 可视化结果
-        plt.figure(figsize=(6, 4))
-        plt.imshow(
-            Z_interp.T, extent=(k_grid[0, 0], k_grid[-1, 0], f_grid[0, 0], f_grid[0, -1]), aspect='auto',
-            cmap='gray',
-            origin='lower',
-        )
-        plt.colorbar(label='Z')
-        plt.xlabel('k-space (sin(θ) * P/λ)')
-        plt.ylabel('Normalized Frequency (P/λ)')
-        plt.title('Interpolated Z in Normalized Frequency and k-space')
-        plt.show()
+        # # 可视化结果
+        # plt.figure(figsize=(6, 4))
+        # plt.imshow(
+        #     Z_interp.T, extent=(k_grid[0, 0], k_grid[-1, 0], f_grid[0, 0], f_grid[0, -1]), aspect='auto',
+        #     cmap='gray',
+        #     origin='lower',
+        # )
+        # plt.colorbar(label='Z')
+        # plt.xlabel('k-space (sin(θ) * P/λ)')
+        # plt.ylabel('Normalized Frequency (P/λ)')
+        # plt.title('Interpolated Z in Normalized Frequency and k-space')
+        # plt.show()
         # 保存结果
         save_dict = {
             'x_vals': k_grid[:, 0],  # k_space
@@ -151,8 +151,8 @@ def batch_plot(data_dir: str, batch_mode: bool = True) -> None:
                 },
                 annotations={
                     'xlabel': r'$\theta$', 'ylabel': r'$\lambda (nm)$',
-                    'xlim': (-50, 50),
-                    'ylim': (1000, 1400),
+                    'xlim': (-15, 15),
+                    'ylim': (1000, 1300),
                     'title': base_name,  # 设置标题为文件名
                     'show_axis_labels': True,
                     'show_tick_labels': True,
@@ -312,20 +312,19 @@ if __name__ == '__main__':
             'show_tick_labels': True,
         }
     )
-    single_plotter = CustomPlotter(
-        config=single_config,
-        data_path=r'.\data\MZH-3EP-X-pol-260Dose'
-                  r'-Calc\MZH-3EP-Y-pol-200Dose-Calc.csv',
-    )
-    # 单文件执行（注释掉以切换）
-    single_plotter.load_data()
-    single_plotter.prepare_data()
-    single_plotter.new_2d_fig()
-    single_plotter.plot()
-    single_plotter.add_annotations()
-    single_plotter.ax.invert_yaxis()
-    single_plotter.save_and_show(save=True, custom_name='test', custom_abs_path=None)
+    # single_plotter = CustomPlotter(
+    #     config=single_config,
+    #     data_path=r'.\data\MZH-3EP-X-pol-260Dose-Calc\MZH-3EP-Y-pol-200Dose-Calc.csv',
+    # )
+    # # 单文件执行（注释掉以切换）
+    # single_plotter.load_data()
+    # single_plotter.prepare_data()
+    # single_plotter.new_2d_fig()
+    # single_plotter.plot()
+    # single_plotter.add_annotations()
+    # single_plotter.ax.invert_yaxis()
+    # single_plotter.save_and_show(save=True, custom_name='test', custom_abs_path=None)
 
-    # # 批量模式：调用 batch_plot，传入 data 目录路径，设置 batch_mode=True
-    # data_dir = r'D:\DELL\Documents\myPlots\plot_3D\projects\3EP\data\MZH-3EP-X-pol-260Dose-Calc'  # 替换为你的 data 目录路径
-    # batch_plot(data_dir, batch_mode=True)  # 设置为 False 以关闭批量模式
+    # 批量模式：调用 batch_plot，传入 data 目录路径，设置 batch_mode=True
+    data_dir = r'D:\DELL\Documents\myPlots\projects\EP3\data\MZH-3EP-X-pol-260Dose-Calc'  # 替换为你的 data 目录路径
+    batch_plot(data_dir, batch_mode=True)  # 设置为 False 以关闭批量模式

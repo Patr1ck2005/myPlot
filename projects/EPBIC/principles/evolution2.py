@@ -109,7 +109,7 @@ def plot_isosurface_tubes():
     plt.rcParams['ytick.direction'] = 'in'
     plt.rcParams['font.family'] = 'Arial'
 
-    fig = plt.figure(figsize=(1.5, 1.5))
+    fig = plt.figure(figsize=(2, 2))
     ax = fig.add_subplot(111, projection='3d')
 
     # 创建 3D网格对象
@@ -156,7 +156,7 @@ def plot_isosurface_tubes():
     ax.set_yticklabels([])
     ax.set_zticklabels([])
     # set box aspect ratio
-    ax.set_box_aspect([1, 1.5, 1])  # x:y:z ratio
+    ax.set_box_aspect([1, 2, 1])  # x:y:z ratio
     # 去掉背景网格线和背景色
     ax.grid(False)
     ax.set_facecolor('white')
