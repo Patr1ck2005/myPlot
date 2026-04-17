@@ -10,7 +10,9 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    data_path = 'data/PhC-Slit-I-t_slab_space-vary_fill-t_tot(150,180,200)-ultrahigh_mesh.csv'
+    # data_path = 'data/PhC-Slit-I-t_slab_space-vary_fill-t_tot-norm_mesh.csv'
+    # data_path = 'data/PhC-Slit-I-t_slab_space-vary_fill-t_tot-norm_mesh-1.csv'
+    data_path = 'data/PhC-Slit-I-t_slab_space-vary_fill-t_tot(200,250,300)-norm_mesh-2.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
@@ -36,16 +38,16 @@ if __name__ == '__main__':
         fixed_params={
             'm1': 0.00,
             'm2': 0.00,
-            't_tot (nm)': 150,
-            'fill': 0.40,
+            't_tot (nm)': 250,
+            'fill': 0.85,
             'tri_factor': 0.0,
             'slit_delta': 0.2,
-            'slit_shift_delta': 0.1,
+            'slit_shift_delta': 0.0,
             'substrate (nm)': 1500,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 1},  # 筛选
-            "品质因子 (1)": {"<": 1e6},  # 筛选
+            # "品质因子 (1)": {"<": 1e6},  # 筛选
             # "特征频率 (THz)": {"<": 0.60, ">": 0},  # 筛选
         }
     )

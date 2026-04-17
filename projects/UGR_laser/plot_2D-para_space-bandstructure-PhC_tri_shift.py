@@ -10,27 +10,16 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot-norm_mesh.csv'
-    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot-norm_mesh-supp1.csv'
-    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot-ultrahigh_mesh-1.csv'
-    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot-ultrahigh_mesh-2.csv'
-    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot-ultrahigh_mesh-3.csv'
-    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot(250)-ultrahigh_mesh-4.csv'
-    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot(100)-ultrahigh_mesh-5.csv'
-    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot(130,150)-ultrahigh_mesh-6.csv'
-    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot(200)-ultrahigh_mesh-7.csv'
-    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot(110)-ultrahigh_mesh-8.csv'
-    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot(110)-ultrahigh_mesh-8-supp1.csv'
-    # data_path = 'data/PhC-Tri-I-nearΓ0.01MX-t_slab_space-vary_fill-t_tot-ultrahigh_mesh.csv'
-    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot(110)-custom_mesh(1.7).csv'
-    data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot(150)-custom_mesh(1.7).csv'
+    # data_path = 'data/PhC-Tri_shift-I-t_slab_space-vary_fill-t_tot(150)-custom_mesh(1.7).csv'
+    # data_path = 'data/PhC-Tri_shift-I-t_slab_space-vary_fill-t_tot(150)-norm_mesh.csv'
+    data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot-norm_mesh.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
     df_sample["特征频率 (THz)"] = (df_sample["特征频率 (THz)"].apply(convert_complex)
                                    .apply(norm_freq, period=period * 1e-9 * 1e12))
     df_sample["频率 (Hz)"] = np.real(df_sample["特征频率 (THz)"])
-    param_keys = ["m1", "m2", "t_slab (nm)", "t_tot (nm)", "fill", "tri_factor", "substrate (nm)"]
+    param_keys = ["m1", "m2", "t_slab (nm)", "t_tot (nm)", "fill", "tri_factor", "substrate (nm)", "tri_shift_factor"]
     z_keys = ["特征频率 (THz)", "品质因子 (1)", "fake_factor (1)", "up_S3 (1)", "U_factor (1)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
@@ -49,14 +38,15 @@ if __name__ == '__main__':
         fixed_params={
             'm1': 0.00,
             'm2': 0.00,
-            't_tot (nm)': 150,
-            'fill': 0.50,
-            'tri_factor': 0.1,
+            't_tot (nm)': 250,
+            'fill': 0.70,
+            'tri_factor': 0.10,
             'substrate (nm)': 1500,
+            'tri_shift_factor': 0,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 1},  # 筛选
-            "品质因子 (1)": {"<": 1e6},  # 筛选
+            # "品质因子 (1)": {"<": 1e6},  # 筛选
             # "特征频率 (THz)": {"<": 0.60, ">": 0},  # 筛选
         }
     )
@@ -119,6 +109,7 @@ if __name__ == '__main__':
     datasets = []
     for i, Z_target in enumerate(Z_targets):
         dataset = {'eigenfreq_real': Z_target.real, 'eigenfreq_imag': Z_target.imag}
+        # z_keys = ["特征频率 (THz)", "品质因子 (1)", "fake_factor (1)", "up_S3", "U_factor"]
         eigenfreq, qfactor, fake_factor, up_s3, u_factor = extract_adjacent_fields(
             additional_Z_grouped,
             z_keys=z_keys,
