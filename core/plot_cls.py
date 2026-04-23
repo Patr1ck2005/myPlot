@@ -300,8 +300,8 @@ class OneDimFieldVisualizer(LinePlotter, ABC):
         if self.plot_xlims and self.plot_zlims:
             x_min = min(x[0] for x in self.plot_xlims)
             x_max = max(x[1] for x in self.plot_xlims)
-            z_min = min(z[0] for z in self.plot_zlims)
-            z_max = max(z[1] for z in self.plot_zlims)
+            z_min = np.nanmin([z[0] for z in self.plot_zlims])
+            z_max = np.nanmax([z[1] for z in self.plot_zlims])
             self.xlim = (x_min, x_max)
             self.ylim = (z_min, z_max)
         print("自动调整视图范围：")
