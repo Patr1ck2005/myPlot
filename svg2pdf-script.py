@@ -45,6 +45,7 @@ if __name__ == '__main__':
     # main(r'D:\DELL\Documents\Research\2025-SE_Theory')
     # main(r'D:\DELL\Documents\Research\2025-merging_BICs-highTC')
     # main(r'D:\DELL\Documents\Research\2024-VBG\imgs')
-    main(r'D:\DELL\Documents\Research\2025-[revising]-EP_BIC')
+    # main(r'D:\DELL\Documents\Research\2025-[revising]-EP_BIC')
     # main(r'D:\DELL\Documents\Research\2024-[Published]-VBG\R2')
+    main(r'D:\Research\2025-[revising]-EP_BIC')
 

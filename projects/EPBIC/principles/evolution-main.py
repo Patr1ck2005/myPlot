@@ -13,8 +13,9 @@ def compute_volume_fast(Nx=100, Ny=100, Nz=100):
     分辨率: Nx(k), Ny(w3), Nz(s)
     """
     # 物理参数
-    omega1, omega2 = -0.2, 0.2
+    # omega1, omega2 = -0.2, 0.2
     # omega1, omega2 = -0.1, 0.1
+    omega1, omega2 = -0.05, 0.05
     gamma_a, gamma_r = 0.5, 0.0
 
     # 坐标范围
@@ -109,7 +110,7 @@ def plot_isosurface_tubes():
     plt.rcParams['ytick.direction'] = 'in'
     plt.rcParams['font.family'] = 'Arial'
 
-    fig = plt.figure(figsize=(2, 2))
+    fig = plt.figure(figsize=(1.5, 1.5))
     ax = fig.add_subplot(111, projection='3d')
 
     # 创建 3D网格对象
@@ -156,7 +157,7 @@ def plot_isosurface_tubes():
     ax.set_yticklabels([])
     ax.set_zticklabels([])
     # set box aspect ratio
-    ax.set_box_aspect([1, 2, 1])  # x:y:z ratio
+    ax.set_box_aspect([1, 1.5, 1])  # x:y:z ratio
     # 去掉背景网格线和背景色
     ax.grid(False)
     ax.set_facecolor('white')
