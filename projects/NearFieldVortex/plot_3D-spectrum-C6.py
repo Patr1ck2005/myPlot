@@ -1,9 +1,9 @@
 from core.data_postprocess.data_filter import advanced_filter_eigensolution
-from core.data_postprocess.data_grouper import *
 from core.process_multi_dim_params_space import *
 
 import numpy as np
 
+from core.utils import norm_freq, convert_complex
 from utils.advanced_color_mapping import map_complex2rbg
 
 c_const = 299792458
@@ -12,15 +12,6 @@ if __name__ == '__main__':
     # data_path = 'data/Hex_annular-ExpTest-spectrum1.csv'
     data_path = 'data/Hex_annular-ExpTest-spectrum2.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
-
-
-    # 对 "特征频率 (THz)" 进行简单转换，假设仅取实部，后续也可以根据需要修改数据处理过程
-    def convert_complex(freq_str):
-        return complex(freq_str.replace('i', 'j'))
-
-
-    def norm_freq(freq, period):
-        return freq / (c_const / period)
 
 
     period = 400
@@ -51,18 +42,13 @@ if __name__ == '__main__':
     )
 
     # 创建一个新的数组，用于存储更新后的结果
-    s11 = np.empty_like(Z_filtered, dtype=object)
-    s21 = np.empty_like(Z_filtered, dtype=object)
-    R = np.empty_like(Z_filtered, dtype=object)
+    s11 = np.empty_like(Z_filtered, dtype=complex)
+    s21 = np.empty_like(Z_filtered, dtype=complex)
+    R = np.empty_like(Z_filtered, dtype=complex)
     # 使用直接的循环来更新 Z_new
     for i in range(Z_filtered.shape[0]):
         for j in range(Z_filtered.shape[1]):
-            R[i, j] = Z_filtered[i][j][0]
-
-    new_coords, R = group_solution(
-        new_coords, R,
-        freq_index=0  # 第n个
-    )
+            R[i, j] = Z_filtered[i][j][0][0]
 
     # new_coords, s11 = group_solution(
     #     new_coords, s11,
@@ -100,6 +86,8 @@ if __name__ == '__main__':
     # ax.set_ylabel('Frequency (THz)')
     # plt.savefig('temp.png', bbox_inches='tight', transparent=True, dpi=300)
     # plt.show()
+
+    ################################################################################################################
 
     fs = 9
     tickdir = 'in'

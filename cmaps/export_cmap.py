@@ -5,7 +5,8 @@ from pathlib import Path
 # Parameters
 # cmap_name = "coolwarm"
 # cmap_name = "nipy_spectral"
-cmap_name = "hot"
+# cmap_name = "hot"
+cmap_name = "RdBu"
 # width = 1024
 # height = 64
 
