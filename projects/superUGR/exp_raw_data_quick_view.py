@@ -16,7 +16,7 @@ def load_and_visualize_ftir_spectra(directory, prefix, start_num, end_num, angle
                                     save_plots=False, plot_dir=None,
                                     ref_filename=None, ref_usecols=None,
                                     bg_filename=None, bg_usecols=None,
-                                    interpolate_ref=False, eps=0):
+                                    interpolate_ref=False, eps=0, delimiter=' '):
     """
     加载FTIR谱数据并可视化，并可选用参考谱做分母归一化/比值计算。
 
@@ -75,7 +75,7 @@ def load_and_visualize_ftir_spectra(directory, prefix, start_num, end_num, angle
         if not os.path.exists(filepath):
             raise FileNotFoundError(f"文件 {filepath} 不存在。")
 
-        data = np.loadtxt(filepath, usecols=(wavenumber_col, spectrum_col))
+        data = np.loadtxt(filepath, usecols=(wavenumber_col, spectrum_col), delimiter=delimiter)
         wavenumbers = data[:, 0]
         spectrums = data[:, 1]
 
@@ -320,17 +320,17 @@ def load_and_visualize_ftir_spectra(directory, prefix, start_num, end_num, angle
 #     bg_filename=r"D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.23 KEREN\heiti_beijing\beijing.dpt"
 # )
 
-# EXP @2026.1.23 KEREN s-forw with reference spectrum
-prefix = 'Sample name.'
-start_num = 7191
-end_num = 7206
-
-angles = list(range(start_num, end_num+1))
-data = load_and_visualize_ftir_spectra(
-    r'D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.26\S ZHENG zhengxu(-5-15)',
-    prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt',
-    cmap='Blues_r'
-)
+# # EXP @2026.1.23 KEREN s-forw with reference spectrum
+# prefix = 'Sample name.'
+# start_num = 7191
+# end_num = 7206
+#
+# angles = list(range(start_num, end_num+1))
+# data = load_and_visualize_ftir_spectra(
+#     r'D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.26\S ZHENG zhengxu(-5-15)',
+#     prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt',
+#     cmap='Blues_r'
+# )
 
 # # EXP @2026.1.23 KEREN s-back with reference spectrum
 # prefix = 'Sample name.'
@@ -344,17 +344,17 @@ data = load_and_visualize_ftir_spectra(
 #     cmap='Blues_r'
 # )
 
-# EXP @2026.1.23 KEREN P-forw with reference spectrum
-prefix = 'Sample name.'
-start_num = 7132
-end_num = 7132+20
-
-angles = list(range(start_num, end_num+1))
-data = load_and_visualize_ftir_spectra(
-    r'D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.26\P ZHENG zhengxu(-5-15)',
-    prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt',
-    cmap='Blues_r'
-)
+# # EXP @2026.1.23 KEREN P-forw with reference spectrum
+# prefix = 'Sample name.'
+# start_num = 7132
+# end_num = 7132+20
+#
+# angles = list(range(start_num, end_num+1))
+# data = load_and_visualize_ftir_spectra(
+#     r'D:\DELL\Documents\myPlots\projects\superUGR\data\exp\26.1.26\P ZHENG zhengxu(-5-15)',
+#     prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt',
+#     cmap='Blues_r'
+# )
 
 # # EXP @2026.1.23 KEREN P-back with reference spectrum
 # prefix = 'Sample name.'
@@ -367,3 +367,27 @@ data = load_and_visualize_ftir_spectra(
 #     prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt',
 #     cmap='Blues_r'
 # )
+
+# EXP @2026.4.24 KEREN 1-forw with reference spectrum
+prefix = 'Sample name.'
+start_num = 8496
+end_num = 8496+14
+
+angles = list(range(start_num, end_num+1))
+data = load_and_visualize_ftir_spectra(
+    r'D:\Dev\Projects\Work\myPlots\projects\superUGR\data\exp\26.4.24 KEREN\1\0-15',
+    prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt', delimiter=',',
+    cmap='Blues_r'
+)
+
+# EXP @2026.4.24 KEREN 2-forw with reference spectrum
+prefix = 'Sample name.'
+start_num = 8517
+end_num = 8517+19
+
+angles = list(range(start_num, end_num+1))
+data = load_and_visualize_ftir_spectra(
+    r'D:\Dev\Projects\Work\myPlots\projects\superUGR\data\exp\26.4.24 KEREN\2    -5-15',
+    prefix, start_num, end_num, angles, save_plots=True, plot_dir='./', file_ext='.dpt', delimiter=',',
+    cmap='Blues_r'
+)
