@@ -10,15 +10,15 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-
-    data_path = 'data/PhC-Tri-I-nearΓ0.01MX-t_slab_space-vary_fill-t_tot(200)-norm_mesh.csv'
+    data_path = "data/Tri_Rod-I-search0.55-k_space-vary_fill-t_tot-t_slab_factor-norm_mesh-UGR_E_BIC-(400t).csv"
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
     df_sample["特征频率 (THz)"] = (df_sample["特征频率 (THz)"].apply(convert_complex)
                                    .apply(norm_freq, period=period * 1e-9 * 1e12))
     df_sample["频率 (Hz)"] = np.real(df_sample["特征频率 (THz)"])
-    param_keys = ["m1", "m2", "t_slab (nm)", "t_tot (nm)", "fill", "tri_factor", "substrate (nm)"]
+    df_sample["k"] = df_sample["m1"] + df_sample["m2"] / 2.414
+    param_keys = ["k", "t_slab_factor", "t_tot (nm)", "fill", "tri_factor", "substrate (nm)"]
     z_keys = ["特征频率 (THz)", "品质因子 (1)", "fake_factor (1)", "up_S3 (1)", "U_factor (1)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
@@ -28,26 +28,23 @@ if __name__ == '__main__':
         print(f"  {key}: {arr}")
     print("数据网格 Z 的形状：", Z.shape)
 
-    X_KEY = 't_slab (nm)'
+    X_KEY = 'k'
 
     # 假设已得到grid_coords, Z
     new_coords, Z_filtered, min_lens = advanced_filter_eigensolution(
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            # 'm1': 0.01,
-            # 'm2': 0.00,
-            'm1': -0.00707107,
-            'm2': -0.00707107,
-            't_tot (nm)': 200,
-            'fill': 0.70,
+            't_slab_factor': 0.19,
+            't_tot (nm)': 400,
+            'fill': 0.68,
             'tri_factor': 0.0,
-            'substrate (nm)': 1500,
+            'substrate (nm)': 3000,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 1},  # 筛选
-            # "品质因子 (1)": {"<": 1e6},  # 筛选
-            # "特征频率 (THz)": {"<": 0.60, ">": 0},  # 筛选
+            # "品质因子 (1)": {"<": 1e5},  # 筛选
+            "特征频率 (THz)": {"<": 0.67, ">": 0},  # 筛选
         }
     )
 

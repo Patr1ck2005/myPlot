@@ -10,27 +10,15 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot-norm_mesh.csv'
-    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot-norm_mesh-supp1.csv'
-    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot-ultrahigh_mesh-1.csv'
-    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot-ultrahigh_mesh-2.csv'
-    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot-ultrahigh_mesh-3.csv'
-    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot(250)-ultrahigh_mesh-4.csv'
-    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot(100)-ultrahigh_mesh-5.csv'
-    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot(130,150)-ultrahigh_mesh-6.csv'
-    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot(200)-ultrahigh_mesh-7.csv'
-    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot(110)-ultrahigh_mesh-8.csv'
-    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot(110)-ultrahigh_mesh-8-supp1.csv'
-    # data_path = 'data/PhC-Tri-I-nearΓ0.01MX-t_slab_space-vary_fill-t_tot-ultrahigh_mesh.csv'
-    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot(110)-custom_mesh(1.7).csv'
-    data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot(150)-custom_mesh(1.7).csv'
+    # data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot(150)-custom_mesh(1.7).csv'
+    data_path = '../data/Void/PhC-Tri-I-detailed-t_slab_space-vary_fill-t_tot-norm_mesh-(tri0.10).csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
     df_sample["特征频率 (THz)"] = (df_sample["特征频率 (THz)"].apply(convert_complex)
                                    .apply(norm_freq, period=period * 1e-9 * 1e12))
     df_sample["频率 (Hz)"] = np.real(df_sample["特征频率 (THz)"])
-    param_keys = ["m1", "m2", "t_slab (nm)", "t_tot (nm)", "fill", "tri_factor", "substrate (nm)"]
+    param_keys = ["m1", "m2", "t_slab_factor", "t_tot (nm)", "fill", "tri_factor", "substrate (nm)"]
     z_keys = ["特征频率 (THz)", "品质因子 (1)", "fake_factor (1)", "up_S3 (1)", "U_factor (1)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
@@ -40,7 +28,7 @@ if __name__ == '__main__':
         print(f"  {key}: {arr}")
     print("数据网格 Z 的形状：", Z.shape)
 
-    X_KEY = 't_slab (nm)'
+    X_KEY = 't_slab_factor'
 
     # 假设已得到grid_coords, Z
     new_coords, Z_filtered, min_lens = advanced_filter_eigensolution(
@@ -49,8 +37,8 @@ if __name__ == '__main__':
         fixed_params={
             'm1': 0.00,
             'm2': 0.00,
-            't_tot (nm)': 150,
-            'fill': 0.50,
+            't_tot (nm)': 300,
+            'fill': 0.75,
             'tri_factor': 0.1,
             'substrate (nm)': 1500,
         },  # 固定
@@ -133,7 +121,7 @@ if __name__ == '__main__':
 
     data_path = prepare_plot_data(
         new_coords, data_class='Eigensolution', dataset_list=datasets, fixed_params={},
-        save_dir='./rsl/1_para_space',
+        save_dir='../rsl/1_para_space',
     )
 
     # ============================================================================================================

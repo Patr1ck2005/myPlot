@@ -10,16 +10,15 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    # data_path = 'data/PhC-Tri_shift-I-t_slab_space-vary_fill-t_tot(150)-custom_mesh(1.7).csv'
-    # data_path = 'data/PhC-Tri_shift-I-t_slab_space-vary_fill-t_tot(150)-norm_mesh.csv'
-    data_path = 'data/PhC-Tri-I-t_slab_space-vary_fill-t_tot-norm_mesh.csv'
+
+    data_path = 'data/PhC-Tri-I-nearΓ0.01MX-t_slab_space-vary_fill-t_tot(200)-norm_mesh.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
     df_sample["特征频率 (THz)"] = (df_sample["特征频率 (THz)"].apply(convert_complex)
                                    .apply(norm_freq, period=period * 1e-9 * 1e12))
     df_sample["频率 (Hz)"] = np.real(df_sample["特征频率 (THz)"])
-    param_keys = ["m1", "m2", "t_slab (nm)", "t_tot (nm)", "fill", "tri_factor", "substrate (nm)", "tri_shift_factor"]
+    param_keys = ["m1", "m2", "t_slab (nm)", "t_tot (nm)", "fill", "tri_factor", "substrate (nm)"]
     z_keys = ["特征频率 (THz)", "品质因子 (1)", "fake_factor (1)", "up_S3 (1)", "U_factor (1)"]
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
@@ -36,13 +35,14 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            'm1': 0.00,
-            'm2': 0.00,
-            't_tot (nm)': 250,
+            # 'm1': 0.01,
+            # 'm2': 0.00,
+            'm1': -0.00707107,
+            'm2': -0.00707107,
+            't_tot (nm)': 200,
             'fill': 0.70,
-            'tri_factor': 0.10,
+            'tri_factor': 0.0,
             'substrate (nm)': 1500,
-            'tri_shift_factor': 0,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 1},  # 筛选
@@ -124,7 +124,7 @@ if __name__ == '__main__':
 
     data_path = prepare_plot_data(
         new_coords, data_class='Eigensolution', dataset_list=datasets, fixed_params={},
-        save_dir='./rsl/1_para_space',
+        save_dir='../rsl/1_para_space',
     )
 
     # ============================================================================================================
