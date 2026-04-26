@@ -18,6 +18,7 @@ if __name__ == '__main__':
     # data_path = 'data/PhC-Rod-I-detailed-t_slab_factor_space-vary_fill-t_tot-norm_mesh-(tri0.10).csv'
     # data_path = "data/PhC-Tri_Rod-I-search0.60-t_slab_space-vary_fill-t_tot-norm_mesh-detailed_UGR_E-(tri0.10)-supp.csv"
     data_path = "data/PhC-Tri_Rod-I-search0.55-t_slab_space-vary_fill-t_tot-tri_factor-norm_mesh-detailed_UGR_E-(400t).csv"  # marked
+    # data_path = "data/PhC-Tri_Rod-I-search0.55-t_slab_space-vary_fill-t_tot-tri_factor-ultrahigh_mesh-detailed_UGR_E-(400t).csv"  # marked
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
@@ -44,8 +45,8 @@ if __name__ == '__main__':
             'm1': 0,
             'm2': 0,
             't_tot (nm)': 400,
-            'fill': 0.678,
-            'tri_factor': 0.02,
+            'fill': 0.680,
+            'tri_factor': 0.15,
             'substrate (nm)': 3000,
         },  # 固定
         filter_conditions={

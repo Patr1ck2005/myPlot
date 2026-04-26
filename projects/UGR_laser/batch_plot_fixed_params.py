@@ -455,7 +455,8 @@ if __name__ == "__main__":
     # DATA_PATH = "data/PhC-Tri_Rod-I-search0.50-t_slab_space-vary_fill-t_tot-norm_mesh-detailed_UGR_E-(tri0.05).csv"
     # DATA_PATH = "data/PhC-Tri_Rod-I-search0.50-t_slab_space-vary_fill-t_tot-norm_mesh-detailed_UGR_E-(tri0.05)-supp1.csv"
     # DATA_PATH = "data/PhC-Tri_Rod-I-search0.60-t_slab_space-vary_fill-t_tot-norm_mesh-detailed_UGR_E-(tri0.10)-supp.csv"
-    DATA_PATH = "data/PhC-Tri_Rod-I-search0.55-t_slab_space-vary_fill-t_tot-tri_factor-norm_mesh-detailed_UGR_E-(400t).csv"
+    # DATA_PATH = "data/PhC-Tri_Rod-I-search0.55-t_slab_space-vary_fill-t_tot-tri_factor-norm_mesh-detailed_UGR_E-(400t).csv"
+    DATA_PATH = "data/PhC-Tri_Rod-I-search0.55-t_slab_space-vary_fill-t_tot-tri_factor-ultrahigh_mesh-detailed_UGR_E-(400t).csv"
     OUTPUT_ROOT = "./BATCH_OUTPUT"
 
     # -------------------------
@@ -485,8 +486,8 @@ if __name__ == "__main__":
         "m2": 0.00,
         "t_tot (nm)": 400,
         "tri_factor": 0.02,
-        "substrate (nm)": 3000,  # 1500, 3000
-        "dpml (nm)": 600,  # 300, 600
+        "substrate (nm)": 3000,  # 1500, 3000, 6000
+        "dpml (nm)": 900,  # 300, 600, 900
     }
 
     # -------------------------
@@ -498,7 +499,8 @@ if __name__ == "__main__":
     # FILL_LIST = [0.59,0.595,0.60]
     # FILL_LIST = [0.50, 0.55, 0.60, 0.65, 0.70]
     # FILL_LIST = [0.50,0.53,0.55,0.58,0.60,0.63,0.65,0.68,0.70]
-    FILL_LIST = [0.671, 0.673, 0.674, 0.675, 0.676, 0.677, 0.678, 0.679, 0.680, 0.681, 0.682,0.684]
+    # FILL_LIST = [0.671, 0.673, 0.674, 0.675, 0.676, 0.677, 0.678, 0.679, 0.680, 0.681, 0.682,0.684]
+    FILL_LIST = [0.675, 0.676, 0.677, 0.678, 0.679, 0.68,  0.681, 0.682, 0.683]
 
     FIXED_PARAMS_LIST = [
         {

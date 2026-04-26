@@ -12,7 +12,8 @@ c_const = 299792458
 if __name__ == '__main__':
     # data_path = 'data/Tri_Rod-I-0.3k_space-norm_mesh-UGR_E-(tri0.10).csv'
     # data_path = 'data/Tri_Rod-I-0.5k_space-norm_mesh-UGR_E-(tri0.10,400t).csv'
-    data_path = 'data/Tri_Rod-I-search0.55-0.5k_space-norm_mesh-UGR_E-(tri0.10,400t)-1.csv'
+    # data_path = 'data/Tri_Rod-I-search0.55-0.5k_space-norm_mesh-UGR_E-(tri0.10,400t)-1.csv'
+    data_path = 'data/Tri_Rod-I-Full_k_space-norm_mesh-UGR_E-(tri0.10,400t).csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
@@ -28,7 +29,7 @@ if __name__ == '__main__':
     grid_coords, Z = create_data_grid(df_sample, param_keys, z_keys, deduplication=False)
     print("网格参数：")
     for key, arr in grid_coords.items():
-        print(f"  {key}: {arr}")
+        print(f"  {key}: {arr}, count = {len(arr)}")
     print("数据网格 Z 的形状：", Z.shape)
 
     X_KEY = 'k'
