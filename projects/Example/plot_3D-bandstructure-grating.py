@@ -189,7 +189,7 @@ if __name__ == '__main__':
 
     plotter.new_2d_fig(figsize=(1.5, 1.5))
     plotter.plot_polarization_ellipses(index=BAND_INDEX, step=(2, 2), scale=2e-2, cmap='coolwarm')
-    plotter.plot_iso_contours2D(index=BAND_INDEX, levels=(0.36, 0.37, 0.38), z_key='eigenfreq_real', colors=('r', 'k', 'b'))
+    plotter.plot_iso_contours2D(index=BAND_INDEX, levels=(0.36, 0.37, 0.38), field_key='eigenfreq_real', colors=('r', 'k', 'b'))
     plotter.save_and_show()
 
     plotter.new_2d_fig(figsize=(1.5, 1.5))

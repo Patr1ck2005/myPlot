@@ -10,7 +10,10 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    data_path = 'data/Tri_Rod-I-0.03k_space2Dim-norm_mesh-UGR_E-(tri0.10,400t).csv'
+    data_path = 'data/Tri_Rod-I-search0.55-detailed_k_space2Dim-norm_mesh-UGR_E-(tri0.02,400t).csv'
+    # data_path = 'data/Tri_Rod-I-search0.55-detailed_k_space2Dim-norm_mesh-UGR_E-(tri0.05,400t).csv'
+    # data_path = 'data/Tri_Rod-I-search0.55-detailed_k_space2Dim-norm_mesh-UGR_E-(tri0.10,400t).csv'
+    # data_path = 'data/Tri_Rod-I-search0.55-detailed_k_space2Dim-norm_mesh-UGR_E-(tri0.15,400t,14eigens).csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
@@ -45,13 +48,22 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            't_slab_factor': 0.178,
+            't_slab_factor': 0.1795,
             't_tot (nm)': 400,
             'fill': 0.675,
-            # 't_slab_factor': 0.180,
+            'tri_factor': 0.02,
+            # 't_slab_factor': 0.179,
             # 't_tot (nm)': 400,
-            # 'fill': 0.68,
-            'tri_factor': 0.1,
+            # 'fill': 0.675,
+            # 'tri_factor': 0.05,
+            # 't_slab_factor': 0.1785,
+            # 't_tot (nm)': 400,
+            # 'fill': 0.678,
+            # 'tri_factor': 0.10,
+            # 't_slab_factor': 0.1795,
+            # 't_tot (nm)': 400,
+            # 'fill': 0.684,
+            # 'tri_factor': 0.15,
             'substrate (nm)': 3000,
             'dpml (nm)': 600,
         },  # 固定
@@ -132,35 +144,41 @@ if __name__ == '__main__':
     from core.plot_cls import MomentumSpaceEigenVisualizer
     from core.plot_workflow import PlotConfig
     from core.prepare_plot import prepare_plot_data
-    from core.data_postprocess.data_package import package_stad_data
+    from core.data_postprocess.data_package import package_stad_C2_data
+    from core.data_postprocess.momentum_space_toolkits import geom_complete
 
     raw_datasets = []
     selected_bands = [5]
     for i in selected_bands:
         Z_target = Z_targets[i]
-        raw_dataset = {'eigenfreq_real': Z_target.real, 'eigenfreq_imag': Z_target.imag}
+        eigenfreq_real = Z_target.real
+        eigenfreq_imag = Z_target.imag
         eigenfreq, qfactor, up_tanchi, up_phi, down_tanchi, down_phi, fake_factor, freq, u_factor, \
             up_cx, up_cy, down_cx, down_cy = extract_adjacent_fields(
             additional_Z_grouped,
             z_keys=z_keys,
             band_index=i
         )
-        qlog = np.log10(qfactor)
-        raw_dataset['qlog'] = qlog.real
-        # raw_dataset['-u_factor'] = np.abs(u_factor.real)
-        raw_dataset['u_eff'] = -(1-np.abs(u_factor.real))/(1+np.abs(u_factor.real))
-        raw_dataset['up_cx (V/m)'] = up_cx
-        raw_dataset['up_cy (V/m)'] = up_cy
-        raw_dataset['down_cx (V/m)'] = up_cx
-        raw_dataset['down_cy (V/m)'] = up_cy
+        qlog = np.log10(qfactor).real
+        u_eff = -(1-np.abs(u_factor.real))/(1+np.abs(u_factor.real))
+        u_factor = np.abs(u_factor.real)
+        full_coords, qlog_supped = geom_complete(new_coords, qlog, mode='x')
+        _, u_eff_supped = geom_complete(new_coords, u_eff, mode='x')
+        _, u_factor_supped = geom_complete(new_coords, u_factor, mode='x')
+        _, eigenfreq_real_supped = geom_complete(new_coords, eigenfreq_real, mode='x')
+        _, eigenfreq_imag_supped = geom_complete(new_coords, eigenfreq_imag, mode='x')
+        raw_dataset = {
+            'eigenfreq_real': eigenfreq_real_supped, 'eigenfreq_imag': eigenfreq_imag_supped,
+            'qlog': qlog_supped, 'u_eff': u_eff_supped, 'u_factor': u_factor_supped,
+        }
         print(f"Band {i}: qlog range = [{raw_dataset['qlog'].min()}, {raw_dataset['qlog'].max()}]")
         raw_datasets.append(raw_dataset)
 
     # datasets = []
-    # selected_bands = [6]
+    # selected_bands = [5]
     # for i in selected_bands:
     #     Z_target = Z_targets[i]
-    #     full_coords, dataset = package_stad_data(
+    #     full_coords, dataset = package_stad_C2_data(
     #         new_coords, i, Z_target, additional_Z_grouped, z_keys,
     #         q_key='品质因子 (1)',
     #         tanchi_key='up_tanchi (1)',
@@ -172,7 +190,7 @@ if __name__ == '__main__':
     #     datasets.append(dataset)
 
     data_path = prepare_plot_data(
-        coords=new_coords, data_class='Eigensolution', dataset_list=raw_datasets, fixed_params={},
+        coords=full_coords, data_class='Eigensolution', dataset_list=raw_datasets, fixed_params={},
         save_dir='./rsl/2_para_space',
     )
 

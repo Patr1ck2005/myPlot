@@ -10,20 +10,17 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    # data_path = 'data/PhC-Rod-I-detailed-t_slab_factor_space-vary_fill-t_tot-norm_mesh-(tri0.10).csv'
-    # data_path = 'data/PhC-Rod-I-t_slab_factor_space-vary_fill-t_tot-norm_mesh-supp2(tri0.15).csv'
-    # data_path = 'data/PhC-Rod-I-t_slab_factor_space-vary_fill-t_tot-norm_mesh-supp1(tri0.05).csv'
-    # data_path = 'data/PhC-Tri_Rod-I-t_slab_space-vary_fill-t_tot-norm_mesh-detailed_UGR_C-(tri0.03).csv'
-    # data_path = 'data/PhC-Tri_Rod-I-t_slab_space-vary_fill-t_tot-norm_mesh-detailed_UGR_C-(tri0.05)-supp2.csv'
-    # data_path = 'data/PhC-Rod-I-detailed-t_slab_factor_space-vary_fill-t_tot-norm_mesh-(tri0.10).csv'
-    # data_path = "data/PhC-Tri_Rod-I-search0.60-t_slab_space-vary_fill-t_tot-norm_mesh-detailed_UGR_E-(tri0.10)-supp.csv"
-    data_path = "data/PhC-Tri_Rod-I-search0.55-t_slab_space-vary_fill-t_tot-tri_factor-norm_mesh-detailed_UGR_E-(400t).csv"  # marked
-    # data_path = "data/PhC-Tri_Rod-I-search0.55-t_slab_space-vary_fill-t_tot-tri_factor-ultrahigh_mesh-detailed_UGR_E-(400t).csv"  # marked
+    # data_path = 'data/Tri_Rod-I-search0.55-t_slab_space-vary_fill-t_tot-tri_factor-norm_mesh-detailed_UGR_E-(400t).csv'
+    # data_path = 'data/Tri_Rod-I-search0.55-t_slab_space-vary_fill-t_tot-tri_factor-norm_mesh-detailed_UGR_E-(400t)-supp1.csv'
+    # data_path = 'data/Tri_Rod-I-search0.55-t_slab_space-vary_fill-t_tot-tri_factor-norm_mesh-detailed_UGR_E-(400t,1.46bg)-supp1.csv'
+    data_path = 'data/Tri_Rod-I-search0.55-t_slab_space-vary_fill-t_tot-tri_factor-norm_mesh-detailed_UGR_E-(400t)-supp2.csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
     df_sample["特征频率 (THz)"] = (df_sample["特征频率 (THz)"].apply(convert_complex)
                                    .apply(norm_freq, period=period * 1e-9 * 1e12))
+    # df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex)
+                                   # .apply(norm_freq, period=period * 1e-9 * 1e12))
     df_sample["频率 (Hz)"] = np.real(df_sample["特征频率 (THz)"])
     param_keys = ["m1", "m2", "t_slab_factor", "t_tot (nm)", "fill", "tri_factor", "substrate (nm)"]
     z_keys = ["特征频率 (THz)", "品质因子 (1)", "fake_factor (1)", "up_S3 (1)", "U_factor (1)"]
@@ -32,7 +29,7 @@ if __name__ == '__main__':
     grid_coords, Z = create_data_grid(df_sample, param_keys, z_keys, deduplication=False)
     print("网格参数：")
     for key, arr in grid_coords.items():
-        print(f"  {key}: {arr}")
+        print(f"  {key}: {arr}, count = {len(arr)}")
     print("数据网格 Z 的形状：", Z.shape)
 
     X_KEY = 't_slab_factor'
@@ -45,7 +42,7 @@ if __name__ == '__main__':
             'm1': 0,
             'm2': 0,
             't_tot (nm)': 400,
-            'fill': 0.680,
+            'fill': 0.683,
             'tri_factor': 0.15,
             'substrate (nm)': 3000,
         },  # 固定

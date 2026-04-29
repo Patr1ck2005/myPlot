@@ -47,5 +47,6 @@ if __name__ == '__main__':
     # main(r'D:\DELL\Documents\Research\2024-VBG\imgs')
     # main(r'D:\DELL\Documents\Research\2025-[revising]-EP_BIC')
     # main(r'D:\DELL\Documents\Research\2024-[Published]-VBG\R2')
-    main(r'D:\Research\2025-[revising]-EP_BIC')
+    # main(r'D:\Research\2025-[revising]-EP_BIC')
+    main(r'D:\Research\School\必修\Solid Physics\固体物理\作业\hw1')
 

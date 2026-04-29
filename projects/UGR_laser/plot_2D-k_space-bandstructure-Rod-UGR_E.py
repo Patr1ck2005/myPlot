@@ -10,15 +10,16 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    # data_path = 'data/Tri_Rod-I-0.3k_space-norm_mesh-UGR_E-(tri0.10).csv'
-    # data_path = 'data/Tri_Rod-I-0.5k_space-norm_mesh-UGR_E-(tri0.10,400t).csv'
-    # data_path = 'data/Tri_Rod-I-search0.55-0.5k_space-norm_mesh-UGR_E-(tri0.10,400t)-1.csv'
-    data_path = 'data/Tri_Rod-I-Full_k_space-norm_mesh-UGR_E-(tri0.10,400t).csv'
+    # data_path = 'data/Tri_Rod-I-search0.55-detailed_k_space1Dim-norm_mesh-UGR_E-(tri0.02,400t).csv'
+    # data_path = 'data/Tri_Rod-I-search0.55-detailed_k_space1Dim-norm_mesh-UGR_E-(tri0.05,400t).csv'
+    data_path = 'data/Tri_Rod-I-search0.55-detailed_k_space1Dim-norm_mesh-UGR_E-(tri0.10,400t).csv'
+    # data_path = 'data/Tri_Rod-I-search0.55-detailed_k_space1Dim-norm_mesh-UGR_E-(tri0.15,400t).csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
     df_sample["特征频率 (THz)"] = (df_sample["特征频率 (THz)"].apply(convert_complex)
                                    .apply(norm_freq, period=period * 1e-9 * 1e12))
+    # df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex)
     df_sample["频率 (Hz)"] = np.real(df_sample["特征频率 (THz)"])
     df_sample["k"] = df_sample["m1"] + df_sample["m2"] / 2.414
     # df_sample = df_sample[(df_sample["k"]<=0.3) & (df_sample["k"]>=-0.3)]  # filter k<0.3
@@ -39,15 +40,21 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            't_slab_factor': 0.178,
             't_tot (nm)': 400,
-            'fill': 0.675,
-            # 't_slab_factor': 0.180,
-            # 't_tot (nm)': 400,
-            # 'fill': 0.68,
-            'tri_factor': 0.1,
             'substrate (nm)': 3000,
             'dpml (nm)': 600,
+            # 't_slab_factor': 0.1795,
+            # 'fill': 0.675,
+            # 'tri_factor': 0.02,
+            # 't_slab_factor': 0.179,
+            # 'fill': 0.675,
+            # 'tri_factor': 0.05,
+            't_slab_factor': 0.1785,
+            'fill': 0.678,
+            'tri_factor': 0.10,
+            # 't_slab_factor': 0.1795,
+            # 'fill': 0.684,
+            # 'tri_factor': 0.15,
         },  # 固定
         filter_conditions={
             "fake_factor (1)": {"<": 1},  # 筛选
@@ -122,7 +129,7 @@ if __name__ == '__main__':
         )
         qlog = np.log10(qfactor)
         dataset['qlog'] = qlog.real.ravel()
-        dataset['-u_factor'] = np.abs(u_factor.real.ravel())
+        dataset['u_factor'] = np.abs(u_factor.real.ravel())
         dataset['u_eff'] = -(1-np.abs(u_factor.real.ravel()))/(1+np.abs(u_factor.real.ravel()))
         dataset['up_s3'] = up_s3.real.ravel()
         print(f"Band {i}: qlog range = [{np.nanmin(dataset['qlog'])}, {np.nanmax(dataset['qlog'])}]")
@@ -167,48 +174,70 @@ if __name__ == '__main__':
     plt.savefig('temp.svg', bbox_inches='tight', transparent=True)
     plt.show()
 
-    # plotter.new_2d_fig()
-    # # for i in range(MAX_NUM):
-    # #     plotter.plot(
-    # #         index=i, x_key=X_KEY, z1_key='-u_factor', z3_key='qlog', cmap='nipy_spectral',
-    # #         # enable_dynamic_color=True, global_color_vmin=2, global_color_vmax=7, linewidth_base=2
-    # #     )
+    plotter.new_2d_fig()
+    plotter.plot(
+        index=5, x_key=X_KEY, z1_key='u_eff', z3_key='qlog', cmap='nipy_spectral',
+        default_line_color='k'
+        # enable_dynamic_color=True, global_color_vmin=2, global_color_vmax=7, linewidth_base=2
+    )
+    plotter.adjust_view_2dim_auto()
+    plotter.ax.set_ylim((-1, 1))
+    plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig()
+    plotter.plot(
+        index=5, x_key=X_KEY, z1_key='qlog', z3_key='qlog', cmap='nipy_spectral',
+        default_line_color='k'
+        # enable_dynamic_color=True, global_color_vmin=2, global_color_vmax=7, linewidth_base=2
+    )
+    plotter.adjust_view_2dim_auto()
+    plotter.ax.set_ylim((1, 7))
+    plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.new_2d_fig()
+    for i in range(MAX_NUM):
+        plotter.plot(
+            index=i, x_key=X_KEY, z1_key='u_factor', z3_key='qlog', cmap='nipy_spectral',
+            # enable_dynamic_color=True, global_color_vmin=2, global_color_vmax=7, linewidth_base=2
+        )
     # plotter.plot(
     #     index=1, x_key=X_KEY, z1_key='-u_factor', z3_key='qlog', cmap='nipy_spectral',
     #     default_color='red'
     #     # enable_dynamic_color=True, global_color_vmin=2, global_color_vmax=7, linewidth_base=2
     # )
-    # # plotter.plot(
-    # #     index=1, x_key=X_KEY, z1_key='u_eff', z3_key='qlog', cmap='nipy_spectral',
-    # #     default_color='red'
-    # #     # enable_dynamic_color=True, global_color_vmin=2, global_color_vmax=7, linewidth_base=2
-    # # )
+    # plotter.plot(
+    #     index=1, x_key=X_KEY, z1_key='u_eff', z3_key='qlog', cmap='nipy_spectral',
+    #     default_color='red'
+    #     # enable_dynamic_color=True, global_color_vmin=2, global_color_vmax=7, linewidth_base=2
+    # )
     # plotter.adjust_view_2dim_auto()
-    # plotter.ax.set_yscale('log')
-    # plotter.add_annotations()
-    # plotter.save_and_show()
+    plotter.ax.set_yscale('log')
+    plotter.add_annotations()
+    plotter.save_and_show()
     #
-    # plotter.re_initialized_plot()
-    # plotter.new_2d_fig()
-    # for i in range(MAX_NUM):
-    #     plotter.plot(
-    #         index=i, x_key=X_KEY, z1_key='eigenfreq_real', z2_key='eigenfreq_imag',
-    #         # enable_fill=True, default_color='gray', alpha_fill=0.3, scale=1
-    #     )
-    # plotter.adjust_view_2dim_auto()
-    # plotter.add_annotations()
-    # plotter.save_and_show()
-    #
-    # plotter.re_initialized_plot()
-    # plotter.new_2d_fig()
-    # for i in range(MAX_NUM):
-    #     plotter.plot(
-    #         index=i, x_key=X_KEY, z1_key='qlog', z2_key='qlog',
-    #         # enable_fill=True, default_color='gray', alpha_fill=0.3, scale=1
-    #     )
-    # plotter.adjust_view_2dim_auto()
-    # plotter.add_annotations()
-    # plotter.save_and_show()
+    plotter.re_initialized_plot()
+    plotter.new_2d_fig()
+    for i in range(MAX_NUM):
+        plotter.plot(
+            index=i, x_key=X_KEY, z1_key='eigenfreq_real', z2_key='eigenfreq_imag',
+            # enable_fill=True, default_color='gray', alpha_fill=0.3, scale=1
+        )
+    plotter.adjust_view_2dim_auto()
+    plotter.add_annotations()
+    plotter.save_and_show()
+
+    plotter.re_initialized_plot()
+    plotter.new_2d_fig()
+    for i in range(MAX_NUM):
+        plotter.plot(
+            index=i, x_key=X_KEY, z1_key='qlog', z2_key='qlog',
+            # enable_fill=True, default_color='gray', alpha_fill=0.3, scale=1
+        )
+    plotter.adjust_view_2dim_auto()
+    plotter.add_annotations()
+    plotter.save_and_show()
 
     plotter.re_initialized_plot()
     plotter.new_2d_fig(figsize=(2,2))

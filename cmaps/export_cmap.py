@@ -3,10 +3,7 @@ import numpy as np
 from pathlib import Path
 
 # Parameters
-# cmap_name = "coolwarm"
-# cmap_name = "nipy_spectral"
-# cmap_name = "hot"
-cmap_name = "RdBu"
+cmap_name = "hsv"
 # width = 1024
 # height = 64
 

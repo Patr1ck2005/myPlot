@@ -384,7 +384,7 @@ def batch_run_cases(
 
     print("网格参数：")
     for key, arr in grid_coords.items():
-        print(f"  {key}: {arr}")
+        print(f"  {key}: {arr}, count = {len(arr)}")
     print("数据网格 Z 的形状：", Z.shape)
 
 
@@ -438,25 +438,11 @@ if __name__ == "__main__":
     # -------------------------
     # 1. 文件与输出
     # -------------------------
-    # DATA_PATH = "data/PhC-Rod-I-detailed-t_slab_factor_space-vary_fill-t_tot-norm_mesh-(tri0.10).csv"
-    # DATA_PATH = "data/PhC-Rod-I-t_slab_factor_space-vary_fill-t_tot-norm_mesh-supp1(tri0.05).csv"
-    # DATA_PATH = "data/PhC-Rod-I-t_slab_factor_space-vary_fill-t_tot-norm_mesh-supp2(tri0.15).csv"
-    # DATA_PATH = "data/PhC-Tri-I-detailed-t_slab_space-vary_fill-t_tot-norm_mesh-(tri0.10).csv"
-    # DATA_PATH = "data/PhC-Tri-I-t_slab_space-vary_fill-t_tot-norm_mesh-supp1(tri0.05).csv"
-    # DATA_PATH = "data/PhC-Trap-I-t_slab_space-vary_fill-t_tot-norm_mesh-1.csv"
-    # DATA_PATH = "data/PhC-Tri_Rod-I-t_slab_space-vary_fill-t_tot-norm_mesh-detailed_UGR_C-(tri0.05).csv"
-    # DATA_PATH = "data/PhC-Tri_Rod-I-t_slab_space-vary_fill-t_tot-norm_mesh-detailed_UGR_C-(tri0.05)-supp1.csv"
-    # DATA_PATH = "data/PhC-Tri_Void-I-t_slab_space-vary_fill-t_tot-norm_mesh-detailed_UGR_B-(tri0.10).csv"
-    # DATA_PATH = "data/PhC-Tri_Void-I-t_slab_space-vary_fill-t_tot-norm_mesh-(tri0.10)-supp1.csv"
-    # DATA_PATH = "data/PhC-Tri_Rod-I-t_slab_space-vary_fill-t_tot-t_cladding-norm_mesh-detailed_UGR_C-(tri0.03)-supp3.csv"
-    # DATA_PATH = "data/PhC-Tri_Void-I-t_slab_space-vary_fill-t_tot-norm_mesh-detailed_UGR_D-(tri0.10).csv"
-    # DATA_PATH = "data/PhC-Tri_Void-I-t_slab_space-vary_fill-t_tot-norm_mesh-detailed_UGR_D-(tri0.10)-supp1.csv"
-    # DATA_PATH = "data/PhC-Tri_Rod-I-t_slab_space-vary_fill-t_tot(330,370nm)-norm_mesh-(tri0.10)-supp.csv"
-    # DATA_PATH = "data/PhC-Tri_Rod-I-search0.50-t_slab_space-vary_fill-t_tot-norm_mesh-detailed_UGR_E-(tri0.05).csv"
-    # DATA_PATH = "data/PhC-Tri_Rod-I-search0.50-t_slab_space-vary_fill-t_tot-norm_mesh-detailed_UGR_E-(tri0.05)-supp1.csv"
-    # DATA_PATH = "data/PhC-Tri_Rod-I-search0.60-t_slab_space-vary_fill-t_tot-norm_mesh-detailed_UGR_E-(tri0.10)-supp.csv"
-    # DATA_PATH = "data/PhC-Tri_Rod-I-search0.55-t_slab_space-vary_fill-t_tot-tri_factor-norm_mesh-detailed_UGR_E-(400t).csv"
-    DATA_PATH = "data/PhC-Tri_Rod-I-search0.55-t_slab_space-vary_fill-t_tot-tri_factor-ultrahigh_mesh-detailed_UGR_E-(400t).csv"
+    # DATA_PATH = "data/Tri_Rod-I-search0.60-t_slab_space-vary_fill-t_tot-tri_factor-norm_mesh-detailed_UGR_C-(300t).csv"
+    # DATA_PATH = "data/Tri_Rod-I-search0.55-t_slab_space-vary_fill-t_tot-tri_factor-norm_mesh-detailed_UGR_E-(400t,0.10tri).csv"
+    # DATA_PATH = "data/Tri_Rod-I-search0.55-t_slab_space-vary_fill-t_tot-tri_factor-norm_mesh-detailed_UGR_E-(400t).csv"
+    DATA_PATH = "data/Tri_Rod-I-search0.55-t_slab_space-vary_fill-t_tot-tri_factor-norm_mesh-detailed_UGR_E-(400t)-supp1.csv"
+    # DATA_PATH = "data/Tri_Rod-I-search0.55-t_slab_space-vary_fill-t_tot-tri_factor-norm_mesh-detailed_UGR_E-(400t,1.46bg)-supp1.csv"
     OUTPUT_ROOT = "./BATCH_OUTPUT"
 
     # -------------------------
@@ -485,22 +471,23 @@ if __name__ == "__main__":
         "m1": 0.00,
         "m2": 0.00,
         "t_tot (nm)": 400,
-        "tri_factor": 0.02,
+        "tri_factor": 0.15,
         "substrate (nm)": 3000,  # 1500, 3000, 6000
-        "dpml (nm)": 900,  # 300, 600, 900
+        "dpml (nm)": 600,  # 300, 600, 900
     }
 
     # -------------------------
     # 5. 扫描参数：这里改成 fill 列表
     # -------------------------
-    # FILL_LIST = [0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85]
-    # FILL_LIST = [0.56, 0.58, 0.59, 0.6,  0.61, 0.62, 0.64,]
-    # FILL_LIST = [0.65,0.70,0.72,0.75,0.78,0.80,0.85]
-    # FILL_LIST = [0.59,0.595,0.60]
-    # FILL_LIST = [0.50, 0.55, 0.60, 0.65, 0.70]
-    # FILL_LIST = [0.50,0.53,0.55,0.58,0.60,0.63,0.65,0.68,0.70]
-    # FILL_LIST = [0.671, 0.673, 0.674, 0.675, 0.676, 0.677, 0.678, 0.679, 0.680, 0.681, 0.682,0.684]
-    FILL_LIST = [0.675, 0.676, 0.677, 0.678, 0.679, 0.68,  0.681, 0.682, 0.683]
+    # FILL_LIST = [0.675, 0.676, 0.677, 0.678, 0.679, 0.68, 0.681, 0.682, 0.683]  # E
+    # FILL_LIST = [0.673,0.674, 0.675, 0.676, 0.677, 0.678, 0.679, 0.68, 0.681, 0.682, 0.683]  # E
+    # FILL_LIST = [0.670,0.671,0.672]  # E
+    # FILL_LIST = [0.677, 0.6772, 0.6774,0.6776,0.6778, 0.678]  # E
+    FILL_LIST = [0.668, 0.669, 0.67,  0.671, 0.672, 0.684, 0.685, 0.686]  # E
+ #    FILL_LIST = [0.655, 0.656, 0.657, 0.658, 0.659, 0.66,  0.661, 0.662, 0.663, 0.664, 0.665, 0.666,
+ # 0.667, 0.668, 0.669, 0.67,  0.671, 0.672, 0.673, 0.674, 0.675, 0.676, 0.677, 0.678,
+ # 0.679, 0.68,  0.681, 0.682, 0.683, 0.684, 0.685]  # E in 1.46
+    # FILL_LIST = [0.55, 0.58, 0.59, 0.6,  0.61, 0.62, 0.63, 0.64, 0.65]  # C
 
     FIXED_PARAMS_LIST = [
         {
