@@ -12,22 +12,22 @@ c_const = 299792458
 if __name__ == '__main__':
     # data_path = 'data/spectrums/spectrum-s-btm-Tri_Rod-I-norm_mesh-0.03k-UGR_E-(tri0.10,400t_tot,0.003k).csv'
     # data_path = 'data/spectrums/spectrum-s-top-Tri_Rod-I-norm_mesh-0.03k-UGR_E-(tri0.10,400t_tot,0.003k).csv'
-    # data_path = 'data/spectrums/spectrum-s-top-Tri_Rod-I-norm_mesh-0.03k-UGR_E-(tri0.10,400t_tot,0k).csv'
-    data_path = 'data/spectrums/spectrum-s-btm-Tri_Rod-I-norm_mesh-0.03k-UGR_E-(tri0.10,400t_tot,0k).csv'
+    data_path = 'data/spectrums/spectrum-s-top-Tri_Rod-I-norm_mesh-0.03k-UGR_E-(tri0.10,400t_tot,0k).csv'
+    # data_path = 'data/spectrums/spectrum-s-btm-Tri_Rod-I-norm_mesh-0.03k-UGR_E-(tri0.10,400t_tot,0k).csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
     df_sample["f (c/P)"] = df_sample["freq (THz)"].apply(norm_freq, period=period * 1e3)
     df_sample["k"] = df_sample["m1"] + df_sample["m2"]/2.414
-    # df_sample["S11 (1)"] = df_sample["S11 (1)"].apply(convert_complex)  # top
-    # df_sample["S21 (1)"] = df_sample["S21 (1)"].apply(convert_complex)  # top
-    df_sample["S12 (1)"] = df_sample["S12 (1)"].apply(convert_complex)  # btm
-    df_sample["S22 (1)"] = df_sample["S22 (1)"].apply(convert_complex)  # btm
+    df_sample["S11 (1)"] = df_sample["S11 (1)"].apply(convert_complex)  # top
+    df_sample["S21 (1)"] = df_sample["S21 (1)"].apply(convert_complex)  # top
+    # df_sample["S12 (1)"] = df_sample["S12 (1)"].apply(convert_complex)  # btm
+    # df_sample["S22 (1)"] = df_sample["S22 (1)"].apply(convert_complex)  # btm
     df_sample = df_sample[(df_sample["f (c/P)"] >= 0.524) & (df_sample["f (c/P)"] <= 0.615)]
     # 指定用于构造网格的参数以及目标数据列
     param_keys = ["k", "f (c/P)"]
-    # z_keys = ["总反射率 (1)", "吸收率 (1)", "S11 (1)"]  # top
-    z_keys = ["总反射率 (1)", "吸收率 (1)", "S22 (1)"]  # btm
+    z_keys = ["总反射率 (1)", "吸收率 (1)", "S11 (1)"]  # top
+    # z_keys = ["总反射率 (1)", "吸收率 (1)", "S22 (1)"]  # btm
 
     # 构造数据网格，此处不进行聚合，每个单元格保存列表
     grid_coords, Z = create_data_grid(df_sample, param_keys, z_keys, deduplication=False)
@@ -102,8 +102,8 @@ if __name__ == '__main__':
     # extent = (new_coords['k'][0], new_coords['k'][-1], wavelengths[0], wavelengths[-1])
     extent = (new_coords['k'][0], new_coords['k'][-1], new_coords['f (c/P)'][0], new_coords['f (c/P)'][-1])
     im = ax.imshow(R.real.T, origin='lower', extent=extent,
-                     # cmap='Blues', aspect='auto', vmin=0, vmax=1, interpolation='none')
-                     cmap='rainbow', aspect='auto', vmin=0, vmax=1, interpolation='none')
+                     cmap='Blues', aspect='auto', vmin=0, vmax=1, interpolation='none')
+                     # cmap='rainbow', aspect='auto', vmin=0, vmax=1, interpolation='none')
     # # plot iso-angle lines (wavelength vs k) -10, -5, 5, 10 degrees
     # iso_angles = [-15, -10, -5, 5, 10, 15]
     # for angle in iso_angles:
@@ -124,6 +124,18 @@ if __name__ == '__main__':
                    cmap='hsv', aspect='auto', interpolation='none')
     # cbar = fig.colorbar(im, ax=ax)
     ax.set_ylim((0.555,0.568))
+    plt.savefig('temp.svg', bbox_inches='tight', transparent=True, dpi=300)
+    plt.show()
+
+    fig, ax = plt.subplots(figsize=(2, 2))
+    phase_s11 = np.angle(s11)
+    freq = new_coords['f (c/P)']
+    norm_R = R.real[29,:]
+    norm_phase_s11 = phase_s11[29,:]
+    plt.plot(freq, norm_R, color='blue')
+    twin_ax = ax.twinx()
+    plt.plot(freq, norm_phase_s11, color='red')
+    # cbar = fig.colorbar(im, ax=ax)
     plt.savefig('temp.svg', bbox_inches='tight', transparent=True, dpi=300)
     plt.show()
 

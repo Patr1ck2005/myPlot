@@ -10,10 +10,10 @@ from core.utils import norm_freq, convert_complex
 c_const = 299792458
 
 if __name__ == '__main__':
-    data_path = 'data/Tri_Rod-I-search0.55-detailed_k_space2Dim-norm_mesh-UGR_E-(tri0.02,400t).csv'
+    # data_path = 'data/Tri_Rod-I-search0.55-detailed_k_space2Dim-norm_mesh-UGR_E-(tri0.02,400t).csv'
     # data_path = 'data/Tri_Rod-I-search0.55-detailed_k_space2Dim-norm_mesh-UGR_E-(tri0.05,400t).csv'
     # data_path = 'data/Tri_Rod-I-search0.55-detailed_k_space2Dim-norm_mesh-UGR_E-(tri0.10,400t).csv'
-    # data_path = 'data/Tri_Rod-I-search0.55-detailed_k_space2Dim-norm_mesh-UGR_E-(tri0.15,400t,14eigens).csv'
+    data_path = 'data/Tri_Rod-I-search0.55-detailed_k_space2Dim-norm_mesh-UGR_E-(tri0.15,400t,14eigens).csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
@@ -48,10 +48,10 @@ if __name__ == '__main__':
         grid_coords, Z,
         z_keys=z_keys,
         fixed_params={
-            't_slab_factor': 0.1795,
-            't_tot (nm)': 400,
-            'fill': 0.675,
-            'tri_factor': 0.02,
+            # 't_slab_factor': 0.1795,
+            # 't_tot (nm)': 400,
+            # 'fill': 0.675,
+            # 'tri_factor': 0.02,
             # 't_slab_factor': 0.179,
             # 't_tot (nm)': 400,
             # 'fill': 0.675,
@@ -60,10 +60,10 @@ if __name__ == '__main__':
             # 't_tot (nm)': 400,
             # 'fill': 0.678,
             # 'tri_factor': 0.10,
-            # 't_slab_factor': 0.1795,
-            # 't_tot (nm)': 400,
-            # 'fill': 0.684,
-            # 'tri_factor': 0.15,
+            't_slab_factor': 0.1795,
+            't_tot (nm)': 400,
+            'fill': 0.684,
+            'tri_factor': 0.15,
             'substrate (nm)': 3000,
             'dpml (nm)': 600,
         },  # 固定

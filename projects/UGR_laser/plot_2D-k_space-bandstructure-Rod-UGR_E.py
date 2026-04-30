@@ -14,6 +14,7 @@ if __name__ == '__main__':
     # data_path = 'data/Tri_Rod-I-search0.55-detailed_k_space1Dim-norm_mesh-UGR_E-(tri0.05,400t).csv'
     data_path = 'data/Tri_Rod-I-search0.55-detailed_k_space1Dim-norm_mesh-UGR_E-(tri0.10,400t).csv'
     # data_path = 'data/Tri_Rod-I-search0.55-detailed_k_space1Dim-norm_mesh-UGR_E-(tri0.15,400t).csv'
+    # data_path = 'data/Tri_Rod-I-search0.55-full_k_space1Dim-norm_mesh-UGR_E-(tri0.10,400t).csv'
     df_sample = pd.read_csv(data_path, sep='\t')
 
     period = 500
@@ -22,7 +23,7 @@ if __name__ == '__main__':
     # df_sample["特征频率 (THz)"] = df_sample["特征频率 (THz)"].apply(convert_complex)
     df_sample["频率 (Hz)"] = np.real(df_sample["特征频率 (THz)"])
     df_sample["k"] = df_sample["m1"] + df_sample["m2"] / 2.414
-    # df_sample = df_sample[(df_sample["k"]<=0.3) & (df_sample["k"]>=-0.3)]  # filter k<0.3
+    df_sample = df_sample[(df_sample["k"]<=0.1) & (df_sample["k"]>=-0.1)]  # filter k<0.5
     param_keys = ["k", "t_slab_factor", "t_tot (nm)", "fill", "tri_factor", "substrate (nm)", "dpml (nm)"]
     z_keys = ["特征频率 (THz)", "品质因子 (1)", "fake_factor (1)", "up_S3 (1)", "U_factor (1)"]
 
@@ -150,13 +151,13 @@ if __name__ == '__main__':
         annotations={
             'xlabel': '', 'ylabel': '',
             'show_axis_labels': True, 'show_tick_labels': True,
-            # 'xlim': (-0.1,0.1),
+            'xlim': (-0.1,0.1),
             # 'ylim': (0.524, 0.615),
             # 'xlim': (-0.03, 0.03),
             # 'ylim': (0.555, 0.568),
         },
     )
-    config.update(figsize=(2, 1), tick_direction='in')
+    config.update(figsize=(2, 2), tick_direction='in')
     plotter = OneDimFieldVisualizer(config=config, data_path=data_path)
     plotter.load_data()
 
@@ -173,6 +174,16 @@ if __name__ == '__main__':
     # plt.grid(True)
     plt.savefig('temp.svg', bbox_inches='tight', transparent=True)
     plt.show()
+
+    plotter.new_2d_fig(figsize=(2, 1))
+    plotter.plot(
+        index=5, x_key=X_KEY, z1_key='u_factor', z3_key='qlog', cmap='nipy_spectral',
+        default_line_color='orange'
+        # enable_dynamic_color=True, global_color_vmin=2, global_color_vmax=7, linewidth_base=2
+    )
+    plotter.ax.set_yscale('log')
+    plotter.add_annotations()
+    plotter.save_and_show()
 
     plotter.new_2d_fig()
     plotter.plot(
@@ -240,7 +251,7 @@ if __name__ == '__main__':
     plotter.save_and_show()
 
     plotter.re_initialized_plot()
-    plotter.new_2d_fig(figsize=(2,2))
+    plotter.new_2d_fig(figsize=(2,4))
     # plotter.plot(
     #     index=4, x_key=X_KEY, z1_key='eigenfreq_real', z2_key='eigenfreq_imag',
     #     enable_fill=True, default_color='gray', alpha_fill=0.3, scale=1
@@ -307,6 +318,9 @@ if __name__ == '__main__':
             index=i, x_key=X_KEY, z1_key='eigenfreq_real', z3_key='u_eff', cmap='RdBu',
             enable_dynamic_color=True, global_color_vmin=-1, global_color_vmax=1, linewidth_base=2
         )
-    plotter.adjust_view_2dim_auto()
+    # plotter.adjust_view_2dim_auto()
+    # 'ylim': (0.524, 0.615),
+    plotter.ax.set_xlim((-0.1, +0.1))
+    plotter.ax.set_ylim((0.524, 0.615))
     plotter.add_annotations()
     plotter.save_and_show()

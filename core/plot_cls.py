@@ -63,7 +63,7 @@ class BandPlotterOneDim(LinePlotter, ABC):
             'cmap': 'magma',
             'add_colorbar': False,
             'global_color_vmin': vmin, 'global_color_vmax': vmax,
-            'default_color': 'gray', 'alpha_fill': alpha,
+            'default_line_color': 'gray', 'alpha_fill': alpha,
             'edge_color': 'none',
             'gradient_direction': 'z3',
         }
@@ -84,7 +84,7 @@ class BandPlotterOneDim(LinePlotter, ABC):
             'cmap': cmap,
             'add_colorbar': False,
             'global_color_vmin': vmin, 'global_color_vmax': vmax,
-            'default_color': 'gray', 'alpha_fill': 1,
+            'default_line_color': 'gray', 'alpha_fill': 1,
             'linewidth_base': 2,
             'edge_color': 'none',
             'alpha_line': 1
@@ -106,7 +106,7 @@ class BandPlotterOneDim(LinePlotter, ABC):
             'enable_dynamic_color': False,
             'cmap': cmap,
             'add_colorbar': False,
-            'default_color': False, 'alpha_fill': 1,
+            'default_line_color': False, 'alpha_fill': 1,
             'linewidth_base': 2,
             'edge_color': 'none',
             'alpha_line': 0.75,
@@ -129,7 +129,7 @@ class BandPlotterOneDim(LinePlotter, ABC):
             'enable_dynamic_color': False,
             'cmap': None,
             'add_colorbar': False,
-            'default_color': False, 'alpha_fill': 1,
+            'default_line_color': False, 'alpha_fill': 1,
             'linewidth_base': 2,
             'edge_color': 'none',
             'alpha_line': 0.75,
@@ -296,6 +296,15 @@ class OneDimFieldVisualizer(LinePlotter, ABC):
         self.plot_xlims.append((np.nanmin(x), np.nanmax(x)))
         self.plot_zlims.append((np.nanmin(z1), np.nanmax(z1)))
 
+    def scatter(self, index, x_key, z1_key, z2_key=None, z3_key=None, **params_bg) -> None:
+        x = self.coordinates[x_key]
+        z1 = self.raw_datasets["data_list"][index][z1_key]
+        z2 = self.raw_datasets["data_list"][index][z2_key] if z2_key is not None else None
+        z3 = self.raw_datasets["data_list"][index][z3_key] if z3_key is not None else None
+        self.ax.scatter(x, z1, **params_bg)
+        self.plot_xlims.append((np.nanmin(x), np.nanmax(x)))
+        self.plot_zlims.append((np.nanmin(z1), np.nanmax(z1)))
+
     def adjust_view_2dim_auto(self) -> None:
         if self.plot_xlims and self.plot_zlims:
             x_min = min(x[0] for x in self.plot_xlims)
@@ -364,16 +373,30 @@ class TwoDimFieldVisualizer(HeatmapPlotter, ABC):
 
     def imshow_field(
             self, index, x_key, y_key, field_key, **kwargs
-    ) -> None:
+    ):
         # x = self.coordinates[x_key]
         # y = self.coordinates[y_key]
         # z1 = self.raw_datasets["data_list"][index][field_key]
         x, y, z1 = self._get_coord_field(index, field_key, x_key, y_key)
-        self.ax.imshow(
+        im = self.ax.imshow(
             z1.T,
             extent=(x.min(), x.max(), y.min(), y.max()),
             origin='lower',
             **kwargs
+        )
+        return im
+
+    def plot_iso_contours2D(self, index, x_key, y_key, levels, colors, field_key, cmap=None, linewidths=1.0) -> None:
+        if cmap is not None:
+            # 使用 colormap 生成颜色列表
+            from matplotlib import cm
+            colormap = cm.get_cmap(cmap, len(levels))
+            colors = [colormap(i) for i in range(len(levels))]
+        _, _, z = self._get_coord_field(index, field_key, x_key, y_key)
+        self.ax = plot_iso_contours2D(
+            self.ax, self.coordinates[x_key], self.coordinates[y_key], z, levels=levels,
+            colors=colors,
+            linewidths=linewidths
         )
 
     def plot_3d_surface(
@@ -555,18 +578,8 @@ class MomentumSpaceEigenVisualizer(TwoDimFieldVisualizer):
         self.ax.set_xlim(Mx.min(), Mx.max())
         self.ax.set_ylim(My.min(), My.max())
 
-    def plot_iso_contours2D(self, index, levels, colors, z_key, x_key='m1', y_key='m2', cmap=None) -> None:
-        if cmap is not None:
-            # 使用 colormap 生成颜色列表
-            from matplotlib import cm
-            colormap = cm.get_cmap(cmap, len(levels))
-            colors = [colormap(i) for i in range(len(levels))]
-        _, _, z = self._get_coord_field(index, z_key)
-        self.ax = plot_iso_contours2D(
-            self.ax, self.coordinates[x_key], self.coordinates[y_key], z.T, levels=levels,
-            colors=colors,
-            linewidths=1.0
-        )
+    def plot_iso_contours2D(self, index, levels, colors, field_key, x_key='m1', y_key='m2', cmap=None, linewidths=1.0) -> None:
+        super().plot_iso_contours2D(index, x_key, y_key, levels, colors, field_key, cmap, linewidths)
 
     def _round_path(self, center, radius, num=360):
         theta = np.linspace(0, 2 * np.pi, num, endpoint=False)

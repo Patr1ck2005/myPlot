@@ -94,6 +94,12 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, index=0, **kwargs):
         if z2 is None:
             raise ValueError("启用 fill 需要 z2")
         if gradient_fill:
+            # 先去掉y中的异常值（如inf和nan）, 同时移除x中的对应值
+            valid_mask = np.isfinite(y_upper) & np.isfinite(y_lower) & np.isfinite(x_vals)
+            x_vals = x_vals[valid_mask]
+            y_upper = y_upper[valid_mask]
+            y_lower = y_lower[valid_mask]
+
             # 样式 D：渐变填充基于 imshow + 剪裁路径
             # 创建填充路径（多边形：下边界 + 反转上边界 + 闭合）
             verts = np.vstack([np.column_stack([x_vals, y_lower]),
@@ -105,6 +111,8 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, index=0, **kwargs):
             # 修复：总是用当前数据范围设置 extent，而不是 ax.get_（避免初次默认 (0,1) 导致空白）
             xlim = (x_vals.min(), x_vals.max())
             ylim = (np.min(y_lower), np.max(y_upper))
+            # xlim = (np.nanmin(x_vals), np.nanmax(x_vals))
+            # ylim = (np.nanmin(y_lower), np.nanmax(y_upper))
 
             # 创建渐变图像
             if gradient_direction == 'horizontal':
@@ -119,6 +127,9 @@ def plot_line_advanced(ax, x_vals, z1, z2=None, z3=None, index=0, **kwargs):
                 gradient_data = norm_color(color_vals).reshape(1, -1)  # 使用归一化的 z3
             else:
                 raise ValueError("gradient_direction 必须是 'horizontal', 'vertical' 或 'z3'")
+
+            # 处理 Axis limits cannot be NaN or Inf 的问题
+            # extent =
 
             # 绘制渐变图像
             im = ax.imshow(
